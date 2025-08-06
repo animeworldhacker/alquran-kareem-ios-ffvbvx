@@ -55,3 +55,14 @@ export interface AudioState {
   duration: number;
   position: number;
 }
+
+export interface Bookmark {
+  id: string;
+  surahNumber: number;
+  surahName: string;
+  surahEnglishName: string;
+  ayahNumber: number;
+  ayahText: string;
+  createdAt: Date;
+  note?: string;
+}

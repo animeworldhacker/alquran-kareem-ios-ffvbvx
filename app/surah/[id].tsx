@@ -10,8 +10,9 @@ import AudioPlayer from '../../components/AudioPlayer';
 import Icon from '../../components/Icon';
 
 export default function SurahScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
   const surahNumber = parseInt(id || '1', 10);
+  const targetAyah = ayah ? parseInt(ayah, 10) : null;
   
   const { getSurah, loading: quranLoading } = useQuran();
   const { 
@@ -30,6 +31,17 @@ export default function SurahScreen() {
     setSurah(surahData);
     console.log(`Loaded Surah ${surahNumber}:`, surahData?.name);
   }, [surahNumber, getSurah]);
+
+  // Scroll to target ayah if specified
+  useEffect(() => {
+    if (targetAyah && surah) {
+      // Add a small delay to ensure the component is rendered
+      setTimeout(() => {
+        console.log(`Scrolling to ayah ${targetAyah}`);
+        // You could implement scrolling to specific ayah here if needed
+      }, 500);
+    }
+  }, [targetAyah, surah]);
 
   const handlePlayAyah = async (ayahNumber: number) => {
     console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
@@ -82,6 +94,8 @@ export default function SurahScreen() {
             key={ayah.number}
             ayah={ayah}
             surahNumber={surahNumber}
+            surahName={surah.name}
+            surahEnglishName={surah.englishName}
             onPlayAudio={handlePlayAyah}
             isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
           />

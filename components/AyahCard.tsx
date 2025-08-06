@@ -1,22 +1,43 @@
 
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ayah } from '../types';
 import { colors, commonStyles } from '../styles/commonStyles';
 import { tafsirService } from '../services/tafsirService';
+import { useBookmarks } from '../hooks/useBookmarks';
 import Icon from './Icon';
 
 interface AyahCardProps {
   ayah: Ayah;
   surahNumber: number;
+  surahName: string;
+  surahEnglishName: string;
   onPlayAudio: (ayahNumber: number) => void;
   isPlaying: boolean;
 }
 
-export default function AyahCard({ ayah, surahNumber, onPlayAudio, isPlaying }: AyahCardProps) {
+export default function AyahCard({ 
+  ayah, 
+  surahNumber, 
+  surahName, 
+  surahEnglishName, 
+  onPlayAudio, 
+  isPlaying 
+}: AyahCardProps) {
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsir, setTafsir] = useState<string>('');
   const [loadingTafsir, setLoadingTafsir] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  
+  const { addBookmark, removeBookmark, isBookmarked: checkBookmarked, bookmarks } = useBookmarks();
+
+  useEffect(() => {
+    const checkBookmarkStatus = async () => {
+      const bookmarked = await checkBookmarked(surahNumber, ayah.numberInSurah);
+      setIsBookmarked(bookmarked);
+    };
+    checkBookmarkStatus();
+  }, [surahNumber, ayah.numberInSurah, checkBookmarked, bookmarks]);
 
   const handleTafsirToggle = async () => {
     if (!showTafsir && !tafsir) {
@@ -32,6 +53,40 @@ export default function AyahCard({ ayah, surahNumber, onPlayAudio, isPlaying }: 
       }
     }
     setShowTafsir(!showTafsir);
+  };
+
+  const handleBookmarkToggle = async () => {
+    try {
+      if (isBookmarked) {
+        // Find and remove the bookmark
+        const bookmark = bookmarks.find(
+          b => b.surahNumber === surahNumber && b.ayahNumber === ayah.numberInSurah
+        );
+        if (bookmark) {
+          await removeBookmark(bookmark.id);
+          setIsBookmarked(false);
+          console.log('Bookmark removed');
+        }
+      } else {
+        // Add bookmark
+        await addBookmark(
+          surahNumber,
+          surahName,
+          surahEnglishName,
+          ayah.numberInSurah,
+          ayah.text
+        );
+        setIsBookmarked(true);
+        console.log('Bookmark added');
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      Alert.alert(
+        'خطأ',
+        error instanceof Error ? error.message : 'حدث خطأ في حفظ المفضلة',
+        [{ text: 'موافق' }]
+      );
+    }
   };
 
   return (
@@ -61,6 +116,17 @@ export default function AyahCard({ ayah, surahNumber, onPlayAudio, isPlaying }: 
               name={showTafsir ? "book" : "book-outline"} 
               size={20} 
               style={styles.actionIcon} 
+            />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, isBookmarked && styles.bookmarkedButton]} 
+            onPress={handleBookmarkToggle}
+          >
+            <Icon 
+              name={isBookmarked ? "bookmark" : "bookmark-outline"} 
+              size={20} 
+              style={[styles.actionIcon, isBookmarked && styles.bookmarkedIcon]} 
             />
           </TouchableOpacity>
         </View>
@@ -120,7 +186,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  bookmarkedButton: {
+    backgroundColor: colors.accent,
+  },
   actionIcon: {
+    color: colors.backgroundAlt,
+  },
+  bookmarkedIcon: {
     color: colors.backgroundAlt,
   },
   ayahText: {

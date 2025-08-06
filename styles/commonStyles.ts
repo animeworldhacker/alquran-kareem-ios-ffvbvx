@@ -16,6 +16,7 @@ export const colors = {
   success: '#4CAF50',
   warning: '#FF9800',
   info: '#2196F3',
+  border: '#E0E0E0',
 };
 
 export const buttonStyles = StyleSheet.create({
