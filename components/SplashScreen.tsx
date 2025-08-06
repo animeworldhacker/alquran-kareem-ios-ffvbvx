@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { colors, commonStyles } from '../styles/commonStyles';
 
 interface SplashScreenProps {
@@ -10,9 +10,12 @@ interface SplashScreenProps {
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
+  const tapHintAnim = new Animated.Value(0);
 
   useEffect(() => {
-    // Start animations
+    console.log('Splash screen loaded, waiting for user tap');
+    
+    // Start main content animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -25,18 +28,36 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         friction: 7,
         useNativeDriver: true,
       }),
-    ]).start();
-
-    // Auto-finish after 3 seconds
-    const timer = setTimeout(() => {
-      onFinish();
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    ]).start(() => {
+      // After main animation completes, show the tap hint with a pulsing animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(tapHintAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(tapHintAnim, {
+            toValue: 0.3,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
   }, []);
 
+  const handleTap = () => {
+    console.log('Splash screen tapped, proceeding to main app');
+    onFinish();
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container} 
+      onPress={handleTap}
+      activeOpacity={1}
+    >
       <Animated.View 
         style={[
           styles.content,
@@ -59,8 +80,13 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
         <Text style={styles.appTitle}>المصحف الشريف</Text>
         <Text style={styles.subtitle}>مع تفسير ابن كثير والتلاوات الصوتية</Text>
+        
+        <Animated.View style={[styles.tapHintContainer, { opacity: tapHintAnim }]}>
+          <Text style={styles.tapHint}>اضغط في أي مكان للمتابعة</Text>
+          <Text style={styles.tapHintEnglish}>Tap anywhere to continue</Text>
+        </Animated.View>
       </Animated.View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -128,5 +154,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.9,
     fontFamily: 'Amiri_400Regular',
+  },
+  tapHintContainer: {
+    marginTop: 50,
+    alignItems: 'center',
+  },
+  tapHint: {
+    fontSize: 16,
+    color: colors.accent,
+    textAlign: 'center',
+    fontFamily: 'Amiri_400Regular',
+    marginBottom: 5,
+  },
+  tapHintEnglish: {
+    fontSize: 14,
+    color: colors.backgroundAlt,
+    textAlign: 'center',
+    opacity: 0.8,
   },
 });
