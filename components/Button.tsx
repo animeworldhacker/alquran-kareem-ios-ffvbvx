@@ -1,3 +1,5 @@
+
+import React from 'react';
 import { Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { colors } from '../styles/commonStyles';
 
@@ -6,32 +8,62 @@ interface ButtonProps {
   onPress: () => void;
   style?: ViewStyle | ViewStyle[];
   textStyle?: TextStyle;
+  variant?: 'primary' | 'secondary';
 }
 
-export default function Button({ text, onPress, style, textStyle }: ButtonProps) {
+export default function Button({ 
+  text, 
+  onPress, 
+  style, 
+  textStyle, 
+  variant = 'primary' 
+}: ButtonProps) {
+  const buttonStyle = variant === 'primary' ? styles.primaryButton : styles.secondaryButton;
+  const buttonTextStyle = variant === 'primary' ? styles.primaryText : styles.secondaryText;
+
   return (
-    <TouchableOpacity style={[styles.button, style]} onPress={onPress} activeOpacity={0.7}>
-      <Text style={[styles.buttonText, textStyle]}>{text}</Text>
+    <TouchableOpacity 
+      style={[buttonStyle, style]} 
+      onPress={onPress}
+    >
+      <Text style={[buttonTextStyle, textStyle]}>
+        {text}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
+  primaryButton: {
     backgroundColor: colors.primary,
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
-    marginTop: 10,
-    width: '100%',
-    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.25)',
-    elevation: 5,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
-  buttonText: {
-    color: '#fff',
+  secondaryButton: {
+    backgroundColor: colors.backgroundAlt,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    minHeight: 48,
+  },
+  primaryText: {
+    color: colors.backgroundAlt,
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: '600',
+    fontFamily: 'Amiri_400Regular',
+  },
+  secondaryText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Amiri_400Regular',
   },
 });

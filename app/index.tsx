@@ -1,63 +1,38 @@
-import { Text, View, Image, SafeAreaView } from 'react-native';
-import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import Button from '../components/Button';
-import { commonStyles, buttonStyles } from '../styles/commonStyles';
 
-// Declare the window properties we're using
-declare global {
-  interface Window {
-    handleInstallClick: () => void;
-    canInstall: boolean;
-  }
-}
+import React, { useState, useEffect } from 'react';
+import { View } from 'react-native';
+import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
+import { ScheherazadeNew_400Regular } from '@expo-google-fonts/scheherazade-new';
+import SplashScreen from '../components/SplashScreen';
+import HomeScreen from './home';
+import { commonStyles } from '../styles/commonStyles';
 
 export default function MainScreen() {
-  const [canInstall, setCanInstall] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  
+  const [fontsLoaded] = useFonts({
+    Amiri_400Regular,
+    Amiri_700Bold,
+    ScheherazadeNew_400Regular,
+  });
 
   useEffect(() => {
-    // Initial check
-    setCanInstall(false);
-
-    // Set up polling interval
-    const intervalId = setInterval(() => {
-      if(window.canInstall) {
-        setCanInstall(true);
-        clearInterval(intervalId);
-      }
-    }, 500);
-
-    // Cleanup
-    return () => {
-      clearInterval(intervalId);
-    };
+    console.log('Main screen loaded');
   }, []);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  if (showSplash) {
+    return (
+      <SplashScreen onFinish={() => setShowSplash(false)} />
+    );
+  }
 
   return (
     <View style={commonStyles.container}>
-      <View style={commonStyles.content}>
-        <Image
-          source={require('../assets/images/final_quest_240x240.png')}
-          style={{ width: 180, height: 180 }}
-          resizeMode="contain"
-        />
-        <Text style={commonStyles.title}>This is a placeholder app.</Text>
-        <Text style={commonStyles.text}>Your app will be displayed here when it's ready.</Text>
-        <View style={commonStyles.buttonContainer}>
-          {canInstall && (
-            <Button
-              text="Install App"
-              onPress={() => {
-                if(window.handleInstallClick) {
-                  window.handleInstallClick();
-                  setCanInstall(false); // Update state after installation
-                }
-              }}
-              style={buttonStyles.instructionsButton}
-            />
-          )}
-        </View>
-      </View>
+      <HomeScreen />
     </View>
   );
 }
