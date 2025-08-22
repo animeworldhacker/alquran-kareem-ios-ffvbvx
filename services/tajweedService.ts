@@ -41,20 +41,38 @@ class TajweedService {
     try {
       console.log(`Fetching Tajweed data for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
       
-      // Try to fetch from the tajweed API
-      const response = await fetch(`${this.baseUrl}/ayah/${surahNumber}:${ayahNumber}/editions/quran-tajweed`);
-      const data = await response.json();
+      if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
+        throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
+      }
       
-      if (data.code === 200 && data.data && data.data.length > 0) {
-        const ayahData = data.data[0];
-        const tajweedData = this.parseTajweedText(ayahData.text, surahNumber, ayahNumber);
-        this.tajweedCache.set(cacheKey, tajweedData);
-        console.log(`Tajweed data fetched successfully for ${surahNumber}:${ayahNumber}`);
-        return tajweedData;
-      } else {
-        // Fallback to basic tajweed parsing
+      // Try to fetch from the tajweed API
+      const response = await fetch(`${this.baseUrl}/ayah/${surahNumber}:${ayahNumber}/editions/quran-tajweed`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.log(`Tajweed API returned ${response.status}, using fallback`);
         return this.generateBasicTajweed(surahNumber, ayahNumber);
       }
+      
+      const data = await response.json();
+      
+      if (data.code === 200 && data.data && Array.isArray(data.data) && data.data.length > 0) {
+        const ayahData = data.data[0];
+        if (ayahData && ayahData.text) {
+          const tajweedData = this.parseTajweedText(ayahData.text, surahNumber, ayahNumber);
+          this.tajweedCache.set(cacheKey, tajweedData);
+          console.log(`Tajweed data fetched successfully for ${surahNumber}:${ayahNumber}`);
+          return tajweedData;
+        }
+      }
+      
+      // Fallback to basic tajweed parsing
+      return this.generateBasicTajweed(surahNumber, ayahNumber);
     } catch (error) {
       console.error(`Error fetching Tajweed data for ${surahNumber}:${ayahNumber}:`, error);
       // Return basic tajweed as fallback
@@ -64,6 +82,15 @@ class TajweedService {
 
   private parseTajweedText(text: string, surahNumber: number, ayahNumber: number): TajweedData {
     const segments: TajweedSegment[] = [];
+    
+    if (!text || typeof text !== 'string') {
+      console.log('Invalid text provided to parseTajweedText');
+      return {
+        surah: surahNumber,
+        ayah: ayahNumber,
+        segments: []
+      };
+    }
     
     // Remove HTML tags and parse tajweed markup
     let cleanText = text;
@@ -87,14 +114,15 @@ class TajweedService {
     // Find all tajweed segments
     tajweedPatterns.forEach(({ pattern, type }) => {
       let match;
-      while ((match = pattern.exec(cleanText)) !== null) {
+      const regex = new RegExp(pattern.source, pattern.flags);
+      while ((match = regex.exec(cleanText)) !== null) {
         const start = match.index;
         const end = start + match[0].length;
         foundSegments.push({
           start,
           end,
           type,
-          text: match[1]
+          text: match[1] || ''
         });
       }
     });
@@ -155,15 +183,14 @@ class TajweedService {
     return {
       surah: surahNumber,
       ayah: ayahNumber,
-      segments: segments.filter(s => s.text.trim().length > 0)
+      segments: segments.filter(s => s.text && s.text.trim().length > 0)
     };
   }
 
   private generateBasicTajweed(surahNumber: number, ayahNumber: number): TajweedData {
     // This is a fallback method that applies basic tajweed rules
-    // In a real implementation, you would have more sophisticated rules
+    console.log(`Generating basic tajweed for ${surahNumber}:${ayahNumber}`);
     
-    // For now, we'll return a simple structure that can be enhanced
     return {
       surah: surahNumber,
       ayah: ayahNumber,
@@ -174,10 +201,20 @@ class TajweedService {
   // Method to apply basic tajweed rules to any Arabic text
   applyBasicTajweedRules(text: string): TajweedSegment[] {
     const segments: TajweedSegment[] = [];
+    
+    if (!text || typeof text !== 'string') {
+      console.log('Invalid text provided to applyBasicTajweedRules');
+      return segments;
+    }
+    
     const words = text.split(' ');
     
     words.forEach((word, index) => {
       let wordSegments: TajweedSegment[] = [];
+      
+      if (!word || word.trim().length === 0) {
+        return;
+      }
       
       // Basic tajweed rules
       if (word.includes('ن') || word.includes('م')) {

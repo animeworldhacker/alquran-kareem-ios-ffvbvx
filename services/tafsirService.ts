@@ -8,20 +8,36 @@ class TafsirService {
     try {
       console.log(`Fetching Tafsir for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
       
+      if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
+        throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
+      }
+      
       // Using a fallback approach since the original API might not be accessible
-      // This is a simplified tafsir service - in a real app you'd use the proper Ibn Katheer API
-      const response = await fetch(`${this.baseUrl}/arabic_moyassar/${surahNumber}/${ayahNumber}`);
+      const response = await fetch(`${this.baseUrl}/arabic_moyassar/${surahNumber}/${ayahNumber}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.log(`Tafsir API returned ${response.status}, using fallback`);
+        return this.getBasicTafsir(surahNumber, ayahNumber);
+      }
+      
       const data = await response.json();
       
-      if (data.result) {
+      if (data && data.result && data.result.translation) {
         console.log(`Tafsir fetched successfully for ${surahNumber}:${ayahNumber}`);
-        return data.result.translation || 'تفسير غير متوفر حاليا';
+        return data.result.translation;
       } else {
-        return 'تفسير غير متوفر حاليا';
+        console.log(`No tafsir data found, using fallback for ${surahNumber}:${ayahNumber}`);
+        return this.getBasicTafsir(surahNumber, ayahNumber);
       }
     } catch (error) {
       console.error(`Error fetching Tafsir for ${surahNumber}:${ayahNumber}:`, error);
-      return 'تفسير غير متوفر حاليا';
+      return this.getBasicTafsir(surahNumber, ayahNumber);
     }
   }
 

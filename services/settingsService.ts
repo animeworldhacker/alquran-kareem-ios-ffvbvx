@@ -9,7 +9,15 @@ class SettingsService {
     try {
       const settingsJson = await AsyncStorage.getItem(this.storageKey);
       if (settingsJson) {
-        return JSON.parse(settingsJson);
+        const parsed = JSON.parse(settingsJson);
+        
+        // Validate the parsed settings
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed;
+        } else {
+          console.log('Invalid settings format, returning defaults');
+          return {};
+        }
       }
       return {};
     } catch (error) {
@@ -20,6 +28,19 @@ class SettingsService {
 
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
+      // Validate settings before saving
+      if (!settings || typeof settings !== 'object') {
+        throw new Error('Invalid settings object');
+      }
+      
+      // Ensure required properties exist
+      const requiredProps: (keyof AppSettings)[] = ['textSize', 'theme', 'showBanner', 'readingMode', 'squareAdjustment', 'showTajweed'];
+      for (const prop of requiredProps) {
+        if (settings[prop] === undefined || settings[prop] === null) {
+          throw new Error(`Missing required setting: ${prop}`);
+        }
+      }
+      
       await AsyncStorage.setItem(this.storageKey, JSON.stringify(settings));
       console.log('Settings saved successfully');
     } catch (error) {
@@ -33,9 +54,18 @@ class SettingsService {
     value: AppSettings[K]
   ): Promise<void> {
     try {
+      if (!key || value === undefined || value === null) {
+        throw new Error(`Invalid setting update: ${key} = ${value}`);
+      }
+      
       const currentSettings = await this.getSettings();
-      const updatedSettings = { ...currentSettings, [key]: value };
-      await this.saveSettings(updatedSettings as AppSettings);
+      const defaultSettings = this.getDefaultSettings();
+      
+      // Merge with defaults to ensure all properties exist
+      const mergedSettings = { ...defaultSettings, ...currentSettings };
+      const updatedSettings = { ...mergedSettings, [key]: value };
+      
+      await this.saveSettings(updatedSettings);
     } catch (error) {
       console.error(`Error updating setting ${key}:`, error);
       throw error;

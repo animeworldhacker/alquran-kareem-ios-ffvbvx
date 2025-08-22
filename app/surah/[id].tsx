@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useAudio } from '../../hooks/useAudio';
@@ -14,7 +14,7 @@ export default function SurahScreen() {
   const surahNumber = parseInt(id || '1', 10);
   const targetAyah = ayah ? parseInt(ayah, 10) : null;
   
-  const { getSurah, loading: quranLoading } = useQuran();
+  const { getSurah, loading: quranLoading, error: quranError } = useQuran();
   const { 
     audioState, 
     playAyah, 
@@ -27,13 +27,29 @@ export default function SurahScreen() {
   
   const [surah, setSurah] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
-    const surahData = getSurah(surahNumber);
-    setSurah(surahData);
-    console.log(`Loaded Surah ${surahNumber}:`, surahData?.name);
-  }, [surahNumber, getSurah]);
+    try {
+      if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
+        setError(`رقم السورة غير صحيح: ${surahNumber}`);
+        return;
+      }
+
+      const surahData = getSurah(surahNumber);
+      if (surahData) {
+        setSurah(surahData);
+        setError(null);
+        console.log(`Loaded Surah ${surahNumber}:`, surahData?.name);
+      } else if (!quranLoading) {
+        setError(`لم يتم العثور على السورة رقم ${surahNumber}`);
+      }
+    } catch (err) {
+      console.error('Error loading surah:', err);
+      setError('خطأ في تحميل السورة');
+    }
+  }, [surahNumber, getSurah, quranLoading]);
 
   // Scroll to target ayah if specified
   useEffect(() => {
@@ -47,8 +63,13 @@ export default function SurahScreen() {
   }, [targetAyah, surah]);
 
   const handlePlayAyah = async (ayahNumber: number) => {
-    console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
-    await playAyah(surahNumber, ayahNumber);
+    try {
+      console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
+      await playAyah(surahNumber, ayahNumber);
+    } catch (error) {
+      console.error('Error playing ayah:', error);
+      Alert.alert('خطأ', 'فشل في تشغيل الآية');
+    }
   };
 
   const isCurrentAyahPlaying = (ayahNumber: number) => {
@@ -59,10 +80,10 @@ export default function SurahScreen() {
 
   // Split ayahs into pages for flip mode (10 ayahs per page)
   const ayahsPerPage = 10;
-  const totalPages = surah ? Math.ceil(surah.ayahs?.length / ayahsPerPage) : 0;
+  const totalPages = surah && surah.ayahs ? Math.ceil(surah.ayahs.length / ayahsPerPage) : 0;
   
   const getCurrentPageAyahs = () => {
-    if (!surah?.ayahs) return [];
+    if (!surah?.ayahs || !Array.isArray(surah.ayahs)) return [];
     const startIndex = currentPage * ayahsPerPage;
     const endIndex = startIndex + ayahsPerPage;
     return surah.ayahs.slice(startIndex, endIndex);
@@ -80,6 +101,15 @@ export default function SurahScreen() {
     }
   };
 
+  const handleBackPress = () => {
+    try {
+      router.back();
+    } catch (error) {
+      console.error('Error navigating back:', error);
+      router.push('/(tabs)/chapters');
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -88,6 +118,8 @@ export default function SurahScreen() {
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
+      flex: 1,
+      padding: 20,
     },
     scrollView: {
       flex: 1,
@@ -109,7 +141,7 @@ export default function SurahScreen() {
       alignItems: 'center',
     },
     backIcon: {
-      color: colors.backgroundAlt,
+      color: '#fff',
     },
     headerContent: {
       flex: 1,
@@ -118,12 +150,12 @@ export default function SurahScreen() {
     headerTitle: {
       fontSize: textSizes.title,
       fontWeight: 'bold',
-      color: colors.backgroundAlt,
+      color: '#fff',
       fontFamily: 'Amiri_700Bold',
     },
     headerSubtitle: {
       fontSize: textSizes.caption,
-      color: colors.backgroundAlt,
+      color: '#fff',
       opacity: 0.8,
       fontFamily: 'Amiri_400Regular',
     },
@@ -132,9 +164,36 @@ export default function SurahScreen() {
     },
     ayahCount: {
       fontSize: textSizes.caption,
-      color: colors.backgroundAlt,
+      color: '#fff',
       opacity: 0.8,
       fontFamily: 'Amiri_400Regular',
+    },
+    errorContainer: {
+      backgroundColor: '#ffebee',
+      padding: 20,
+      margin: 16,
+      borderRadius: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: '#f44336',
+    },
+    errorText: {
+      fontSize: textSizes.body,
+      color: '#c62828',
+      fontFamily: 'Amiri_400Regular',
+      textAlign: 'center',
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+      marginTop: 10,
+    },
+    retryButtonText: {
+      color: '#fff',
+      fontSize: textSizes.body,
+      fontFamily: 'Amiri_700Bold',
+      textAlign: 'center',
     },
     // New elegant Quran page styles
     pageContainer: {
@@ -318,10 +377,100 @@ export default function SurahScreen() {
     },
   });
 
+  // Show error state
+  if (error || quranError) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackPress}
+          >
+            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>خطأ</Text>
+          </View>
+          
+          <View style={styles.headerInfo} />
+        </View>
+        
+        <View style={styles.centerContent}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              {error || quranError || 'حدث خطأ غير متوقع'}
+            </Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => {
+                setError(null);
+                // Trigger a reload
+                window.location.reload();
+              }}
+            >
+              <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Show loading state
   if (quranLoading || !surah) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: '#8B4513', fontFamily: 'Amiri_700Bold' }}>جاري تحميل السورة...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackPress}
+          >
+            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>جاري التحميل...</Text>
+          </View>
+          
+          <View style={styles.headerInfo} />
+        </View>
+        
+        <View style={styles.centerContent}>
+          <Text style={{ fontSize: textSizes.title, color: '#8B4513', fontFamily: 'Amiri_700Bold' }}>
+            جاري تحميل السورة...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Validate surah data
+  if (!surah.ayahs || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackPress}
+          >
+            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>خطأ</Text>
+          </View>
+          
+          <View style={styles.headerInfo} />
+        </View>
+        
+        <View style={styles.centerContent}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              لا توجد آيات في هذه السورة
+            </Text>
+          </View>
+        </View>
       </View>
     );
   }
@@ -332,18 +481,18 @@ export default function SurahScreen() {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton} 
-            onPress={() => router.back()}
+            onPress={handleBackPress}
           >
             <Icon name="arrow-back" size={24} style={styles.backIcon} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{surah.name}</Text>
-            <Text style={styles.headerSubtitle}>{surah.englishName}</Text>
+            <Text style={styles.headerTitle}>{surah.name || 'السورة'}</Text>
+            <Text style={styles.headerSubtitle}>{surah.englishName || ''}</Text>
           </View>
           
           <View style={styles.headerInfo}>
-            <Text style={styles.ayahCount}>{surah.numberOfAyahs} آية</Text>
+            <Text style={styles.ayahCount}>{surah.numberOfAyahs || surah.ayahs.length} آية</Text>
           </View>
         </View>
 
@@ -354,7 +503,7 @@ export default function SurahScreen() {
           
           <View style={styles.pageHeader}>
             <Text style={styles.pageNumber}>صفحة {currentPage + 1} من {totalPages}</Text>
-            <Text style={styles.pageNumber}>{surah.name}</Text>
+            <Text style={styles.pageNumber}>{surah.name || 'السورة'}</Text>
           </View>
 
           {currentPage === 0 && surahNumber !== 1 && (
@@ -365,27 +514,15 @@ export default function SurahScreen() {
 
           <ScrollView style={styles.ayahContainer} showsVerticalScrollIndicator={false}>
             {getCurrentPageAyahs().map((ayah: any) => (
-              <View key={ayah.number} style={styles.ayahRow}>
-                <View style={styles.ayahNumberCircle}>
-                  <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
-                </View>
-                <View style={styles.ayahTextContainer}>
-                  <TouchableOpacity 
-                    style={styles.audioButton}
-                    onPress={() => handlePlayAyah(ayah.numberInSurah)}
-                  >
-                    <Icon 
-                      name={isCurrentAyahPlaying(ayah.numberInSurah) ? "pause" : "play"} 
-                      size={16} 
-                      style={{ color: '#fff' }} 
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.ayahText}>{ayah.text}</Text>
-                  <Text style={styles.ayahTranslation}>
-                    [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
-                  </Text>
-                </View>
-              </View>
+              <AyahCard
+                key={ayah.number || ayah.numberInSurah}
+                ayah={ayah}
+                surahNumber={surahNumber}
+                surahName={surah.name || 'السورة'}
+                surahEnglishName={surah.englishName || ''}
+                onPlayAudio={handlePlayAyah}
+                isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
+              />
             ))}
 
             {currentPage === totalPages - 1 && (
@@ -432,72 +569,48 @@ export default function SurahScreen() {
     );
   }
 
-  // Default scroll mode with elegant styling
+  // Default scroll mode with AyahCard components
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={() => router.back()}
+          onPress={handleBackPress}
         >
           <Icon name="arrow-back" size={24} style={styles.backIcon} />
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{surah.name}</Text>
-          <Text style={styles.headerSubtitle}>{surah.englishName}</Text>
+          <Text style={styles.headerTitle}>{surah.name || 'السورة'}</Text>
+          <Text style={styles.headerSubtitle}>{surah.englishName || ''}</Text>
         </View>
         
         <View style={styles.headerInfo}>
-          <Text style={styles.ayahCount}>{surah.numberOfAyahs} آية</Text>
+          <Text style={styles.ayahCount}>{surah.numberOfAyahs || surah.ayahs.length} آية</Text>
         </View>
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.pageContainer}>
-          <View style={styles.decorativeBorder}>
-            <View style={styles.decorativePattern} />
+        {surahNumber !== 1 && (
+          <View style={styles.bismillahContainer}>
+            <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
           </View>
-          
-          <View style={styles.surahHeader}>
-            <Text style={styles.surahTitle}>{surah.name}</Text>
-          </View>
-          
-          {surahNumber !== 1 && (
-            <View style={styles.bismillahContainer}>
-              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
-            </View>
-          )}
-          
-          <View style={styles.ayahContainer}>
-            {surah.ayahs?.map((ayah: any) => (
-              <View key={ayah.number} style={styles.ayahRow}>
-                <View style={styles.ayahNumberCircle}>
-                  <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
-                </View>
-                <View style={styles.ayahTextContainer}>
-                  <TouchableOpacity 
-                    style={styles.audioButton}
-                    onPress={() => handlePlayAyah(ayah.numberInSurah)}
-                  >
-                    <Icon 
-                      name={isCurrentAyahPlaying(ayah.numberInSurah) ? "pause" : "play"} 
-                      size={16} 
-                      style={{ color: '#fff' }} 
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.ayahText}>{ayah.text}</Text>
-                  <Text style={styles.ayahTranslation}>
-                    [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>صدق الله العظيم</Text>
-          </View>
+        )}
+        
+        {surah.ayahs.map((ayah: any) => (
+          <AyahCard
+            key={ayah.number || ayah.numberInSurah}
+            ayah={ayah}
+            surahNumber={surahNumber}
+            surahName={surah.name || 'السورة'}
+            surahEnglishName={surah.englishName || ''}
+            onPlayAudio={handlePlayAyah}
+            isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
+          />
+        ))}
+        
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>صدق الله العظيم</Text>
         </View>
       </ScrollView>
       

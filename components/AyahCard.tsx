@@ -27,22 +27,15 @@ export default function AyahCard({
   isPlaying 
 }: AyahCardProps) {
   const { settings, colors, textSizes } = useTheme();
-  const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+  const { bookmarks, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsir, setTafsir] = useState<string>('');
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [tajweedData, setTajweedData] = useState<TajweedData | null>(null);
   const [loadingTajweed, setLoadingTajweed] = useState(false);
+  const [loadingTafsir, setLoadingTafsir] = useState(false);
 
-  useEffect(() => {
-    const checkBookmarked = () => {
-      const exists = bookmarks.some(b => 
-        b.surahNumber === surahNumber && b.ayahNumber === ayah.numberInSurah
-      );
-      setIsBookmarked(exists);
-    };
-    checkBookmarked();
-  }, [surahNumber, ayah.numberInSurah, bookmarks]);
+  // Check if this ayah is bookmarked
+  const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
   useEffect(() => {
     const loadTajweedData = async () => {
@@ -50,11 +43,11 @@ export default function AyahCard({
         setLoadingTajweed(true);
         try {
           const data = await tajweedService.getTajweedData(surahNumber, ayah.numberInSurah);
-          if (data && data.segments.length > 0) {
+          if (data && data.segments && data.segments.length > 0) {
             setTajweedData(data);
           } else {
             // Fallback to basic tajweed rules
-            const segments = tajweedService.applyBasicTajweedRules(ayah.text);
+            const segments = tajweedService.applyBasicTajweedRules(ayah.text || '');
             setTajweedData({
               surah: surahNumber,
               ayah: ayah.numberInSurah,
@@ -64,12 +57,17 @@ export default function AyahCard({
         } catch (error) {
           console.log('Error loading tajweed data:', error);
           // Fallback to basic tajweed rules
-          const segments = tajweedService.applyBasicTajweedRules(ayah.text);
-          setTajweedData({
-            surah: surahNumber,
-            ayah: ayah.numberInSurah,
-            segments
-          });
+          try {
+            const segments = tajweedService.applyBasicTajweedRules(ayah.text || '');
+            setTajweedData({
+              surah: surahNumber,
+              ayah: ayah.numberInSurah,
+              segments
+            });
+          } catch (fallbackError) {
+            console.error('Error in tajweed fallback:', fallbackError);
+            setTajweedData(null);
+          }
         } finally {
           setLoadingTajweed(false);
         }
@@ -80,14 +78,16 @@ export default function AyahCard({
   }, [settings.showTajweed, surahNumber, ayah.numberInSurah, ayah.text, tajweedData, loadingTajweed]);
 
   const handleTafsirToggle = async () => {
-    if (!showTafsir && !tafsir) {
+    if (!showTafsir && !tafsir && !loadingTafsir) {
+      setLoadingTafsir(true);
       try {
         const tafsirText = await tafsirService.getTafsir(surahNumber, ayah.numberInSurah);
-        setTafsir(tafsirText);
+        setTafsir(tafsirText || 'تفسير غير متوفر حاليا');
       } catch (error) {
         console.log('Failed to load tafsir:', error);
-        Alert.alert('خطأ', 'فشل في تحميل التفسير');
-        return;
+        setTafsir('تفسير غير متوفر حاليا');
+      } finally {
+        setLoadingTafsir(false);
       }
     }
     setShowTafsir(!showTafsir);
@@ -95,7 +95,7 @@ export default function AyahCard({
 
   const handleBookmarkToggle = async () => {
     try {
-      if (isBookmarked) {
+      if (bookmarked) {
         const bookmark = bookmarks.find(b => 
           b.surahNumber === surahNumber && b.ayahNumber === ayah.numberInSurah
         );
@@ -108,12 +108,21 @@ export default function AyahCard({
           surahName,
           surahEnglishName,
           ayahNumber: ayah.numberInSurah,
-          ayahText: ayah.text,
+          ayahText: ayah.text || '',
         });
       }
     } catch (error) {
       console.log('Bookmark error:', error);
       Alert.alert('خطأ', 'فشل في حفظ العلامة المرجعية');
+    }
+  };
+
+  const handlePlayAudio = () => {
+    try {
+      onPlayAudio(ayah.numberInSurah);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      Alert.alert('خطأ', 'فشل في تشغيل الصوت');
     }
   };
 
@@ -257,14 +266,14 @@ export default function AyahCard({
           {settings.showTajweed && tajweedData && <View style={styles.tajweedIndicator} />}
         </View>
         <View style={styles.ayahTextContainer}>
-          {settings.showTajweed && tajweedData ? (
+          {settings.showTajweed && tajweedData && tajweedData.segments ? (
             <TajweedText
               segments={tajweedData.segments}
               fontSize={Math.max(20, textSizes.arabic * 0.9)}
               style={styles.tajweedContainer}
             />
           ) : (
-            <Text style={styles.ayahText}>{ayah.text}</Text>
+            <Text style={styles.ayahText}>{ayah.text || ''}</Text>
           )}
           <Text style={styles.ayahTranslation}>
             [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
@@ -275,7 +284,7 @@ export default function AyahCard({
       <View style={styles.actionsRow}>
         <TouchableOpacity
           style={[styles.actionButton, isPlaying && styles.actionButtonActive]}
-          onPress={() => onPlayAudio(ayah.numberInSurah)}
+          onPress={handlePlayAudio}
         >
           <Icon 
             name={isPlaying ? "pause" : "play"} 
@@ -302,16 +311,16 @@ export default function AyahCard({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, isBookmarked && styles.actionButtonActive]}
+          style={[styles.actionButton, bookmarked && styles.actionButtonActive]}
           onPress={handleBookmarkToggle}
         >
           <Icon 
-            name={isBookmarked ? "bookmark" : "bookmark-outline"} 
+            name={bookmarked ? "bookmark" : "bookmark-outline"} 
             size={16} 
-            style={{ color: isBookmarked ? '#fff' : '#8B4513' }} 
+            style={{ color: bookmarked ? '#fff' : '#8B4513' }} 
           />
-          <Text style={[styles.actionText, isBookmarked && styles.actionTextActive]}>
-            {isBookmarked ? 'محفوظ' : 'حفظ'}
+          <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
+            {bookmarked ? 'محفوظ' : 'حفظ'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -320,7 +329,7 @@ export default function AyahCard({
         <View style={styles.tafsirContainer}>
           <Text style={styles.tafsirTitle}>تفسير ابن كثير:</Text>
           <Text style={styles.tafsirText}>
-            {tafsir || 'جاري تحميل التفسير...'}
+            {loadingTafsir ? 'جاري تحميل التفسير...' : (tafsir || 'تفسير غير متوفر حاليا')}
           </Text>
         </View>
       )}

@@ -23,23 +23,16 @@ export function useBookmarks() {
     }
   }, []);
 
-  const addBookmark = useCallback(async (
-    surahNumber: number,
-    surahName: string,
-    surahEnglishName: string,
-    ayahNumber: number,
-    ayahText: string,
-    note?: string
-  ) => {
+  const addBookmark = useCallback(async (bookmarkData: {
+    surahNumber: number;
+    surahName: string;
+    surahEnglishName: string;
+    ayahNumber: number;
+    ayahText: string;
+    note?: string;
+  }) => {
     try {
-      const newBookmark = await bookmarkService.addBookmark({
-        surahNumber,
-        surahName,
-        surahEnglishName,
-        ayahNumber,
-        ayahText,
-        note
-      });
+      const newBookmark = await bookmarkService.addBookmark(bookmarkData);
       setBookmarks(prev => [...prev, newBookmark]);
       return newBookmark;
     } catch (err) {
@@ -58,14 +51,11 @@ export function useBookmarks() {
     }
   }, []);
 
-  const isBookmarked = useCallback(async (surahNumber: number, ayahNumber: number) => {
-    try {
-      return await bookmarkService.isBookmarked(surahNumber, ayahNumber);
-    } catch (err) {
-      console.error('Error checking bookmark status:', err);
-      return false;
-    }
-  }, []);
+  const isBookmarked = useCallback((surahNumber: number, ayahNumber: number) => {
+    return bookmarks.some(b => 
+      b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
+    );
+  }, [bookmarks]);
 
   const updateBookmarkNote = useCallback(async (bookmarkId: string, note: string) => {
     try {

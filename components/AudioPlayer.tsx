@@ -15,9 +15,34 @@ interface AudioPlayerProps {
 export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: AudioPlayerProps) {
   const { colors, textSizes } = useTheme();
 
-  if (!audioState.currentSurah || !audioState.currentAyah) {
+  // Safety checks
+  if (!audioState || (!audioState.currentSurah && !audioState.currentAyah)) {
     return null;
   }
+
+  const handlePlay = () => {
+    try {
+      onPlay();
+    } catch (error) {
+      console.error('Error in AudioPlayer onPlay:', error);
+    }
+  };
+
+  const handlePause = () => {
+    try {
+      onPause();
+    } catch (error) {
+      console.error('Error in AudioPlayer onPause:', error);
+    }
+  };
+
+  const handleStop = () => {
+    try {
+      onStop();
+    } catch (error) {
+      console.error('Error in AudioPlayer onStop:', error);
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -34,7 +59,7 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
       flex: 1,
     },
     currentText: {
-      color: colors.backgroundAlt,
+      color: '#fff',
       fontSize: textSizes.body,
       fontWeight: '500',
       fontFamily: 'Amiri_400Regular',
@@ -56,7 +81,7 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
       backgroundColor: colors.accent,
     },
     controlIcon: {
-      color: colors.backgroundAlt,
+      color: '#fff',
     },
   });
 
@@ -64,18 +89,18 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
     <View style={styles.container}>
       <View style={styles.info}>
         <Text style={styles.currentText}>
-          سورة {audioState.currentSurah} - آية {audioState.currentAyah}
+          سورة {audioState.currentSurah || '؟'} - آية {audioState.currentAyah || '؟'}
         </Text>
       </View>
       
       <View style={styles.controls}>
-        <TouchableOpacity style={styles.controlButton} onPress={onStop}>
+        <TouchableOpacity style={styles.controlButton} onPress={handleStop}>
           <Icon name="stop" size={24} style={styles.controlIcon} />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.controlButton, styles.playButton]} 
-          onPress={audioState.isPlaying ? onPause : onPlay}
+          onPress={audioState.isPlaying ? handlePause : handlePlay}
         >
           <Icon 
             name={audioState.isPlaying ? "pause" : "play"} 
@@ -87,5 +112,3 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
     </View>
   );
 }
-
-
