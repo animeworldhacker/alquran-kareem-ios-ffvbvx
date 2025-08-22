@@ -129,7 +129,7 @@ class TajweedService {
     ];
 
     let workingText = text;
-    const foundSegments: Array<{ start: number; end: number; type: string; text: string; originalMatch: string }> = [];
+    const foundSegments: { start: number; end: number; type: string; text: string; originalMatch: string }[] = [];
 
     // Find all tajweed segments
     tajweedPatterns.forEach(({ pattern, type }) => {
@@ -225,7 +225,7 @@ class TajweedService {
   private cleanText(text: string): string {
     // Remove brackets and HTML tags, keep Arabic text and diacritics
     return text
-      .replace(/[\[\]]/g, '')
+      .replace(/[[\]]/g, '')
       .replace(/<[^>]*>/g, '')
       .trim();
   }

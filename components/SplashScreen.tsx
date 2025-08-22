@@ -44,7 +44,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         ])
       ).start();
     });
-  }, []);
+  }, [fadeAnim, scaleAnim, tapHintAnim]);
 
   const handleTap = () => {
     console.log('Splash screen tapped, proceeding to main app');
@@ -172,5 +172,3 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     </TouchableOpacity>
   );
 }
-
-
