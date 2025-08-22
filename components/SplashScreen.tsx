@@ -15,7 +15,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     console.log('Splash screen loaded, waiting for user tap');
     
-    // Start main content animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -29,7 +28,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // After main animation completes, show the tap hint with a pulsing animation
       Animated.loop(
         Animated.sequence([
           Animated.timing(tapHintAnim, {
@@ -67,7 +65,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+        <Text style={styles.bismillah} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
         
         <View style={styles.dedicationContainer}>
           <Text style={styles.dedicationTitle}>هذا المصحف صدقة جارية إلى</Text>
@@ -103,9 +101,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bismillah: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
-    color: colors.accent,
+    color: '#d4db7f',
     textAlign: 'center',
     marginBottom: 40,
     fontFamily: 'ScheherazadeNew_400Regular',
@@ -126,7 +124,7 @@ const styles = StyleSheet.create({
   },
   dedicationNames: {
     fontSize: 20,
-    color: colors.accent,
+    color: '#d4db7f',
     textAlign: 'center',
     marginBottom: 8,
     fontWeight: 'bold',
@@ -161,7 +159,7 @@ const styles = StyleSheet.create({
   },
   tapHint: {
     fontSize: 16,
-    color: colors.accent,
+    color: '#d4db7f',
     textAlign: 'center',
     fontFamily: 'Amiri_400Regular',
     marginBottom: 5,

@@ -4,8 +4,8 @@ import { View } from 'react-native';
 import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
 import { ScheherazadeNew_400Regular } from '@expo-google-fonts/scheherazade-new';
 import SplashScreen from '../components/SplashScreen';
-import HomeScreen from './home';
 import { commonStyles } from '../styles/commonStyles';
+import { Redirect } from 'expo-router';
 
 export default function MainScreen() {
   const [showSplash, setShowSplash] = useState(true);
@@ -21,7 +21,7 @@ export default function MainScreen() {
   }, []);
 
   if (!fontsLoaded) {
-    return null;
+    return <View style={commonStyles.container} />;
   }
 
   if (showSplash) {
@@ -30,9 +30,5 @@ export default function MainScreen() {
     );
   }
 
-  return (
-    <View style={commonStyles.container}>
-      <HomeScreen />
-    </View>
-  );
+  return <Redirect href='/(tabs)/chapters' />;
 }
