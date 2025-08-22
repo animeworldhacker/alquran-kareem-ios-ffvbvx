@@ -73,9 +73,22 @@ export interface AppSettings {
   showBanner: boolean;
   readingMode: 'scroll' | 'flip';
   squareAdjustment: number; // 0-100 for square size adjustment
+  showTajweed: boolean; // New setting for tajweed display
 }
 
 export interface ReciterWithImage extends Reciter {
   image?: string;
   description?: string;
+}
+
+export interface TajweedSegment {
+  text: string;
+  type: string;
+  color: string;
+}
+
+export interface TajweedData {
+  surah: number;
+  ayah: number;
+  segments: TajweedSegment[];
 }

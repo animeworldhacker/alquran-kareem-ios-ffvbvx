@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Ayah } from '../types';
+import { Ayah, TajweedData } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { tafsirService } from '../services/tafsirService';
+import { tajweedService } from '../services/tajweedService';
+import TajweedText from './TajweedText';
 import Icon from './Icon';
 
 interface AyahCardProps {
@@ -29,6 +31,8 @@ export default function AyahCard({
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsir, setTafsir] = useState<string>('');
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [tajweedData, setTajweedData] = useState<TajweedData | null>(null);
+  const [loadingTajweed, setLoadingTajweed] = useState(false);
 
   useEffect(() => {
     const checkBookmarked = () => {
@@ -39,6 +43,41 @@ export default function AyahCard({
     };
     checkBookmarked();
   }, [surahNumber, ayah.numberInSurah, bookmarks]);
+
+  useEffect(() => {
+    const loadTajweedData = async () => {
+      if (settings.showTajweed && !tajweedData && !loadingTajweed) {
+        setLoadingTajweed(true);
+        try {
+          const data = await tajweedService.getTajweedData(surahNumber, ayah.numberInSurah);
+          if (data && data.segments.length > 0) {
+            setTajweedData(data);
+          } else {
+            // Fallback to basic tajweed rules
+            const segments = tajweedService.applyBasicTajweedRules(ayah.text);
+            setTajweedData({
+              surah: surahNumber,
+              ayah: ayah.numberInSurah,
+              segments
+            });
+          }
+        } catch (error) {
+          console.log('Error loading tajweed data:', error);
+          // Fallback to basic tajweed rules
+          const segments = tajweedService.applyBasicTajweedRules(ayah.text);
+          setTajweedData({
+            surah: surahNumber,
+            ayah: ayah.numberInSurah,
+            segments
+          });
+        } finally {
+          setLoadingTajweed(false);
+        }
+      }
+    };
+
+    loadTajweedData();
+  }, [settings.showTajweed, surahNumber, ayah.numberInSurah, ayah.text, tajweedData, loadingTajweed]);
 
   const handleTafsirToggle = async () => {
     if (!showTafsir && !tafsir) {
@@ -124,6 +163,11 @@ export default function AyahCard({
       marginBottom: 12,
       paddingRight: 10,
     },
+    tajweedContainer: {
+      textAlign: 'right',
+      marginBottom: 12,
+      paddingRight: 10,
+    },
     ayahTranslation: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_400Regular',
@@ -193,6 +237,15 @@ export default function AyahCard({
       borderRadius: 6,
       backgroundColor: '#d4af37',
     },
+    tajweedIndicator: {
+      position: 'absolute',
+      top: -5,
+      left: -5,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: '#FF6B6B',
+    },
   });
 
   return (
@@ -201,9 +254,18 @@ export default function AyahCard({
         <View style={styles.ayahNumberCircle}>
           <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
           {isPlaying && <View style={styles.playingIndicator} />}
+          {settings.showTajweed && tajweedData && <View style={styles.tajweedIndicator} />}
         </View>
         <View style={styles.ayahTextContainer}>
-          <Text style={styles.ayahText}>{ayah.text}</Text>
+          {settings.showTajweed && tajweedData ? (
+            <TajweedText
+              segments={tajweedData.segments}
+              fontSize={Math.max(20, textSizes.arabic * 0.9)}
+              style={styles.tajweedContainer}
+            />
+          ) : (
+            <Text style={styles.ayahText}>{ayah.text}</Text>
+          )}
           <Text style={styles.ayahTranslation}>
             [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
           </Text>

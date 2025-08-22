@@ -2,53 +2,66 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppSettings } from '../types';
 
-const SETTINGS_KEY = 'app_settings';
-
-const defaultSettings: AppSettings = {
-  textSize: 'medium',
-  theme: 'light',
-  showBanner: true,
-  readingMode: 'scroll',
-  squareAdjustment: 50,
-};
-
 class SettingsService {
-  async getSettings(): Promise<AppSettings> {
+  private storageKey = 'app_settings';
+
+  async getSettings(): Promise<Partial<AppSettings>> {
     try {
-      const stored = await AsyncStorage.getItem(SETTINGS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return { ...defaultSettings, ...parsed };
+      const settingsJson = await AsyncStorage.getItem(this.storageKey);
+      if (settingsJson) {
+        return JSON.parse(settingsJson);
       }
-      return defaultSettings;
+      return {};
     } catch (error) {
       console.error('Error loading settings:', error);
-      return defaultSettings;
+      return {};
     }
   }
 
-  async updateSettings(settings: Partial<AppSettings>): Promise<AppSettings> {
+  async saveSettings(settings: AppSettings): Promise<void> {
     try {
-      const current = await this.getSettings();
-      const updated = { ...current, ...settings };
-      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-      console.log('Settings updated:', updated);
-      return updated;
+      await AsyncStorage.setItem(this.storageKey, JSON.stringify(settings));
+      console.log('Settings saved successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
       throw error;
     }
   }
 
-  async resetSettings(): Promise<AppSettings> {
+  async updateSetting<K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ): Promise<void> {
     try {
-      await AsyncStorage.removeItem(SETTINGS_KEY);
-      console.log('Settings reset to defaults');
-      return defaultSettings;
+      const currentSettings = await this.getSettings();
+      const updatedSettings = { ...currentSettings, [key]: value };
+      await this.saveSettings(updatedSettings as AppSettings);
+    } catch (error) {
+      console.error(`Error updating setting ${key}:`, error);
+      throw error;
+    }
+  }
+
+  async resetSettings(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(this.storageKey);
+      console.log('Settings reset successfully');
     } catch (error) {
       console.error('Error resetting settings:', error);
       throw error;
     }
+  }
+
+  // Default settings
+  getDefaultSettings(): AppSettings {
+    return {
+      textSize: 'medium',
+      theme: 'light',
+      showBanner: true,
+      readingMode: 'scroll',
+      squareAdjustment: 50,
+      showTajweed: true,
+    };
   }
 }
 
