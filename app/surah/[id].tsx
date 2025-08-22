@@ -83,7 +83,7 @@ export default function SurahScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#f8f6f0', // Cream background like in the image
     },
     centerContent: {
       justifyContent: 'center',
@@ -136,27 +136,120 @@ export default function SurahScreen() {
       opacity: 0.8,
       fontFamily: 'Amiri_400Regular',
     },
-    bismillahContainer: {
-      padding: 20,
+    // New elegant Quran page styles
+    pageContainer: {
+      backgroundColor: '#f8f6f0',
+      margin: 16,
+      borderRadius: 12,
+      overflow: 'hidden',
+      boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
+      elevation: 8,
+    },
+    decorativeBorder: {
+      height: 60,
+      backgroundColor: '#d4af37', // Gold color
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    decorativePattern: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'transparent',
+    },
+    surahHeader: {
+      backgroundColor: '#f8f6f0',
+      paddingVertical: 20,
       alignItems: 'center',
-      backgroundColor: colors.backgroundAlt,
-      marginBottom: 16,
+      borderBottomWidth: 2,
+      borderBottomColor: '#d4af37',
+    },
+    surahTitle: {
+      fontSize: 28,
+      fontFamily: 'ScheherazadeNew_400Regular',
+      color: '#8B4513', // Brown color
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    bismillahContainer: {
+      paddingVertical: 30,
+      alignItems: 'center',
+      backgroundColor: '#f8f6f0',
     },
     bismillah: {
-      fontSize: textSizes.arabic,
-      fontWeight: 'bold',
-      color: colors.primary,
-      textAlign: 'center',
+      fontSize: 24,
       fontFamily: 'ScheherazadeNew_400Regular',
+      color: '#2F4F4F', // Dark slate gray
+      textAlign: 'center',
+      fontWeight: 'bold',
+    },
+    ayahContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      backgroundColor: '#f8f6f0',
+    },
+    ayahRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 20,
+    },
+    ayahNumberCircle: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: '#d4af37',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 15,
+      marginTop: 5,
+    },
+    ayahNumber: {
+      fontSize: 14,
+      fontFamily: 'Amiri_700Bold',
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    ayahTextContainer: {
+      flex: 1,
+    },
+    ayahText: {
+      fontSize: 22,
+      fontFamily: 'ScheherazadeNew_400Regular',
+      color: '#2F4F4F',
+      textAlign: 'right',
+      lineHeight: 40,
+      marginBottom: 10,
+    },
+    ayahTranslation: {
+      fontSize: 14,
+      fontFamily: 'Amiri_400Regular',
+      color: '#8B4513',
+      textAlign: 'left',
+      lineHeight: 20,
+      fontStyle: 'italic',
+    },
+    audioButton: {
+      position: 'absolute',
+      right: 10,
+      top: 10,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: '#d4af37',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     footer: {
-      padding: 20,
+      padding: 30,
       alignItems: 'center',
-      marginTop: 20,
+      backgroundColor: '#f8f6f0',
     },
     footerText: {
-      fontSize: textSizes.body,
-      color: colors.primary,
+      fontSize: 18,
+      color: '#8B4513',
       textAlign: 'center',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
@@ -164,12 +257,12 @@ export default function SurahScreen() {
     // Flip mode styles
     flipContainer: {
       flex: 1,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#f8f6f0',
       margin: 16,
       borderRadius: 12,
-      padding: 20,
-      boxShadow: '0px 4px 12px rgba(0,0,0,0.15)',
-      elevation: 5,
+      overflow: 'hidden',
+      boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
+      elevation: 8,
     },
     pageHeader: {
       flexDirection: 'row',
@@ -178,11 +271,13 @@ export default function SurahScreen() {
       marginBottom: 20,
       paddingBottom: 10,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: '#d4af37',
+      paddingHorizontal: 20,
+      paddingTop: 20,
     },
     pageNumber: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      color: '#8B4513',
       fontFamily: 'Amiri_700Bold',
     },
     navigationButtons: {
@@ -191,9 +286,9 @@ export default function SurahScreen() {
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 16,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#f8f6f0',
       borderTopWidth: 1,
-      borderTopColor: colors.border,
+      borderTopColor: '#d4af37',
     },
     navButton: {
       flexDirection: 'row',
@@ -201,14 +296,14 @@ export default function SurahScreen() {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 8,
-      backgroundColor: colors.primary,
+      backgroundColor: '#d4af37',
       opacity: 1,
     },
     navButtonDisabled: {
       opacity: 0.3,
     },
     navButtonText: {
-      color: colors.backgroundAlt,
+      color: '#fff',
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
       marginHorizontal: 4,
@@ -218,7 +313,7 @@ export default function SurahScreen() {
     },
     pageIndicatorText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      color: '#8B4513',
       fontFamily: 'Amiri_400Regular',
     },
   });
@@ -226,7 +321,7 @@ export default function SurahScreen() {
   if (quranLoading || !surah) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل السورة...</Text>
+        <Text style={{ fontSize: textSizes.title, color: '#8B4513', fontFamily: 'Amiri_700Bold' }}>جاري تحميل السورة...</Text>
       </View>
     );
   }
@@ -253,6 +348,10 @@ export default function SurahScreen() {
         </View>
 
         <View style={styles.flipContainer}>
+          <View style={styles.decorativeBorder}>
+            <View style={styles.decorativePattern} />
+          </View>
+          
           <View style={styles.pageHeader}>
             <Text style={styles.pageNumber}>صفحة {currentPage + 1} من {totalPages}</Text>
             <Text style={styles.pageNumber}>{surah.name}</Text>
@@ -264,17 +363,29 @@ export default function SurahScreen() {
             </View>
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.ayahContainer} showsVerticalScrollIndicator={false}>
             {getCurrentPageAyahs().map((ayah: any) => (
-              <AyahCard
-                key={ayah.number}
-                ayah={ayah}
-                surahNumber={surahNumber}
-                surahName={surah.name}
-                surahEnglishName={surah.englishName}
-                onPlayAudio={handlePlayAyah}
-                isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-              />
+              <View key={ayah.number} style={styles.ayahRow}>
+                <View style={styles.ayahNumberCircle}>
+                  <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
+                </View>
+                <View style={styles.ayahTextContainer}>
+                  <TouchableOpacity 
+                    style={styles.audioButton}
+                    onPress={() => handlePlayAyah(ayah.numberInSurah)}
+                  >
+                    <Icon 
+                      name={isCurrentAyahPlaying(ayah.numberInSurah) ? "pause" : "play"} 
+                      size={16} 
+                      style={{ color: '#fff' }} 
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.ayahText}>{ayah.text}</Text>
+                  <Text style={styles.ayahTranslation}>
+                    [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
+                  </Text>
+                </View>
+              </View>
             ))}
 
             {currentPage === totalPages - 1 && (
@@ -291,7 +402,7 @@ export default function SurahScreen() {
             onPress={prevPage}
             disabled={currentPage === 0}
           >
-            <Icon name="chevron-back" size={16} style={{ color: colors.backgroundAlt }} />
+            <Icon name="chevron-back" size={16} style={{ color: '#fff' }} />
             <Text style={styles.navButtonText}>السابق</Text>
           </TouchableOpacity>
 
@@ -307,7 +418,7 @@ export default function SurahScreen() {
             disabled={currentPage === totalPages - 1}
           >
             <Text style={styles.navButtonText}>التالي</Text>
-            <Icon name="chevron-forward" size={16} style={{ color: colors.backgroundAlt }} />
+            <Icon name="chevron-forward" size={16} style={{ color: '#fff' }} />
           </TouchableOpacity>
         </View>
 
@@ -321,7 +432,7 @@ export default function SurahScreen() {
     );
   }
 
-  // Default scroll mode
+  // Default scroll mode with elegant styling
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -343,28 +454,50 @@ export default function SurahScreen() {
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {surahNumber !== 1 && (
-          <View style={styles.bismillahContainer}>
-            <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+        <View style={styles.pageContainer}>
+          <View style={styles.decorativeBorder}>
+            <View style={styles.decorativePattern} />
           </View>
-        )}
-        
-        {surah.ayahs?.map((ayah: any) => (
-          <AyahCard
-            key={ayah.number}
-            ayah={ayah}
-            surahNumber={surahNumber}
-            surahName={surah.name}
-            surahEnglishName={surah.englishName}
-            onPlayAudio={handlePlayAyah}
-            isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-          />
-        ))}
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            صدق الله العظيم
-          </Text>
+          
+          <View style={styles.surahHeader}>
+            <Text style={styles.surahTitle}>{surah.name}</Text>
+          </View>
+          
+          {surahNumber !== 1 && (
+            <View style={styles.bismillahContainer}>
+              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+            </View>
+          )}
+          
+          <View style={styles.ayahContainer}>
+            {surah.ayahs?.map((ayah: any) => (
+              <View key={ayah.number} style={styles.ayahRow}>
+                <View style={styles.ayahNumberCircle}>
+                  <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
+                </View>
+                <View style={styles.ayahTextContainer}>
+                  <TouchableOpacity 
+                    style={styles.audioButton}
+                    onPress={() => handlePlayAyah(ayah.numberInSurah)}
+                  >
+                    <Icon 
+                      name={isCurrentAyahPlaying(ayah.numberInSurah) ? "pause" : "play"} 
+                      size={16} 
+                      style={{ color: '#fff' }} 
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.ayahText}>{ayah.text}</Text>
+                  <Text style={styles.ayahTranslation}>
+                    [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>صدق الله العظيم</Text>
+          </View>
         </View>
       </ScrollView>
       
@@ -377,5 +510,3 @@ export default function SurahScreen() {
     </View>
   );
 }
-
-
