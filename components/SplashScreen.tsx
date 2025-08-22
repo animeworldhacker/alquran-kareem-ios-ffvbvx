@@ -1,13 +1,14 @@
 
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
-import { colors, commonStyles } from '../styles/commonStyles';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
+  const { colors, textSizes } = useTheme();
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
   const tapHintAnim = new Animated.Value(0);
@@ -50,6 +51,90 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     onFinish();
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    content: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bismillah: {
+      fontSize: 30,
+      fontWeight: 'bold',
+      color: '#d4db7f',
+      textAlign: 'center',
+      marginBottom: 40,
+      fontFamily: 'ScheherazadeNew_400Regular',
+    },
+    dedicationContainer: {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      padding: 20,
+      borderRadius: 15,
+      marginBottom: 40,
+      alignItems: 'center',
+    },
+    dedicationTitle: {
+      fontSize: textSizes.subtitle,
+      color: colors.backgroundAlt,
+      textAlign: 'center',
+      marginBottom: 15,
+      fontFamily: 'Amiri_400Regular',
+    },
+    dedicationNames: {
+      fontSize: textSizes.title,
+      color: '#d4db7f',
+      textAlign: 'center',
+      marginBottom: 8,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
+    },
+    prayer: {
+      fontSize: textSizes.body,
+      color: colors.backgroundAlt,
+      textAlign: 'center',
+      marginTop: 10,
+      fontStyle: 'italic',
+      fontFamily: 'Amiri_400Regular',
+    },
+    appTitle: {
+      fontSize: textSizes.title,
+      fontWeight: 'bold',
+      color: colors.backgroundAlt,
+      textAlign: 'center',
+      marginBottom: 10,
+      fontFamily: 'Amiri_700Bold',
+    },
+    subtitle: {
+      fontSize: textSizes.body,
+      color: colors.backgroundAlt,
+      textAlign: 'center',
+      opacity: 0.9,
+      fontFamily: 'Amiri_400Regular',
+    },
+    tapHintContainer: {
+      marginTop: 50,
+      alignItems: 'center',
+    },
+    tapHint: {
+      fontSize: textSizes.body,
+      color: '#d4db7f',
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+      marginBottom: 5,
+    },
+    tapHintEnglish: {
+      fontSize: textSizes.caption,
+      color: colors.backgroundAlt,
+      textAlign: 'center',
+      opacity: 0.8,
+    },
+  });
+
   return (
     <TouchableOpacity 
       style={styles.container} 
@@ -88,86 +173,4 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bismillah: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#d4db7f',
-    textAlign: 'center',
-    marginBottom: 40,
-    fontFamily: 'ScheherazadeNew_400Regular',
-  },
-  dedicationContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 40,
-    alignItems: 'center',
-  },
-  dedicationTitle: {
-    fontSize: 18,
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    marginBottom: 15,
-    fontFamily: 'Amiri_400Regular',
-  },
-  dedicationNames: {
-    fontSize: 20,
-    color: '#d4db7f',
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: 'bold',
-    fontFamily: 'Amiri_700Bold',
-  },
-  prayer: {
-    fontSize: 16,
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    marginTop: 10,
-    fontStyle: 'italic',
-    fontFamily: 'Amiri_400Regular',
-  },
-  appTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    marginBottom: 10,
-    fontFamily: 'Amiri_700Bold',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    opacity: 0.9,
-    fontFamily: 'Amiri_400Regular',
-  },
-  tapHintContainer: {
-    marginTop: 50,
-    alignItems: 'center',
-  },
-  tapHint: {
-    fontSize: 16,
-    color: '#d4db7f',
-    textAlign: 'center',
-    fontFamily: 'Amiri_400Regular',
-    marginBottom: 5,
-  },
-  tapHintEnglish: {
-    fontSize: 14,
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-});
+

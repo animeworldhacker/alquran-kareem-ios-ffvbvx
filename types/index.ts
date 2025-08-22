@@ -66,3 +66,16 @@ export interface Bookmark {
   createdAt: Date;
   note?: string;
 }
+
+export interface AppSettings {
+  textSize: 'small' | 'medium' | 'large' | 'extra-large';
+  theme: 'light' | 'dark';
+  showBanner: boolean;
+  readingMode: 'scroll' | 'flip';
+  squareAdjustment: number; // 0-100 for square size adjustment
+}
+
+export interface ReciterWithImage extends Reciter {
+  image?: string;
+  description?: string;
+}

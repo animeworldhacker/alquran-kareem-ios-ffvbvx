@@ -32,8 +32,8 @@ class AudioService {
       const response = await fetch('https://quranapi.pages.dev/api/reciters');
       const data = await response.json();
       if (Array.isArray(data) && data.length > 0) {
-        // Normalize if needed
-        this.reciters = data.slice(0, 5).map((r: any, idx: number) => ({
+        // Normalize if needed - take more reciters
+        this.reciters = data.slice(0, 15).map((r: any, idx: number) => ({
           id: r.id ?? idx + 1,
           name: r.name ?? `قارئ ${idx + 1}`,
           letter: r.letter ?? '',
@@ -47,13 +47,23 @@ class AudioService {
       throw new Error('Invalid reciters response');
     } catch (error) {
       console.error('Error fetching reciters from pages.dev, using fallback:', error);
-      // Fallback: include 5 known reciters (folders from EveryAyah per-ayah)
+      // Fallback: include more known reciters with placeholder images
       this.reciters = [
         { id: 1, name: 'عبد الباسط عبد الصمد (مرتل)', letter: 'أ', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdul_Basit_Murattal_192kbps' },
         { id: 2, name: 'مشارى راشد العفاسى', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Alafasy_64kbps' },
         { id: 3, name: 'الحصري (مرتل)', letter: 'ح', rewaya: 'حفص عن عاصم', count: 114, server: 'Husary_128kbps' },
         { id: 4, name: 'المنشاوي (مجود)', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Minshawy_Mujawwad_128kbps' },
         { id: 5, name: 'الغامدي', letter: 'غ', rewaya: 'حفص عن عاصم', count: 114, server: 'Ghamadi_40kbps' },
+        { id: 6, name: 'ماهر المعيقلي', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'MaherAlMuaiqly128kbps' },
+        { id: 7, name: 'أحمد العجمي', letter: 'أ', rewaya: 'حفص عن عاصم', count: 114, server: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net' },
+        { id: 8, name: 'محمد صديق المنشاوي', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Minshawy_Teacher_128kbps' },
+        { id: 9, name: 'عبد الرحمن السديس', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdurrahmaan_As-Sudais_192kbps' },
+        { id: 10, name: 'سعود الشريم', letter: 'س', rewaya: 'حفص عن عاصم', count: 114, server: 'Saood_ash-Shuraym_128kbps' },
+        { id: 11, name: 'ياسر الدوسري', letter: 'ي', rewaya: 'حفص عن عاصم', count: 114, server: 'Yasser_Ad-Dussary_128kbps' },
+        { id: 12, name: 'عبد الله بصفر', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdullah_Basfar_192kbps' },
+        { id: 13, name: 'خالد الجليل', letter: 'خ', rewaya: 'حفص عن عاصم', count: 114, server: 'Khalid_Al-Jaleel_128kbps' },
+        { id: 14, name: 'فارس عباد', letter: 'ف', rewaya: 'حفص عن عاصم', count: 114, server: 'Fares_Abbad_64kbps' },
+        { id: 15, name: 'عبد الله عواد الجهني', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdullah_Awad_Al-Juhani_128kbps' },
       ];
       return this.reciters;
     }

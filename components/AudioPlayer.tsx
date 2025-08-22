@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../styles/commonStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { AudioState } from '../types';
 import Icon from './Icon';
 
@@ -13,9 +13,52 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: AudioPlayerProps) {
+  const { colors, textSizes } = useTheme();
+
   if (!audioState.currentSurah || !audioState.currentAyah) {
     return null;
   }
+
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: colors.secondary,
+    },
+    info: {
+      flex: 1,
+    },
+    currentText: {
+      color: colors.backgroundAlt,
+      fontSize: textSizes.body,
+      fontWeight: '500',
+      fontFamily: 'Amiri_400Regular',
+    },
+    controls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    controlButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.secondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    playButton: {
+      backgroundColor: colors.accent,
+    },
+    controlIcon: {
+      color: colors.backgroundAlt,
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -45,43 +88,4 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors.secondary,
-  },
-  info: {
-    flex: 1,
-  },
-  currentText: {
-    color: colors.backgroundAlt,
-    fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'Amiri_400Regular',
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  controlButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playButton: {
-    backgroundColor: colors.accent,
-  },
-  controlIcon: {
-    color: colors.backgroundAlt,
-  },
-});
+

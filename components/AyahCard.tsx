@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ayah } from '../types';
-import { colors, commonStyles } from '../styles/commonStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { tafsirService } from '../services/tafsirService';
 import { useBookmarks } from '../hooks/useBookmarks';
 import Icon from './Icon';
@@ -30,6 +30,7 @@ export default function AyahCard({
   const [isBookmarked, setIsBookmarked] = useState(false);
   
   const { addBookmark, removeBookmark, isBookmarked: checkBookmarked, bookmarks } = useBookmarks();
+  const { settings, colors, textSizes } = useTheme();
 
   useEffect(() => {
     const checkBookmarkStatus = async () => {
@@ -88,6 +89,96 @@ export default function AyahCard({
       );
     }
   };
+
+  const styles = StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 10,
+      padding: 16,
+      marginVertical: 8,
+      marginHorizontal: 16,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+      elevation: 3,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    ayahNumber: {
+      width: 32 * (settings.squareAdjustment / 100),
+      height: 32 * (settings.squareAdjustment / 100),
+      borderRadius: 16 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    numberText: {
+      color: colors.backgroundAlt,
+      fontSize: textSizes.caption,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    actionButton: {
+      width: 36 * (settings.squareAdjustment / 100),
+      height: 36 * (settings.squareAdjustment / 100),
+      borderRadius: 18 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.secondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    bookmarkedButton: {
+      backgroundColor: colors.accent,
+    },
+    actionIcon: {
+      color: colors.backgroundAlt,
+    },
+    bookmarkedIcon: {
+      color: colors.backgroundAlt,
+    },
+    ayahText: {
+      fontSize: textSizes.arabic,
+      lineHeight: textSizes.arabic * 1.6,
+      color: colors.text,
+      textAlign: 'right',
+      fontFamily: 'ScheherazadeNew_400Regular',
+    },
+    tafsirContainer: {
+      marginTop: 16,
+      padding: 12,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.accent,
+    },
+    tafsirTitle: {
+      fontSize: textSizes.body,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 8,
+      fontFamily: 'Amiri_700Bold',
+    },
+    tafsirText: {
+      fontSize: textSizes.body,
+      lineHeight: textSizes.body * 1.5,
+      color: colors.textSecondary,
+      textAlign: 'right',
+      fontFamily: 'Amiri_400Regular',
+    },
+    loadingText: {
+      fontSize: textSizes.caption,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      fontFamily: 'Amiri_400Regular',
+    },
+  });
 
   return (
     <View style={styles.card}>
@@ -148,86 +239,4 @@ export default function AyahCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...commonStyles.card,
-    marginHorizontal: 16,
-    marginVertical: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  ayahNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  numberText: {
-    color: colors.backgroundAlt,
-    fontSize: 14,
-    fontWeight: 'bold',
-    fontFamily: 'Amiri_700Bold',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bookmarkedButton: {
-    backgroundColor: colors.accent,
-  },
-  actionIcon: {
-    color: colors.backgroundAlt,
-  },
-  bookmarkedIcon: {
-    color: colors.backgroundAlt,
-  },
-  ayahText: {
-    fontSize: 22,
-    lineHeight: 36,
-    color: colors.text,
-    textAlign: 'right',
-    fontFamily: 'ScheherazadeNew_400Regular',
-  },
-  tafsirContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent,
-  },
-  tafsirTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
-  },
-  tafsirText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    fontFamily: 'Amiri_400Regular',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.grey,
-    fontStyle: 'italic',
-    fontFamily: 'Amiri_400Regular',
-  },
-});
+

@@ -2,9 +2,11 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import Icon from '../../components/Icon';
-import { colors } from '../../styles/commonStyles';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function TabsLayout() {
+  const { colors, textSizes } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
@@ -12,14 +14,14 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.text,
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#eee',
+          backgroundColor: colors.backgroundAlt,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: 60,
         },
         tabBarLabelStyle: {
           fontFamily: 'Amiri_700Bold',
-          fontSize: 12,
+          fontSize: textSizes.caption,
           marginBottom: 6,
         },
       }}
@@ -36,6 +38,13 @@ export default function TabsLayout() {
         options={{
           title: 'المفضلة',
           tabBarIcon: ({ color, size }) => <Icon name="bookmark" size={size} style={{ color }} />,
+        }}
+      />
+      <Tabs.Screen
+        name="reciters"
+        options={{
+          title: 'القراء',
+          tabBarIcon: ({ color, size }) => <Icon name="musical-notes" size={size} style={{ color }} />,
         }}
       />
       <Tabs.Screen

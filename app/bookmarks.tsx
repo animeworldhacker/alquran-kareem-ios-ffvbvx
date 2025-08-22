@@ -3,12 +3,13 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { colors, commonStyles } from '../styles/commonStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import BookmarkCard from '../components/BookmarkCard';
 import Icon from '../components/Icon';
 
 export default function BookmarksScreen() {
   const { bookmarks, loading, error, removeBookmark } = useBookmarks();
+  const { colors, textSizes } = useTheme();
 
   const navigateToAyah = (surahNumber: number, ayahNumber: number) => {
     console.log(`Navigating to Surah ${surahNumber}, Ayah ${ayahNumber}`);
@@ -24,26 +25,116 @@ export default function BookmarksScreen() {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centerContent: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    header: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerTitle: {
+      fontSize: textSizes.title,
+      fontWeight: 'bold',
+      color: colors.backgroundAlt,
+      fontFamily: 'Amiri_700Bold',
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.secondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    backIcon: {
+      color: colors.backgroundAlt,
+    },
+    headerSpacer: {
+      width: 40,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+    },
+    emptyIcon: {
+      color: colors.textSecondary,
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: textSizes.title,
+      fontWeight: 'bold',
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: 8,
+      fontFamily: 'Amiri_700Bold',
+    },
+    emptySubtitle: {
+      fontSize: textSizes.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: textSizes.body * 1.5,
+      fontFamily: 'Amiri_400Regular',
+    },
+    statsContainer: {
+      padding: 16,
+      backgroundColor: colors.backgroundAlt,
+      marginBottom: 16,
+      alignItems: 'center',
+    },
+    statsText: {
+      fontSize: textSizes.body,
+      color: colors.primary,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
+    },
+    footer: {
+      padding: 20,
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    footerText: {
+      fontSize: textSizes.caption,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+    },
+  });
+
   if (loading) {
     return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <Text style={commonStyles.title}>جاري تحميل المفضلة...</Text>
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل المفضلة...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <Text style={commonStyles.title}>خطأ في تحميل البيانات</Text>
-        <Text style={commonStyles.text}>{error}</Text>
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={commonStyles.container}>
-      <View style={commonStyles.header}>
+    <View style={styles.container}>
+      <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => router.back()}
@@ -51,7 +142,7 @@ export default function BookmarksScreen() {
           <Icon name="arrow-back" size={24} style={styles.backIcon} />
         </TouchableOpacity>
         
-        <Text style={commonStyles.headerTitle}>المفضلة</Text>
+        <Text style={styles.headerTitle}>المفضلة</Text>
         
         <View style={styles.headerSpacer} />
       </View>
@@ -94,74 +185,4 @@ export default function BookmarksScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    color: colors.backgroundAlt,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    color: colors.grey,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontFamily: 'Amiri_400Regular',
-  },
-  statsContainer: {
-    padding: 16,
-    backgroundColor: colors.backgroundAlt,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  statsText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: 'bold',
-    fontFamily: 'Amiri_700Bold',
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: colors.grey,
-    textAlign: 'center',
-    fontFamily: 'Amiri_400Regular',
-  },
-});
+

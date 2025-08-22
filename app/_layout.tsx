@@ -7,6 +7,7 @@ import { commonStyles } from '../styles/commonStyles';
 import { useEffect, useState } from 'react';
 import { setupErrorLogging } from '../utils/errorLogger';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ThemeProvider } from '../contexts/ThemeContext';
 
 const STORAGE_KEY = 'emulated_device';
 
@@ -45,22 +46,24 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1, display: 'contents' as any }}>
-        <SafeAreaView style={[commonStyles.wrapper, {
-            paddingTop: insetsToUse.top,
-            paddingBottom: insetsToUse.bottom,
-            paddingLeft: insetsToUse.left,
-            paddingRight: insetsToUse.right,
-         }]}>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'default',
-            }}
-          />
-        </SafeAreaView>
-      </GestureHandlerRootView>
+      <ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1, display: 'contents' as any }}>
+          <SafeAreaView style={[commonStyles.wrapper, {
+              paddingTop: insetsToUse.top,
+              paddingBottom: insetsToUse.bottom,
+              paddingLeft: insetsToUse.left,
+              paddingRight: insetsToUse.right,
+           }]}>
+            <StatusBar style="light" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'default',
+              }}
+            />
+          </SafeAreaView>
+        </GestureHandlerRootView>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

@@ -4,7 +4,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 
 import { router } from 'expo-router';
 import { useQuran } from '../hooks/useQuran';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { colors, commonStyles } from '../styles/commonStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import SurahCard from '../components/SurahCard';
 import Icon from '../components/Icon';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
@@ -14,6 +14,7 @@ type DivisionTab = 'juz' | 'hizb' | 'quarter' | 'sajda';
 export default function HomeScreen() {
   const { surahs, loading, error } = useQuran();
   const { bookmarks } = useBookmarks();
+  const { settings, colors, textSizes } = useTheme();
 
   const [search, setSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -113,25 +114,217 @@ export default function HomeScreen() {
     await handleSelectQuarter(firstQuarter);
   };
 
+  const styles = StyleSheet.create({
+    centerContent: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.backgroundAlt,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    iconBtn: {
+      width: 36 * (settings.squareAdjustment / 100),
+      height: 36 * (settings.squareAdjustment / 100),
+      borderRadius: 18 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontFamily: 'Amiri_700Bold',
+      fontSize: textSizes.title,
+      color: colors.text,
+    },
+    dedicationBox: {
+      margin: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      backgroundColor: colors.backgroundAlt,
+      borderWidth: 1,
+      borderColor: '#d4db7f',
+    },
+    dedicationText: {
+      color: colors.text,
+      fontFamily: 'Amiri_400Regular',
+      fontSize: textSizes.body,
+      textAlign: 'center',
+    },
+    searchBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      backgroundColor: colors.backgroundAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: 'Amiri_400Regular',
+      color: colors.text,
+      fontSize: textSizes.body,
+      paddingVertical: 4,
+      textAlign: 'left',
+    },
+    quickRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginHorizontal: 12,
+      marginTop: 12,
+      marginBottom: 8,
+    },
+    quickBtn: {
+      flex: 1,
+      marginHorizontal: 4,
+      backgroundColor: colors.backgroundAlt,
+      paddingVertical: 10 * (settings.squareAdjustment / 100),
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
+    },
+    quickBtnText: {
+      fontFamily: 'Amiri_700Bold',
+      color: colors.text,
+      fontSize: textSizes.caption,
+    },
+    footer: {
+      padding: 20,
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    footerText: {
+      fontSize: textSizes.caption,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+    },
+    sheetContainer: {
+      flex: 1,
+    },
+    sheetTabs: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      padding: 8,
+      paddingHorizontal: 10,
+    },
+    tabBtn: {
+      flex: 1,
+      marginHorizontal: 4,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.backgroundAlt,
+    },
+    tabBtnActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    tabBtnText: {
+      textAlign: 'center',
+      fontFamily: 'Amiri_700Bold',
+      color: colors.text,
+      fontSize: textSizes.caption,
+    },
+    tabBtnTextActive: {
+      color: colors.backgroundAlt,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+    },
+    gridItem: {
+      width: '20%',
+      padding: 8,
+    },
+    gridItemText: {
+      textAlign: 'center',
+      backgroundColor: colors.backgroundAlt,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 10 * (settings.squareAdjustment / 100),
+      fontFamily: 'Amiri_700Bold',
+      color: colors.text,
+      fontSize: textSizes.body,
+      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
+    },
+    sajdaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      borderRadius: 10,
+      backgroundColor: colors.backgroundAlt,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 12,
+    },
+    badge: {
+      width: 34 * (settings.squareAdjustment / 100),
+      height: 34 * (settings.squareAdjustment / 100),
+      borderRadius: 17 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: {
+      color: colors.backgroundAlt,
+      fontFamily: 'Amiri_700Bold',
+      fontSize: textSizes.caption,
+    },
+    sajdaTitle: {
+      fontFamily: 'Amiri_700Bold',
+      color: colors.text,
+      fontSize: textSizes.body,
+      textAlign: 'right',
+    },
+    sajdaSub: {
+      fontFamily: 'Amiri_400Regular',
+      color: colors.textSecondary,
+      fontSize: textSizes.caption,
+      textAlign: 'right',
+    },
+  });
+
   if (loading) {
     return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <Text style={commonStyles.title}>جاري تحميل القرآن الكريم...</Text>
+      <View style={[{ flex: 1, backgroundColor: colors.background }, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[commonStyles.container, styles.centerContent]}>
-        <Text style={commonStyles.title}>خطأ في تحميل البيانات</Text>
-        <Text style={commonStyles.text}>{error}</Text>
+      <View style={[{ flex: 1, backgroundColor: colors.background }, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={commonStyles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={styles.iconBtn}>
           <Icon name="settings" size={20} style={{ color: colors.text }} />
@@ -140,17 +333,19 @@ export default function HomeScreen() {
         <View style={styles.iconBtn} />
       </View>
 
-      <View style={styles.dedicationBox}>
-        <Text style={styles.dedicationText}>صدقة جارية الى مريم سليمان رحمة الله عليها</Text>
-      </View>
+      {settings.showBanner && (
+        <View style={styles.dedicationBox}>
+          <Text style={styles.dedicationText}>صدقة جارية الى مريم سليمان رحمة الله عليها</Text>
+        </View>
+      )}
 
       <View style={styles.searchBox}>
-        <Icon name="search" size={18} style={{ color: colors.grey }} />
+        <Icon name="search" size={18} style={{ color: colors.textSecondary }} />
         <TextInput
           value={search}
           onChangeText={setSearch}
           placeholder="...Search chapters"
-          placeholderTextColor={colors.grey}
+          placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
       </View>
@@ -254,7 +449,7 @@ export default function HomeScreen() {
                           <Text style={styles.sajdaTitle}>سجدة</Text>
                           <Text style={styles.sajdaSub}>{surahName} - آية {ayahNumber}</Text>
                         </View>
-                        <Icon name="chevron-forward" size={20} style={{ color: colors.grey }} />
+                        <Icon name="chevron-forward" size={20} style={{ color: colors.textSecondary }} />
                       </TouchableOpacity>
                     );
                   })}
@@ -267,191 +462,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f2f2f2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontFamily: 'Amiri_700Bold',
-    fontSize: 20,
-    color: colors.text,
-  },
-  dedicationBox: {
-    margin: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#d4db7f',
-  },
-  dedicationText: {
-    color: colors.text,
-    fontFamily: 'Amiri_400Regular',
-    textAlign: 'center',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Amiri_400Regular',
-    color: colors.text,
-    paddingVertical: 4,
-    textAlign: 'left',
-  },
-  quickRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  quickBtn: {
-    flex: 1,
-    marginHorizontal: 4,
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
-  },
-  quickBtnText: {
-    fontFamily: 'Amiri_700Bold',
-    color: colors.text,
-    fontSize: 14,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: colors.grey,
-    textAlign: 'center',
-    fontFamily: 'Amiri_400Regular',
-  },
-  sheetContainer: {
-    flex: 1,
-  },
-  sheetTabs: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 8,
-    paddingHorizontal: 10,
-  },
-  tabBtn: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
-  },
-  tabBtnActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  tabBtnText: {
-    textAlign: 'center',
-    fontFamily: 'Amiri_700Bold',
-    color: colors.text,
-  },
-  tabBtnTextActive: {
-    color: colors.backgroundAlt,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  gridItem: {
-    width: '20%',
-    padding: 8,
-  },
-  gridItemText: {
-    textAlign: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
-    paddingVertical: 10,
-    fontFamily: 'Amiri_700Bold',
-    color: colors.text,
-    boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
-  },
-  sajdaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
-    gap: 12,
-  },
-  badge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    color: '#fff',
-    fontFamily: 'Amiri_700Bold',
-    fontSize: 14,
-  },
-  sajdaTitle: {
-    fontFamily: 'Amiri_700Bold',
-    color: colors.text,
-    fontSize: 14,
-    textAlign: 'right',
-  },
-  sajdaSub: {
-    fontFamily: 'Amiri_400Regular',
-    color: colors.textSecondary,
-    fontSize: 12,
-    textAlign: 'right',
-  },
-});
