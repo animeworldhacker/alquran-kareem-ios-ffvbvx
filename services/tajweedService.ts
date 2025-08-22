@@ -96,36 +96,123 @@ class TajweedService {
     }
     
     // Updated tajweed patterns based on the alquran-tools API format
+    // Fixed regex patterns to avoid combined character issues
     const tajweedPatterns = [
-      // Ghunna patterns (نون ساكنة ومیم ساكنة)
-      { pattern: /\[([^[\]]*[نم]ْ[^[\]]*)\]/g, type: 'ghunna' },
-      { pattern: /\[([^[\]]*[نم]ّ[^[\]]*)\]/g, type: 'ghunna' },
+      // Ghunna patterns (نون ساكنة ومیم ساكنة) - separate the characters
+      { pattern: /\[([^\[\]]*[ن][ْ][^\[\]]*)\]/g, type: 'ghunna' },
+      { pattern: /\[([^\[\]]*[م][ْ][^\[\]]*)\]/g, type: 'ghunna' },
+      { pattern: /\[([^\[\]]*[ن][ّ][^\[\]]*)\]/g, type: 'ghunna' },
+      { pattern: /\[([^\[\]]*[م][ّ][^\[\]]*)\]/g, type: 'ghunna' },
       
-      // Qalqala patterns (قطب جد)
-      { pattern: /\[([^[\]]*[قطبجد]ْ[^[\]]*)\]/g, type: 'qalqala' },
+      // Qalqala patterns (قطب جد) - separate the characters
+      { pattern: /\[([^\[\]]*[ق][ْ][^\[\]]*)\]/g, type: 'qalqala' },
+      { pattern: /\[([^\[\]]*[ط][ْ][^\[\]]*)\]/g, type: 'qalqala' },
+      { pattern: /\[([^\[\]]*[ب][ْ][^\[\]]*)\]/g, type: 'qalqala' },
+      { pattern: /\[([^\[\]]*[ج][ْ][^\[\]]*)\]/g, type: 'qalqala' },
+      { pattern: /\[([^\[\]]*[د][ْ][^\[\]]*)\]/g, type: 'qalqala' },
       
-      // Madd patterns (مد)
-      { pattern: /\[([^[\]]*[اوي]ٰ[^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[اوي]ۤ[^[\]]*)\]/g, type: 'madd' },
+      // Madd patterns (مد) - separate the characters
+      { pattern: /\[([^\[\]]*[ا][ٰ][^\[\]]*)\]/g, type: 'madd' },
+      { pattern: /\[([^\[\]]*[و][ٰ][^\[\]]*)\]/g, type: 'madd' },
+      { pattern: /\[([^\[\]]*[ي][ٰ][^\[\]]*)\]/g, type: 'madd' },
+      { pattern: /\[([^\[\]]*[ا][ۤ][^\[\]]*)\]/g, type: 'madd' },
+      { pattern: /\[([^\[\]]*[و][ۤ][^\[\]]*)\]/g, type: 'madd' },
+      { pattern: /\[([^\[\]]*[ي][ۤ][^\[\]]*)\]/g, type: 'madd' },
       
-      // Idgham patterns (إدغام)
-      { pattern: /\[([^[\]]*[نم]ْ\s*[يرملنو][^[\]]*)\]/g, type: 'idgham' },
+      // Idgham patterns (إدغام) - separate the characters
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ي][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ر][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[م][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ل][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ن][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[و][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ي][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ر][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[م][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ل][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ن][^\[\]]*)\]/g, type: 'idgham' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[و][^\[\]]*)\]/g, type: 'idgham' },
       
-      // Ikhfa patterns (إخفاء)
-      { pattern: /\[([^[\]]*[نم]ْ\s*[تثجدذزسشصضطظفقك][^[\]]*)\]/g, type: 'ikhfa' },
+      // Ikhfa patterns (إخفاء) - separate the characters for each letter
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ت][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ث][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ج][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[د][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ذ][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ز][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[س][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ش][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ص][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ض][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ط][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ظ][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ف][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ق][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ك][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ت][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ث][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ج][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[د][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ذ][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ز][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[س][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ش][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ص][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ض][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ط][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ظ][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ف][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ق][^\[\]]*)\]/g, type: 'ikhfa' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ك][^\[\]]*)\]/g, type: 'ikhfa' },
       
-      // Iqlab patterns (إقلاب)
-      { pattern: /\[([^[\]]*[نم]ْ\s*ب[^[\]]*)\]/g, type: 'iqlab' },
+      // Iqlab patterns (إقلاب) - separate the characters
+      { pattern: /\[([^\[\]]*[ن][ْ]\s*[ب][^\[\]]*)\]/g, type: 'iqlab' },
+      { pattern: /\[([^\[\]]*[م][ْ]\s*[ب][^\[\]]*)\]/g, type: 'iqlab' },
       
-      // Waqf signs (علامات الوقف)
-      { pattern: /([۝۞ۖۗۘۙۚۛۜ])/g, type: 'waqf' },
+      // Waqf signs (علامات الوقف) - each sign separately
+      { pattern: /([۝])/g, type: 'waqf' },
+      { pattern: /([۞])/g, type: 'waqf' },
+      { pattern: /([ۖ])/g, type: 'waqf' },
+      { pattern: /([ۗ])/g, type: 'waqf' },
+      { pattern: /([ۘ])/g, type: 'waqf' },
+      { pattern: /([ۙ])/g, type: 'waqf' },
+      { pattern: /([ۚ])/g, type: 'waqf' },
+      { pattern: /([ۛ])/g, type: 'waqf' },
+      { pattern: /([ۜ])/g, type: 'waqf' },
       
-      // Lam Shamsiyya and Qamariyya
-      { pattern: /\[([^[\]]*ال[تثدذرزسشصضطظلن][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*ال[ابجحخعغفقكمهوي][^[\]]*)\]/g, type: 'lam_qamariyya' },
+      // Lam Shamsiyya and Qamariyya - separate the characters
+      { pattern: /\[([^\[\]]*[ا][ل][ت][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ث][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][د][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ذ][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ر][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ز][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][س][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ش][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ص][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ض][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ط][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ظ][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ل][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ن][^\[\]]*)\]/g, type: 'lam_shamsiyya' },
       
-      // Silent letters
-      { pattern: /\[([^[\]]*[ٱ][^[\]]*)\]/g, type: 'silent' },
+      { pattern: /\[([^\[\]]*[ا][ل][ا][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ب][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ج][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ح][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][خ][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ع][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][غ][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ف][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ق][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ك][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][م][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ه][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][و][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      { pattern: /\[([^\[\]]*[ا][ل][ي][^\[\]]*)\]/g, type: 'lam_qamariyya' },
+      
+      // Silent letters - separate the characters
+      { pattern: /\[([^\[\]]*[ٱ][^\[\]]*)\]/g, type: 'silent' },
     ];
 
     let workingText = text;
@@ -225,7 +312,7 @@ class TajweedService {
   private cleanText(text: string): string {
     // Remove brackets and HTML tags, keep Arabic text and diacritics
     return text
-      .replace(/[[\]]/g, '')
+      .replace(/[\[\]]/g, '')
       .replace(/<[^>]*>/g, '')
       .trim();
   }
@@ -348,38 +435,38 @@ class TajweedService {
   }
 
   private hasGhunna(word: string): boolean {
-    // Ghunna: نون ساكنة أو میم ساكنة
-    return /[نم]ْ/.test(word) || /[نم]ّ/.test(word);
+    // Ghunna: نون ساكنة أو میم ساكنة - separate the characters
+    return /[ن][ْ]/.test(word) || /[م][ْ]/.test(word) || /[ن][ّ]/.test(word) || /[م][ّ]/.test(word);
   }
 
   private hasQalqala(word: string): boolean {
-    // Qalqala letters: ق ط ب ج د with sukun
-    return /[قطبجد]ْ/.test(word);
+    // Qalqala letters: ق ط ب ج د with sukun - separate the characters
+    return /[ق][ْ]/.test(word) || /[ط][ْ]/.test(word) || /[ب][ْ]/.test(word) || /[ج][ْ]/.test(word) || /[د][ْ]/.test(word);
   }
 
   private hasMadd(word: string): boolean {
-    // Madd: prolonged vowels
-    return /[اوي]ٰ/.test(word) || /[اوي]ۤ/.test(word) || /[اوي]{2,}/.test(word);
+    // Madd: prolonged vowels - separate the characters
+    return /[ا][ٰ]/.test(word) || /[و][ٰ]/.test(word) || /[ي][ٰ]/.test(word) || /[ا][ۤ]/.test(word) || /[و][ۤ]/.test(word) || /[ي][ۤ]/.test(word) || /[اوي]{2,}/.test(word);
   }
 
   private hasIdgham(word: string): boolean {
-    // Idgham: نون ساكنة أو تنوين followed by يرملنو
-    return /[نم]ْ\s*[يرملنو]/.test(word);
+    // Idgham: نون ساكنة أو تنوين followed by يرملنو - separate the characters
+    return /[ن][ْ]\s*[يرملنو]/.test(word) || /[م][ْ]\s*[يرملنو]/.test(word);
   }
 
   private hasIkhfa(word: string): boolean {
-    // Ikhfa: نون ساكنة أو تنوين followed by تثجدذزسشصضطظفقك
-    return /[نم]ْ\s*[تثجدذزسشصضطظفقك]/.test(word);
+    // Ikhfa: نون ساكنة أو تنوين followed by تثجدذزسشصضطظفقك - separate the characters
+    return /[ن][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word) || /[م][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word);
   }
 
   private hasIqlab(word: string): boolean {
-    // Iqlab: نون ساكنة أو تنوين followed by ب
-    return /[نم]ْ\s*ب/.test(word);
+    // Iqlab: نون ساكنة أو تنوين followed by ب - separate the characters
+    return /[ن][ْ]\s*[ب]/.test(word) || /[م][ْ]\s*[ب]/.test(word);
   }
 
   private hasWaqf(word: string): boolean {
-    // Waqf signs
-    return /[۝۞ۖۗۘۙۚۛۜ]/.test(word);
+    // Waqf signs - each sign separately
+    return /[۝]/.test(word) || /[۞]/.test(word) || /[ۖ]/.test(word) || /[ۗ]/.test(word) || /[ۘ]/.test(word) || /[ۙ]/.test(word) || /[ۚ]/.test(word) || /[ۛ]/.test(word) || /[ۜ]/.test(word);
   }
 
   getTajweedColorLegend(): { [key: string]: { color: string; name: string; description: string } } {

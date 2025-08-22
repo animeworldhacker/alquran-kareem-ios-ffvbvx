@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -9,9 +9,11 @@ interface SplashScreenProps {
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colors, textSizes } = useTheme();
-  const fadeAnim = new Animated.Value(0);
-  const scaleAnim = new Animated.Value(0.8);
-  const tapHintAnim = new Animated.Value(0);
+  
+  // Use useMemo to memoize the animated values
+  const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const scaleAnim = useMemo(() => new Animated.Value(0.8), []);
+  const tapHintAnim = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     console.log('Splash screen loaded, waiting for user tap');
