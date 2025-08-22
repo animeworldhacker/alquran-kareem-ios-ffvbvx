@@ -66,10 +66,10 @@ export default function ChaptersTab() {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // Chapter number scroller on the left
+    // Chapter number scroller on the left (made smaller)
     chapterScroller: {
-      width: 80,
-      backgroundColor: colors.backgroundAlt,
+      width: 65,
+      backgroundColor: colors.surface,
       borderRightWidth: 2,
       borderRightColor: '#d4af37',
     },
@@ -77,12 +77,12 @@ export default function ChaptersTab() {
       paddingVertical: 10,
     },
     chapterItem: {
-      height: itemHeight,
+      height: 45,
       justifyContent: 'center',
       alignItems: 'center',
-      marginVertical: 2,
-      marginHorizontal: 8,
-      borderRadius: 25,
+      marginVertical: 1,
+      marginHorizontal: 6,
+      borderRadius: 22,
       backgroundColor: 'transparent',
     },
     chapterItemSelected: {
@@ -91,7 +91,7 @@ export default function ChaptersTab() {
       elevation: 4,
     },
     chapterNumber: {
-      fontSize: 18,
+      fontSize: 16,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
       fontWeight: 'bold',
@@ -99,9 +99,9 @@ export default function ChaptersTab() {
     chapterNumberSelected: {
       color: '#fff',
     },
-    // Main content area
+    // Main content area (made larger)
     mainContent: {
-      flex: 1,
+      flex: 1.2,
     },
     topBar: {
       flexDirection: 'row',

@@ -21,11 +21,11 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#f8f6f0', // Cream background
-      borderColor: '#e8e6e0',
+      backgroundColor: colors.surface, // Use theme surface color
+      borderColor: colors.border,
       borderWidth: 1,
       borderRadius: 12,
-      marginVertical: 6,
+      marginVertical: 8,
       marginHorizontal: 16,
       overflow: 'hidden',
       boxShadow: '0px 3px 12px rgba(0, 0, 0, 0.08)',
@@ -34,16 +34,16 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     cardContent: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 16,
+      padding: 20, // Increased padding for larger appearance
     },
     numberContainer: {
-      width: 50 * (settings.squareAdjustment / 100),
-      height: 50 * (settings.squareAdjustment / 100),
-      borderRadius: 25 * (settings.squareAdjustment / 100),
-      backgroundColor: '#d4af37', // Gold color
+      width: 55 * (settings.squareAdjustment / 100), // Slightly larger
+      height: 55 * (settings.squareAdjustment / 100),
+      borderRadius: 27.5 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.primary, // Use theme primary color
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 16,
+      marginRight: 18, // Increased margin
       boxShadow: '0px 2px 8px rgba(212, 175, 55, 0.3)',
       elevation: 3,
     },
@@ -54,42 +54,42 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       fontFamily: 'Amiri_700Bold',
     },
     arabicNumber: {
-      color: '#8B4513',
+      color: colors.secondary,
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
       position: 'absolute',
       top: -8,
       right: -8,
-      backgroundColor: '#f8f6f0',
+      backgroundColor: colors.surface,
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#d4af37',
+      borderColor: colors.primary,
     },
     content: {
       flex: 1,
       position: 'relative',
     },
     arabicName: {
-      fontSize: Math.max(22, textSizes.title * 1.1),
+      fontSize: Math.max(24, textSizes.title * 1.2), // Larger font
       fontWeight: 'bold',
-      color: '#2F4F4F', // Dark slate gray
+      color: colors.text, // Use theme text color
       textAlign: 'right',
-      marginBottom: 6,
+      marginBottom: 8, // Increased margin
       fontFamily: 'ScheherazadeNew_400Regular',
     },
     englishName: {
-      fontSize: textSizes.body,
-      color: '#8B4513', // Brown color
-      marginBottom: 4,
+      fontSize: textSizes.body + 1, // Slightly larger
+      color: colors.secondary, // Use theme secondary color
+      marginBottom: 5,
       fontFamily: 'Amiri_700Bold',
       fontWeight: 'bold',
     },
     translation: {
-      fontSize: textSizes.caption,
-      color: '#8B4513',
-      marginBottom: 6,
+      fontSize: textSizes.caption + 1, // Slightly larger
+      color: colors.secondary,
+      marginBottom: 8, // Increased margin
       fontFamily: 'Amiri_400Regular',
       fontStyle: 'italic',
     },
@@ -103,16 +103,16 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       alignItems: 'center',
     },
     infoText: {
-      fontSize: textSizes.caption,
-      color: '#8B4513',
+      fontSize: textSizes.caption + 1, // Slightly larger
+      color: colors.secondary,
       fontFamily: 'Amiri_700Bold',
     },
     revelationType: {
-      backgroundColor: '#d4af37',
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 10,
-      marginLeft: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 10, // Increased padding
+      paddingVertical: 3,
+      borderRadius: 12, // Larger border radius
+      marginLeft: 10,
     },
     revelationText: {
       fontSize: textSizes.caption - 2,
@@ -121,13 +121,13 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       fontWeight: 'bold',
     },
     chevron: {
-      color: '#d4af37',
+      color: colors.primary,
     },
     decorativeLine: {
       height: 2,
-      backgroundColor: '#d4af37',
-      marginHorizontal: 16,
-      marginBottom: 8,
+      backgroundColor: colors.primary,
+      marginHorizontal: 20, // Increased margin
+      marginBottom: 10, // Increased margin
       borderRadius: 1,
     },
   });

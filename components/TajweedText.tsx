@@ -11,7 +11,7 @@ interface TajweedTextProps {
 }
 
 export default function TajweedText({ segments, fontSize, style }: TajweedTextProps) {
-  const { settings } = useTheme();
+  const { settings, colors } = useTheme();
 
   // Safety check for segments
   if (!segments || !Array.isArray(segments) || segments.length === 0) {
@@ -24,11 +24,13 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
+      justifyContent: 'flex-start',
     },
     segment: {
       fontFamily: 'ScheherazadeNew_400Regular',
       fontSize: fontSize || 20,
       lineHeight: (fontSize || 20) * 1.8,
+      textAlign: 'right',
     },
   });
 
@@ -41,13 +43,21 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
           return null;
         }
 
+        // Determine the color to use
+        let segmentColor = colors.text; // Default color
+        
+        if (settings.showTajweed && segment.color) {
+          segmentColor = segment.color;
+        }
+
         return (
           <Text
             key={index}
             style={[
               styles.segment,
               {
-                color: settings.showTajweed && segment.color ? segment.color : '#2F4F4F',
+                color: segmentColor,
+                fontWeight: segment.type !== 'default' && settings.showTajweed ? '600' : 'normal',
               }
             ]}
           >

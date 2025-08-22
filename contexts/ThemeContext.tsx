@@ -8,6 +8,7 @@ interface ThemeContextType {
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
   colors: {
     background: string;
+    backgroundAlt: string;
     surface: string;
     primary: string;
     secondary: string;
@@ -92,7 +93,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (settings.theme === 'dark') {
         return {
           background: '#1a1a1a',
-          surface: '#2d2d2d',
+          backgroundAlt: '#2d2d2d',
+          surface: '#3a3a3a',
           primary: '#d4af37',
           secondary: '#8B4513',
           text: '#ffffff',
@@ -107,7 +109,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       
       return {
         background: '#ffffff',
-        surface: '#f8f6f0',
+        backgroundAlt: '#f8f6f0',
+        surface: '#fefefe',
         primary: '#d4af37',
         secondary: '#8B4513',
         text: '#2F4F4F',
@@ -122,7 +125,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       console.error('Error getting colors, using light theme:', error);
       return {
         background: '#ffffff',
-        surface: '#f8f6f0',
+        backgroundAlt: '#f8f6f0',
+        surface: '#fefefe',
         primary: '#d4af37',
         secondary: '#8B4513',
         text: '#2F4F4F',
