@@ -2,9 +2,9 @@
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const colors = {
-  primary: '#d4af37',      // Gold
+  primary: '#316612',      // Green
   secondary: '#8B4513',    // Brown
-  accent: '#d4af37',       // Gold
+  accent: '#316612',       // Green
   background: '#ffffff',   // White
   backgroundAlt: '#f8f6f0', // Cream
   surface: '#f8f6f0',      // Cream
