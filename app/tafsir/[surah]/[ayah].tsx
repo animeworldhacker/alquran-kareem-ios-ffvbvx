@@ -49,7 +49,7 @@ export default function TafsirScreen() {
     if (surahNumber && ayahNumber) {
       loadData();
     }
-  }, [surahNumber, ayahNumber]);
+  }, [surahNumber, ayahNumber, getSurah]);
 
   const handleBack = () => {
     router.back();

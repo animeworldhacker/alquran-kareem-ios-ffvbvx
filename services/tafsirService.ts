@@ -80,8 +80,8 @@ class TafsirService {
     // Remove extra whitespace
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
     
-    // Remove unwanted characters
-    cleaned = cleaned.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d\.\,\:\;\!\?\(\)\[\]]/g, '');
+    // Remove unwanted characters - fixed regex without unnecessary escapes
+    cleaned = cleaned.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d.,:;!?()[\]]/g, '');
     
     return cleaned;
   }
