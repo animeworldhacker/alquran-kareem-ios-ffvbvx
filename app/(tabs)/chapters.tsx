@@ -66,39 +66,6 @@ export default function ChaptersTab() {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // Chapter number scroller on the left (made smaller)
-    chapterScroller: {
-      width: 65,
-      backgroundColor: colors.surface,
-      borderRightWidth: 2,
-      borderRightColor: '#d4af37',
-    },
-    chapterScrollContainer: {
-      paddingVertical: 10,
-    },
-    chapterItem: {
-      height: 45,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginVertical: 1,
-      marginHorizontal: 6,
-      borderRadius: 22,
-      backgroundColor: 'transparent',
-    },
-    chapterItemSelected: {
-      backgroundColor: '#d4af37',
-      boxShadow: '0px 2px 8px rgba(212, 175, 55, 0.3)',
-      elevation: 4,
-    },
-    chapterNumber: {
-      fontSize: 16,
-      fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      fontWeight: 'bold',
-    },
-    chapterNumberSelected: {
-      color: '#fff',
-    },
     // Main content area (made larger)
     mainContent: {
       flex: 1.2,
@@ -175,6 +142,39 @@ export default function ChaptersTab() {
       borderWidth: 1,
       borderColor: '#d4af37',
     },
+    // Chapter number scroller on the right (moved from left)
+    chapterScroller: {
+      width: 65,
+      backgroundColor: colors.surface,
+      borderLeftWidth: 2, // Changed from borderRightWidth to borderLeftWidth
+      borderLeftColor: '#d4af37', // Changed from borderRightColor to borderLeftColor
+    },
+    chapterScrollContainer: {
+      paddingVertical: 10,
+    },
+    chapterItem: {
+      height: 45,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginVertical: 1,
+      marginHorizontal: 6,
+      borderRadius: 22,
+      backgroundColor: 'transparent',
+    },
+    chapterItemSelected: {
+      backgroundColor: '#d4af37',
+      boxShadow: '0px 2px 8px rgba(212, 175, 55, 0.3)',
+      elevation: 4,
+    },
+    chapterNumber: {
+      fontSize: 16,
+      fontFamily: 'Amiri_700Bold',
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    chapterNumberSelected: {
+      color: '#fff',
+    },
   });
 
   if (loading) {
@@ -196,34 +196,6 @@ export default function ChaptersTab() {
 
   return (
     <View style={styles.container}>
-      {/* Chapter Number Scroller */}
-      <View style={styles.chapterScroller}>
-        <ScrollView 
-          ref={chapterScrollRef}
-          style={styles.chapterScrollContainer}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 20 }}
-        >
-          {Array.from({ length: 114 }, (_, i) => i + 1).map((chapterNum) => (
-            <TouchableOpacity
-              key={chapterNum}
-              style={[
-                styles.chapterItem,
-                selectedChapter === chapterNum && styles.chapterItemSelected
-              ]}
-              onPress={() => handleChapterSelect(chapterNum)}
-            >
-              <Text style={[
-                styles.chapterNumber,
-                selectedChapter === chapterNum && styles.chapterNumberSelected
-              ]}>
-                {toArabicNumerals(chapterNum)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
       {/* Main Content */}
       <View style={styles.mainContent}>
         <View style={styles.topBar}>
@@ -235,7 +207,7 @@ export default function ChaptersTab() {
         </View>
 
         <Text style={styles.instructionText}>
-          اضغط على رقم السورة من الجانب الأيسر للانتقال إليها مباشرة
+          اضغط على رقم السورة من الجانب الأيمن للانتقال إليها مباشرة
         </Text>
 
         <View style={styles.searchBox}>
@@ -266,6 +238,34 @@ export default function ChaptersTab() {
               تم تطوير هذا التطبيق بحمد الله وتوفيقه
             </Text>
           </View>
+        </ScrollView>
+      </View>
+
+      {/* Chapter Number Scroller - Moved to the right */}
+      <View style={styles.chapterScroller}>
+        <ScrollView 
+          ref={chapterScrollRef}
+          style={styles.chapterScrollContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 20 }}
+        >
+          {Array.from({ length: 114 }, (_, i) => i + 1).map((chapterNum) => (
+            <TouchableOpacity
+              key={chapterNum}
+              style={[
+                styles.chapterItem,
+                selectedChapter === chapterNum && styles.chapterItemSelected
+              ]}
+              onPress={() => handleChapterSelect(chapterNum)}
+            >
+              <Text style={[
+                styles.chapterNumber,
+                selectedChapter === chapterNum && styles.chapterNumberSelected
+              ]}>
+                {toArabicNumerals(chapterNum)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
       </View>
     </View>

@@ -24,7 +24,7 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'flex-end', // Changed from flex-start to flex-end for right alignment
     },
     segment: {
       fontFamily: 'ScheherazadeNew_400Regular',

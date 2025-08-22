@@ -155,7 +155,7 @@ export default function AyahCard({
       backgroundColor: '#d4af37', // Gold color
       justifyContent: 'center',
       alignItems: 'center',
-      marginLeft: 15,
+      marginRight: 15, // Changed from marginLeft to marginRight
       marginTop: 5,
       boxShadow: '0px 2px 6px rgba(212, 175, 55, 0.3)',
       elevation: 3,
@@ -169,6 +169,7 @@ export default function AyahCard({
     ayahTextContainer: {
       flex: 1,
       position: 'relative',
+      alignItems: 'flex-end', // Align content to the right
     },
     ayahText: {
       fontSize: Math.max(20, textSizes.arabic * 0.9),
@@ -177,12 +178,15 @@ export default function AyahCard({
       textAlign: 'right',
       lineHeight: 38,
       marginBottom: 12,
-      paddingRight: 10,
+      paddingLeft: 10, // Changed from paddingRight to paddingLeft
+      width: '100%',
     },
     tajweedContainer: {
       textAlign: 'right',
       marginBottom: 12,
-      paddingRight: 10,
+      paddingLeft: 10, // Changed from paddingRight to paddingLeft
+      width: '100%',
+      alignItems: 'flex-end', // Align tajweed text to the right
     },
     ayahTranslation: {
       fontSize: textSizes.body,
@@ -272,7 +276,7 @@ export default function AyahCard({
     playingIndicator: {
       position: 'absolute',
       top: -5,
-      right: -5,
+      left: -5, // Changed from right to left
       width: 12,
       height: 12,
       borderRadius: 6,
@@ -281,7 +285,7 @@ export default function AyahCard({
     tajweedIndicator: {
       position: 'absolute',
       top: -5,
-      left: -5,
+      right: -5, // Changed from left to right
       width: 12,
       height: 12,
       borderRadius: 6,
@@ -292,11 +296,6 @@ export default function AyahCard({
   return (
     <View style={styles.card}>
       <View style={styles.ayahRow}>
-        <View style={styles.ayahNumberCircle}>
-          <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
-          {isPlaying && <View style={styles.playingIndicator} />}
-          {settings.showTajweed && tajweedData && <View style={styles.tajweedIndicator} />}
-        </View>
         <View style={styles.ayahTextContainer}>
           {settings.showTajweed && tajweedData && tajweedData.segments ? (
             <TajweedText
@@ -307,6 +306,11 @@ export default function AyahCard({
           ) : (
             <Text style={styles.ayahText}>{ayah.text || ''}</Text>
           )}
+        </View>
+        <View style={styles.ayahNumberCircle}>
+          <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
+          {isPlaying && <View style={styles.playingIndicator} />}
+          {settings.showTajweed && tajweedData && <View style={styles.tajweedIndicator} />}
         </View>
       </View>
 
