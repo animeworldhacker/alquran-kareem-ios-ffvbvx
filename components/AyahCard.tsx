@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Ayah, TajweedData } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { tafsirService } from '../services/tafsirService';
 import { tajweedService } from '../services/tajweedService';
+import { router } from 'expo-router';
 import TajweedText from './TajweedText';
 import Icon from './Icon';
 
@@ -81,16 +82,22 @@ export default function AyahCard({
     if (!showTafsir && !tafsir && !loadingTafsir) {
       setLoadingTafsir(true);
       try {
+        console.log(`Loading Ibn Katheer Tafsir for ${surahNumber}:${ayah.numberInSurah}`);
         const tafsirText = await tafsirService.getTafsir(surahNumber, ayah.numberInSurah);
         setTafsir(tafsirText || 'تفسير غير متوفر حاليا');
+        console.log('Tafsir loaded successfully');
       } catch (error) {
-        console.log('Failed to load tafsir:', error);
-        setTafsir('تفسير غير متوفر حاليا');
+        console.error('Failed to load tafsir:', error);
+        setTafsir('حدث خطأ في تحميل التفسير. يرجى المحاولة مرة أخرى.');
       } finally {
         setLoadingTafsir(false);
       }
     }
     setShowTafsir(!showTafsir);
+  };
+
+  const handleFullTafsir = () => {
+    router.push(`/tafsir/${surahNumber}/${ayah.numberInSurah}`);
   };
 
   const handleBookmarkToggle = async () => {
@@ -200,7 +207,7 @@ export default function AyahCard({
     actionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 12,
+      paddingHorizontal: 10,
       paddingVertical: 8,
       borderRadius: 20,
       backgroundColor: 'transparent',
@@ -209,7 +216,7 @@ export default function AyahCard({
       backgroundColor: '#d4af37',
     },
     actionText: {
-      fontSize: textSizes.caption,
+      fontSize: textSizes.caption - 1,
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
       marginLeft: 6,
@@ -224,18 +231,43 @@ export default function AyahCard({
       borderTopColor: '#e8e6e0',
     },
     tafsirTitle: {
-      fontSize: textSizes.body,
+      fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
-      marginBottom: 10,
+      marginBottom: 12,
       textAlign: 'right',
     },
     tafsirText: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_400Regular',
       color: '#2F4F4F',
-      lineHeight: 24,
+      lineHeight: 26,
       textAlign: 'right',
+      marginBottom: 15,
+    },
+    fullTafsirButton: {
+      alignSelf: 'flex-end',
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      backgroundColor: '#d4af37',
+      borderRadius: 20,
+    },
+    fullTafsirText: {
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_700Bold',
+      color: '#fff',
+    },
+    loadingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+    },
+    loadingText: {
+      fontSize: textSizes.body,
+      fontFamily: 'Amiri_400Regular',
+      color: '#8B4513',
+      marginLeft: 10,
     },
     playingIndicator: {
       position: 'absolute',
@@ -275,9 +307,6 @@ export default function AyahCard({
           ) : (
             <Text style={styles.ayahText}>{ayah.text || ''}</Text>
           )}
-          <Text style={styles.ayahTranslation}>
-            [All] praise is [due] to Allah, who has sent down upon His Servant the Book and has not made therein any deviance.
-          </Text>
         </View>
       </View>
 
@@ -328,9 +357,23 @@ export default function AyahCard({
       {showTafsir && (
         <View style={styles.tafsirContainer}>
           <Text style={styles.tafsirTitle}>تفسير ابن كثير:</Text>
-          <Text style={styles.tafsirText}>
-            {loadingTafsir ? 'جاري تحميل التفسير...' : (tafsir || 'تفسير غير متوفر حاليا')}
-          </Text>
+          {loadingTafsir ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#d4af37" />
+              <Text style={styles.loadingText}>جاري تحميل التفسير...</Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.tafsirText}>
+                {tafsir ? tafsir.substring(0, 200) + (tafsir.length > 200 ? '...' : '') : 'تفسير غير متوفر حاليا'}
+              </Text>
+              {tafsir && tafsir.length > 200 && (
+                <TouchableOpacity style={styles.fullTafsirButton} onPress={handleFullTafsir}>
+                  <Text style={styles.fullTafsirText}>اقرأ التفسير كاملاً</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
       )}
     </View>

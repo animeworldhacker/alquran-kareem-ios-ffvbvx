@@ -39,6 +39,15 @@ export interface TafsirVerse {
   text: string;
 }
 
+export interface TafsirResponse {
+  tafsirs: {
+    id: number;
+    text: string;
+    language_name: string;
+    resource_name: string;
+  }[];
+}
+
 export interface Reciter {
   id: number;
   name: string;
