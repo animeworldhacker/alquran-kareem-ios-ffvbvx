@@ -14,7 +14,7 @@ export interface TajweedData {
 }
 
 class TajweedService {
-  private baseUrl = 'https://api.alquran.cloud/v1';
+  private baseUrl = 'https://quranapi.pages.dev/api';
   private tajweedCache: Map<string, TajweedData> = new Map();
 
   // Correct Tajweed color mapping based on standard Mushaf coloring
@@ -48,8 +48,8 @@ class TajweedService {
         throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
       }
       
-      // Try to fetch from the tajweed API using the correct endpoint
-      const response = await fetch(`${this.baseUrl}/ayah/${surahNumber}:${ayahNumber}/editions/quran-tajweed`, {
+      // Try to fetch from the new QuranApi with tajweed
+      const response = await fetch(`${this.baseUrl}/${surahNumber}/${ayahNumber}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -58,20 +58,18 @@ class TajweedService {
       });
       
       if (!response.ok) {
-        console.log(`Tajweed API returned ${response.status}, using fallback`);
+        console.log(`QuranApi returned ${response.status}, using fallback`);
         return this.generateBasicTajweed(surahNumber, ayahNumber);
       }
       
       const data = await response.json();
       
-      if (data.code === 200 && data.data && Array.isArray(data.data) && data.data.length > 0) {
-        const ayahData = data.data[0];
-        if (ayahData && ayahData.text) {
-          const tajweedData = this.parseTajweedText(ayahData.text, surahNumber, ayahNumber);
-          this.tajweedCache.set(cacheKey, tajweedData);
-          console.log(`Tajweed data fetched successfully for ${surahNumber}:${ayahNumber}`);
-          return tajweedData;
-        }
+      if (data && data.arabic1) {
+        // The new API provides arabic1 with tajweed markup
+        const tajweedData = this.parseTajweedText(data.arabic1, surahNumber, ayahNumber);
+        this.tajweedCache.set(cacheKey, tajweedData);
+        console.log(`Tajweed data fetched successfully for ${surahNumber}:${ayahNumber}`);
+        return tajweedData;
       }
       
       // Fallback to basic tajweed parsing
@@ -95,165 +93,35 @@ class TajweedService {
       };
     }
     
-    // Updated tajweed patterns based on the alquran-tools API format
-    // Fixed regex patterns to avoid combined character issues
-    const tajweedPatterns = [
-      // Ghunna patterns (نون ساكنة ومیم ساكنة) - separate the characters
-      { pattern: /\[([^[\]]*[ن][ْ][^[\]]*)\]/g, type: 'ghunna' },
-      { pattern: /\[([^[\]]*[م][ْ][^[\]]*)\]/g, type: 'ghunna' },
-      { pattern: /\[([^[\]]*[ن][ّ][^[\]]*)\]/g, type: 'ghunna' },
-      { pattern: /\[([^[\]]*[م][ّ][^[\]]*)\]/g, type: 'ghunna' },
-      
-      // Qalqala patterns (قطب جد) - separate the characters
-      { pattern: /\[([^[\]]*[ق][ْ][^[\]]*)\]/g, type: 'qalqala' },
-      { pattern: /\[([^[\]]*[ط][ْ][^[\]]*)\]/g, type: 'qalqala' },
-      { pattern: /\[([^[\]]*[ب][ْ][^[\]]*)\]/g, type: 'qalqala' },
-      { pattern: /\[([^[\]]*[ج][ْ][^[\]]*)\]/g, type: 'qalqala' },
-      { pattern: /\[([^[\]]*[د][ْ][^[\]]*)\]/g, type: 'qalqala' },
-      
-      // Madd patterns (مد) - separate the characters
-      { pattern: /\[([^[\]]*[ا][ٰ][^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[و][ٰ][^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[ي][ٰ][^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[ا][ۤ][^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[و][ۤ][^[\]]*)\]/g, type: 'madd' },
-      { pattern: /\[([^[\]]*[ي][ۤ][^[\]]*)\]/g, type: 'madd' },
-      
-      // Idgham patterns (إدغام) - separate the characters
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ي][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ر][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[م][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ل][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ن][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[و][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ي][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ر][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[م][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ل][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ن][^[\]]*)\]/g, type: 'idgham' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[و][^[\]]*)\]/g, type: 'idgham' },
-      
-      // Ikhfa patterns (إخفاء) - separate the characters for each letter
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ت][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ث][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ج][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[د][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ذ][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ز][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[س][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ش][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ص][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ض][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ط][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ظ][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ف][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ق][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ك][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ت][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ث][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ج][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[د][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ذ][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ز][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[س][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ش][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ص][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ض][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ط][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ظ][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ف][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ق][^[\]]*)\]/g, type: 'ikhfa' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ك][^[\]]*)\]/g, type: 'ikhfa' },
-      
-      // Iqlab patterns (إقلاب) - separate the characters
-      { pattern: /\[([^[\]]*[ن][ْ]\s*[ب][^[\]]*)\]/g, type: 'iqlab' },
-      { pattern: /\[([^[\]]*[م][ْ]\s*[ب][^[\]]*)\]/g, type: 'iqlab' },
-      
-      // Waqf signs (علامات الوقف) - each sign separately
-      { pattern: /([۝])/g, type: 'waqf' },
-      { pattern: /([۞])/g, type: 'waqf' },
-      { pattern: /([ۖ])/g, type: 'waqf' },
-      { pattern: /([ۗ])/g, type: 'waqf' },
-      { pattern: /([ۘ])/g, type: 'waqf' },
-      { pattern: /([ۙ])/g, type: 'waqf' },
-      { pattern: /([ۚ])/g, type: 'waqf' },
-      { pattern: /([ۛ])/g, type: 'waqf' },
-      { pattern: /([ۜ])/g, type: 'waqf' },
-      
-      // Lam Shamsiyya and Qamariyya - separate the characters
-      { pattern: /\[([^[\]]*[ا][ل][ت][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ث][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][د][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ذ][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ر][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ز][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][س][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ش][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ص][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ض][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ط][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ظ][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ل][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ن][^[\]]*)\]/g, type: 'lam_shamsiyya' },
-      
-      { pattern: /\[([^[\]]*[ا][ل][ا][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ب][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ج][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ح][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][خ][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ع][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][غ][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ف][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ق][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ك][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][م][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ه][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][و][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      { pattern: /\[([^[\]]*[ا][ل][ي][^[\]]*)\]/g, type: 'lam_qamariyya' },
-      
-      // Silent letters - separate the characters
-      { pattern: /\[([^[\]]*[ٱ][^[\]]*)\]/g, type: 'silent' },
-    ];
-
+    // The new API uses HTML-like tags for tajweed rules
+    // Parse the text and extract tajweed segments
     let workingText = text;
-    const foundSegments: { start: number; end: number; type: string; text: string; originalMatch: string }[] = [];
-
-    // Find all tajweed segments
-    tajweedPatterns.forEach(({ pattern, type }) => {
-      let match;
-      const regex = new RegExp(pattern.source, pattern.flags);
-      while ((match = regex.exec(text)) !== null) {
-        foundSegments.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          type,
-          text: match[1] || match[0],
-          originalMatch: match[0]
-        });
-      }
-    });
-
-    // Sort segments by position
-    foundSegments.sort((a, b) => a.start - b.start);
-
-    // Remove overlapping segments (keep the first one)
-    const nonOverlappingSegments = [];
+    let currentIndex = 0;
+    
+    // Regular expression to match HTML-like tags with content
+    const tagPattern = /<([^>]+)>([^<]*)<\/[^>]*>/g;
+    const matches = [];
+    let match;
+    
+    while ((match = tagPattern.exec(text)) !== null) {
+      matches.push({
+        fullMatch: match[0],
+        tag: match[1],
+        content: match[2],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+    
+    // Sort matches by position
+    matches.sort((a, b) => a.start - b.start);
+    
     let lastEnd = 0;
     
-    for (const segment of foundSegments) {
-      if (segment.start >= lastEnd) {
-        nonOverlappingSegments.push(segment);
-        lastEnd = segment.end;
-      }
-    }
-
-    // Build the final segments array
-    let currentPos = 0;
-    
-    for (const segment of nonOverlappingSegments) {
-      // Add text before this segment
-      if (segment.start > currentPos) {
-        const beforeText = text.substring(currentPos, segment.start);
+    for (const tagMatch of matches) {
+      // Add text before this tag
+      if (tagMatch.start > lastEnd) {
+        const beforeText = text.substring(lastEnd, tagMatch.start);
         const cleanBeforeText = this.cleanText(beforeText);
         if (cleanBeforeText.trim()) {
           segments.push({
@@ -264,22 +132,24 @@ class TajweedService {
         }
       }
       
-      // Add the tajweed segment
-      const cleanSegmentText = this.cleanText(segment.text);
-      if (cleanSegmentText.trim()) {
+      // Determine tajweed type from tag attributes
+      const tajweedType = this.determineTajweedType(tagMatch.tag);
+      const cleanContent = this.cleanText(tagMatch.content);
+      
+      if (cleanContent.trim()) {
         segments.push({
-          text: cleanSegmentText,
-          type: segment.type,
-          color: this.tajweedColors[segment.type] || this.tajweedColors.default
+          text: cleanContent,
+          type: tajweedType,
+          color: this.tajweedColors[tajweedType] || this.tajweedColors.default
         });
       }
       
-      currentPos = segment.end;
+      lastEnd = tagMatch.end;
     }
     
     // Add remaining text
-    if (currentPos < text.length) {
-      const remainingText = text.substring(currentPos);
+    if (lastEnd < text.length) {
+      const remainingText = text.substring(lastEnd);
       const cleanRemainingText = this.cleanText(remainingText);
       if (cleanRemainingText.trim()) {
         segments.push({
@@ -290,15 +160,16 @@ class TajweedService {
       }
     }
 
-    // If no segments were found, return the whole text as default
+    // If no segments were found, apply basic tajweed rules
     if (segments.length === 0) {
       const cleanText = this.cleanText(text);
       if (cleanText.trim()) {
-        segments.push({
-          text: cleanText,
-          type: 'default',
-          color: this.tajweedColors.default
-        });
+        const basicSegments = this.applyBasicTajweedRules(cleanText);
+        return {
+          surah: surahNumber,
+          ayah: ayahNumber,
+          segments: basicSegments
+        };
       }
     }
 
@@ -309,19 +180,71 @@ class TajweedService {
     };
   }
 
+  private determineTajweedType(tag: string): string {
+    // Map HTML tag attributes to tajweed types
+    const tagLower = tag.toLowerCase();
+    
+    if (tagLower.includes('ghunna') || tagLower.includes('color="#01579b"')) {
+      return 'ghunna';
+    } else if (tagLower.includes('qalqala') || tagLower.includes('color="#4a148c"')) {
+      return 'qalqala';
+    } else if (tagLower.includes('madd') || tagLower.includes('color="#d32f2f"')) {
+      return 'madd';
+    } else if (tagLower.includes('idgham') || tagLower.includes('color="#2e7d32"')) {
+      return 'idgham';
+    } else if (tagLower.includes('ikhfa') || tagLower.includes('color="#f57c00"')) {
+      return 'ikhfa';
+    } else if (tagLower.includes('iqlab') || tagLower.includes('color="#7b1fa2"')) {
+      return 'iqlab';
+    } else if (tagLower.includes('izhar') || tagLower.includes('color="#1976d2"')) {
+      return 'izhar';
+    } else if (tagLower.includes('waqf') || tagLower.includes('color="#e91e63"')) {
+      return 'waqf';
+    } else if (tagLower.includes('lam') && tagLower.includes('shams')) {
+      return 'lam_shamsiyya';
+    } else if (tagLower.includes('lam') && tagLower.includes('qamar')) {
+      return 'lam_qamariyya';
+    } else if (tagLower.includes('silent') || tagLower.includes('color="#9e9e9e"')) {
+      return 'silent';
+    }
+    
+    return 'default';
+  }
+
   private cleanText(text: string): string {
-    // Remove brackets and HTML tags, keep Arabic text and diacritics
+    // Remove HTML tags and clean up the text
     return text
-      .replace(/[[\]]/g, '')
       .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
       .trim();
   }
 
-  private generateBasicTajweed(surahNumber: number, ayahNumber: number): TajweedData {
+  private async generateBasicTajweed(surahNumber: number, ayahNumber: number): Promise<TajweedData> {
     // This is a fallback method that applies basic tajweed rules
     console.log(`Generating basic tajweed for ${surahNumber}:${ayahNumber}`);
     
-    // Try to get the plain text from the main Quran API as fallback
+    try {
+      // Try to get the plain text from the main Quran API as fallback
+      const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.code === 200 && data.data && data.data.text) {
+          const segments = this.applyBasicTajweedRules(data.data.text);
+          return {
+            surah: surahNumber,
+            ayah: ayahNumber,
+            segments
+          };
+        }
+      }
+    } catch (error) {
+      console.log('Error in generateBasicTajweed:', error);
+    }
+    
     return {
       surah: surahNumber,
       ayah: ayahNumber,
@@ -435,38 +358,38 @@ class TajweedService {
   }
 
   private hasGhunna(word: string): boolean {
-    // Ghunna: نون ساكنة أو میم ساكنة - separate the characters
+    // Ghunna: نون ساكنة أو میم ساكنة
     return /[ن][ْ]/.test(word) || /[م][ْ]/.test(word) || /[ن][ّ]/.test(word) || /[م][ّ]/.test(word);
   }
 
   private hasQalqala(word: string): boolean {
-    // Qalqala letters: ق ط ب ج د with sukun - separate the characters
-    return /[ق][ْ]/.test(word) || /[ط][ْ]/.test(word) || /[ب][ْ]/.test(word) || /[ج][ْ]/.test(word) || /[د][ْ]/.test(word);
+    // Qalqala letters: ق ط ب ج د with sukun
+    return /[قطبجد][ْ]/.test(word);
   }
 
   private hasMadd(word: string): boolean {
-    // Madd: prolonged vowels - separate the characters
-    return /[ا][ٰ]/.test(word) || /[و][ٰ]/.test(word) || /[ي][ٰ]/.test(word) || /[ا][ۤ]/.test(word) || /[و][ۤ]/.test(word) || /[ي][ۤ]/.test(word) || /[اوي]{2,}/.test(word);
+    // Madd: prolonged vowels
+    return /[ا][ٰ]/.test(word) || /[و][ٰ]/.test(word) || /[ي][ٰ]/.test(word) || /[اوي]{2,}/.test(word);
   }
 
   private hasIdgham(word: string): boolean {
-    // Idgham: نون ساكنة أو تنوين followed by يرملنو - separate the characters
+    // Idgham: نون ساكنة أو تنوين followed by يرملنو
     return /[ن][ْ]\s*[يرملنو]/.test(word) || /[م][ْ]\s*[يرملنو]/.test(word);
   }
 
   private hasIkhfa(word: string): boolean {
-    // Ikhfa: نون ساكنة أو تنوين followed by تثجدذزسشصضطظفقك - separate the characters
+    // Ikhfa: نون ساكنة أو تنوين followed by تثجدذزسشصضطظفقك
     return /[ن][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word) || /[م][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word);
   }
 
   private hasIqlab(word: string): boolean {
-    // Iqlab: نون ساكنة أو تنوين followed by ب - separate the characters
+    // Iqlab: نون ساكنة أو تنوين followed by ب
     return /[ن][ْ]\s*[ب]/.test(word) || /[م][ْ]\s*[ب]/.test(word);
   }
 
   private hasWaqf(word: string): boolean {
-    // Waqf signs - each sign separately
-    return /[۝]/.test(word) || /[۞]/.test(word) || /[ۖ]/.test(word) || /[ۗ]/.test(word) || /[ۘ]/.test(word) || /[ۙ]/.test(word) || /[ۚ]/.test(word) || /[ۛ]/.test(word) || /[ۜ]/.test(word);
+    // Waqf signs
+    return /[۝۞ۖۗۘۙۚۛۜ]/.test(word);
   }
 
   getTajweedColorLegend(): { [key: string]: { color: string; name: string; description: string } } {

@@ -1,21 +1,22 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
-import { AppSettings } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { AppSettings } from '../../types';
 import { tajweedService } from '../../services/tajweedService';
 import Icon from '../../components/Icon';
+import TajweedLegend from '../../components/TajweedLegend';
 
 export default function SettingsTab() {
-  const { settings, updateSettings, colors, textSizes } = useTheme();
+  const { settings, colors, textSizes, updateSettings } = useTheme();
   const [showTajweedLegend, setShowTajweedLegend] = useState(false);
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
       await updateSettings({ [key]: value });
-      console.log(`Updated ${key} to:`, value);
+      console.log(`Setting ${key} updated to:`, value);
     } catch (error) {
-      console.log('Error updating setting:', error);
+      console.error('Failed to update setting:', error);
       Alert.alert('خطأ', 'فشل في حفظ الإعدادات');
     }
   };
@@ -23,7 +24,7 @@ export default function SettingsTab() {
   const handleResetSettings = () => {
     Alert.alert(
       'إعادة تعيين الإعدادات',
-      'هل أنت متأكد من إعادة تعيين جميع الإعدادات؟',
+      'هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
@@ -41,7 +42,7 @@ export default function SettingsTab() {
               });
               Alert.alert('تم', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
-              console.log('Error resetting settings:', error);
+              console.error('Failed to reset settings:', error);
               Alert.alert('خطأ', 'فشل في إعادة تعيين الإعدادات');
             }
           },
@@ -50,71 +51,73 @@ export default function SettingsTab() {
     );
   };
 
-  const tajweedLegend = tajweedService.getTajweedColorLegend();
+  if (showTajweedLegend) {
+    return <TajweedLegend onClose={() => setShowTajweedLegend(false)} />;
+  }
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 20,
-      paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+    scrollContainer: {
+      flex: 1,
+      padding: 20,
     },
-    headerTitle: {
+    title: {
       fontSize: textSizes.heading,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
-      textAlign: 'center',
-    },
-    scrollContent: {
-      padding: 16,
+      textAlign: 'right',
+      marginBottom: 30,
     },
     section: {
-      marginBottom: 24,
+      marginBottom: 30,
     },
     sectionTitle: {
       fontSize: textSizes.title,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
-      marginBottom: 12,
       textAlign: 'right',
+      marginBottom: 15,
     },
     settingItem: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingVertical: 15,
+      paddingHorizontal: 20,
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      marginBottom: 8,
+      borderRadius: 12,
+      marginBottom: 10,
+      boxShadow: '0px 2px 8px rgba(0,0,0,0.05)',
+      elevation: 2,
     },
     settingLabel: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_400Regular',
       color: colors.text,
-      flex: 1,
       textAlign: 'right',
+      flex: 1,
     },
     settingValue: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
       color: colors.primary,
-      marginLeft: 12,
+      marginRight: 10,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginTop: 10,
     },
     optionButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.backgroundAlt,
       borderWidth: 1,
       borderColor: colors.border,
-      marginLeft: 8,
     },
     optionButtonActive: {
       backgroundColor: colors.primary,
@@ -126,84 +129,54 @@ export default function SettingsTab() {
       color: colors.text,
     },
     optionTextActive: {
-      color: '#fff',
+      color: colors.background,
+      fontWeight: 'bold',
     },
     resetButton: {
       backgroundColor: colors.error,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 8,
+      paddingVertical: 15,
+      paddingHorizontal: 30,
+      borderRadius: 25,
       alignItems: 'center',
-      marginTop: 20,
+      marginTop: 30,
+      boxShadow: '0px 4px 12px rgba(244, 67, 54, 0.3)',
+      elevation: 4,
     },
     resetButtonText: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: '#fff',
+      color: colors.background,
     },
-    tajweedLegendButton: {
+    legendButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: colors.accent,
       paddingVertical: 12,
-      paddingHorizontal: 16,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      marginTop: 8,
+      paddingHorizontal: 20,
+      borderRadius: 25,
+      marginTop: 10,
+      boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
+      elevation: 3,
     },
-    tajweedLegendText: {
-      fontSize: textSizes.body,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.text,
-      marginLeft: 8,
-    },
-    legendContainer: {
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 16,
-      marginTop: 8,
-    },
-    legendItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    legendColor: {
-      width: 20,
-      height: 20,
-      borderRadius: 4,
-      marginRight: 12,
-    },
-    legendName: {
+    legendButtonText: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      flex: 1,
-      textAlign: 'right',
-    },
-    legendDescription: {
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.textSecondary,
-      marginTop: 2,
-      textAlign: 'right',
+      color: colors.background,
+      marginRight: 8,
     },
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>الإعدادات</Text>
-      </View>
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>الإعدادات</Text>
 
-      <ScrollView style={styles.scrollContent}>
         {/* Text Size Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>حجم النص</Text>
           <View style={styles.settingItem}>
-            <View style={{ flexDirection: 'row' }}>
+            <View style={styles.buttonRow}>
               {(['small', 'medium', 'large', 'extra-large'] as const).map((size) => (
                 <TouchableOpacity
                   key={size}
@@ -219,14 +192,14 @@ export default function SettingsTab() {
                       settings.textSize === size && styles.optionTextActive,
                     ]}
                   >
-                    {size === 'small' ? 'صغير' : 
-                     size === 'medium' ? 'متوسط' : 
-                     size === 'large' ? 'كبير' : 'كبير جداً'}
+                    {size === 'small' && 'صغير'}
+                    {size === 'medium' && 'متوسط'}
+                    {size === 'large' && 'كبير'}
+                    {size === 'extra-large' && 'كبير جداً'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.settingLabel}>حجم النص</Text>
           </View>
         </View>
 
@@ -234,7 +207,7 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>المظهر</Text>
           <View style={styles.settingItem}>
-            <View style={{ flexDirection: 'row' }}>
+            <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={[
                   styles.optionButton,
@@ -268,7 +241,6 @@ export default function SettingsTab() {
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.settingLabel}>نمط المظهر</Text>
           </View>
         </View>
 
@@ -276,7 +248,7 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>وضع القراءة</Text>
           <View style={styles.settingItem}>
-            <View style={{ flexDirection: 'row' }}>
+            <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={[
                   styles.optionButton,
@@ -310,7 +282,6 @@ export default function SettingsTab() {
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.settingLabel}>وضع القراءة</Text>
           </View>
         </View>
 
@@ -322,57 +293,37 @@ export default function SettingsTab() {
               value={settings.showTajweed}
               onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={settings.showTajweed ? '#fff' : colors.textSecondary}
+              thumbColor={settings.showTajweed ? colors.background : colors.textSecondary}
             />
-            <Text style={styles.settingLabel}>إظهار ألوان التجويد</Text>
+            <Text style={styles.settingLabel}>عرض ألوان التجويد</Text>
           </View>
           
           {settings.showTajweed && (
-            <>
-              <TouchableOpacity
-                style={styles.tajweedLegendButton}
-                onPress={() => setShowTajweedLegend(!showTajweedLegend)}
-              >
-                <Icon 
-                  name={showTajweedLegend ? "chevron-up" : "chevron-down"} 
-                  size={16} 
-                  style={{ color: colors.text }} 
-                />
-                <Text style={styles.tajweedLegendText}>دليل ألوان التجويد</Text>
-              </TouchableOpacity>
-              
-              {showTajweedLegend && (
-                <View style={styles.legendContainer}>
-                  {Object.entries(tajweedLegend).map(([key, legend]) => (
-                    <View key={key} style={styles.legendItem}>
-                      <View style={[styles.legendColor, { backgroundColor: legend.color }]} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.legendName}>{legend.name}</Text>
-                        <Text style={styles.legendDescription}>{legend.description}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </>
+            <TouchableOpacity
+              style={styles.legendButton}
+              onPress={() => setShowTajweedLegend(true)}
+            >
+              <Icon name="color-palette" size={20} style={{ color: colors.background }} />
+              <Text style={styles.legendButtonText}>دليل ألوان التجويد</Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* Other Settings */}
+        {/* Banner Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>إعدادات أخرى</Text>
+          <Text style={styles.sectionTitle}>عام</Text>
           <View style={styles.settingItem}>
             <Switch
               value={settings.showBanner}
               onValueChange={(value) => handleUpdateSetting('showBanner', value)}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={settings.showBanner ? '#fff' : colors.textSecondary}
+              thumbColor={settings.showBanner ? colors.background : colors.textSecondary}
             />
-            <Text style={styles.settingLabel}>إظهار البانر في الصفحة الرئيسية</Text>
+            <Text style={styles.settingLabel}>عرض رسالة الإهداء</Text>
           </View>
         </View>
 
-        {/* Reset Button */}
+        {/* Reset Settings */}
         <TouchableOpacity style={styles.resetButton} onPress={handleResetSettings}>
           <Text style={styles.resetButtonText}>إعادة تعيين الإعدادات</Text>
         </TouchableOpacity>

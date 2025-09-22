@@ -24,7 +24,7 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
       flexDirection: 'row',
       flexWrap: 'wrap',
       alignItems: 'center',
-      justifyContent: 'flex-end', // Changed from flex-start to flex-end for right alignment
+      justifyContent: 'flex-end', // Right alignment for Arabic text
     },
     segment: {
       fontFamily: 'ScheherazadeNew_400Regular',
@@ -50,6 +50,9 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
           segmentColor = segment.color;
         }
 
+        // Add subtle emphasis for tajweed segments
+        const isTajweedSegment = segment.type !== 'default' && settings.showTajweed;
+
         return (
           <Text
             key={index}
@@ -57,7 +60,10 @@ export default function TajweedText({ segments, fontSize, style }: TajweedTextPr
               styles.segment,
               {
                 color: segmentColor,
-                fontWeight: segment.type !== 'default' && settings.showTajweed ? '600' : 'normal',
+                fontWeight: isTajweedSegment ? '600' : 'normal',
+                textShadowColor: isTajweedSegment ? 'rgba(0,0,0,0.1)' : 'transparent',
+                textShadowOffset: isTajweedSegment ? { width: 0, height: 1 } : { width: 0, height: 0 },
+                textShadowRadius: isTajweedSegment ? 1 : 0,
               }
             ]}
           >
