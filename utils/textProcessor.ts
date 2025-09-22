@@ -4,7 +4,7 @@
  */
 
 /**
- * Removes Bismillah from the first verse of every chapter
+ * Removes Bismillah from the first verse of every chapter except Surah At-Tawbah
  * @param text - The ayah text
  * @param surahNumber - The surah number
  * @param ayahNumber - The ayah number within the surah
@@ -13,8 +13,8 @@
 export function processAyahText(text: string, surahNumber: number, ayahNumber: number): string {
   if (!text) return text;
   
-  // Only process the first verse of each chapter
-  if (ayahNumber === 1) {
+  // Only process the first verse of each chapter (except Surah At-Tawbah which is chapter 9)
+  if (ayahNumber === 1 && surahNumber !== 9) {
     console.log(`Processing first ayah of Surah ${surahNumber}:${ayahNumber}`);
     
     // Comprehensive list of Bismillah variations to handle different API formats
@@ -43,7 +43,7 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
       if (processedText.startsWith(bismillah)) {
         processedText = processedText.substring(bismillah.length).trim();
         wasRemoved = true;
-        console.log(`Removed Bismillah variation from start of ${surahNumber}:${ayahNumber}`);
+        console.log(`✓ Removed Bismillah variation from start of ${surahNumber}:${ayahNumber}`);
         break;
       }
       
@@ -52,7 +52,7 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
       if (trimmedText.startsWith(bismillah)) {
         processedText = trimmedText.substring(bismillah.length).trim();
         wasRemoved = true;
-        console.log(`Removed Bismillah variation with leading space from ${surahNumber}:${ayahNumber}`);
+        console.log(`✓ Removed Bismillah variation with leading space from ${surahNumber}:${ayahNumber}`);
         break;
       }
     }
@@ -62,17 +62,17 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
       // Create comprehensive regex patterns that match Bismillah with flexible diacritics and spacing
       const patterns = [
         // Standard Bismillah with various diacritics
-        /^[\s]*بِسْمِ[\s]*اللَّهِ[\s]*الرَّحْمَٰنِ[\s]*الرَّحِيمِ[\s]*/,
-        /^[\s]*بِسْمِ[\s]*ٱللَّهِ[\s]*ٱلرَّحْمَٰنِ[\s]*ٱلرَّحِيمِ[\s]*/,
-        /^[\s]*بِسْمِ[\s]*اللَّهِ[\s]*الرَّحْمَنِ[\s]*الرَّحِيمِ[\s]*/,
-        /^[\s]*بِسْمِ[\s]*ٱللَّهِ[\s]*ٱلرَّحْمَنِ[\s]*ٱلرَّحِيمِ[\s]*/,
-        /^[\s]*بِسْمِ[\s]*اللهِ[\s]*الرَّحْمنِ[\s]*الرَّحِيمِ[\s]*/,
-        /^[\s]*بِسْمِ[\s]*ٱللهِ[\s]*ٱلرَّحْمنِ[\s]*ٱلرَّحِيمِ[\s]*/,
+        /^[\s]*بِسْمِ[\s]*اللَّهِ[\s]*الرَّحْمَٰنِ[\s]*الرَّحِيمِ[\s]*/u,
+        /^[\s]*بِسْمِ[\s]*ٱللَّهِ[\s]*ٱلرَّحْمَٰنِ[\s]*ٱلرَّحِيمِ[\s]*/u,
+        /^[\s]*بِسْمِ[\s]*اللَّهِ[\s]*الرَّحْمَنِ[\s]*الرَّحِيمِ[\s]*/u,
+        /^[\s]*بِسْمِ[\s]*ٱللَّهِ[\s]*ٱلرَّحْمَنِ[\s]*ٱلرَّحِيمِ[\s]*/u,
+        /^[\s]*بِسْمِ[\s]*اللهِ[\s]*الرَّحْمنِ[\s]*الرَّحِيمِ[\s]*/u,
+        /^[\s]*بِسْمِ[\s]*ٱللهِ[\s]*ٱلرَّحْمنِ[\s]*ٱلرَّحِيمِ[\s]*/u,
         // Simple version without diacritics
-        /^[\s]*بسم[\s]*الله[\s]*الرحمن[\s]*الرحيم[\s]*/,
+        /^[\s]*بسم[\s]*الله[\s]*الرحمن[\s]*الرحيم[\s]*/u,
         // Very flexible pattern that matches the core words
-        /^[\s]*بِ?سْ?مِ?[\s]*اللَّ?هِ?[\s]*الرَّ?حْ?مَ?[ٰن]?ِ?[\s]*الرَّ?حِ?يمِ?[\s]*/,
-        /^[\s]*بِ?سْ?مِ?[\s]*ٱللَّ?هِ?[\s]*ٱلرَّ?حْ?مَ?[ٰن]?ِ?[\s]*ٱلرَّ?حِ?يمِ?[\s]*/,
+        /^[\s]*بِ?سْ?مِ?[\s]*اللَّ?هِ?[\s]*الرَّ?حْ?مَ?[ٰن]?ِ?[\s]*الرَّ?حِ?يمِ?[\s]*/u,
+        /^[\s]*بِ?سْ?مِ?[\s]*ٱللَّ?هِ?[\s]*ٱلرَّ?حْ?مَ?[ٰن]?ِ?[\s]*ٱلرَّ?حِ?يمِ?[\s]*/u,
       ];
       
       for (const pattern of patterns) {
@@ -81,7 +81,7 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
           if (match && match[0]) {
             processedText = processedText.replace(pattern, '').trim();
             wasRemoved = true;
-            console.log(`Removed Bismillah using regex pattern from ${surahNumber}:${ayahNumber}`, {
+            console.log(`✓ Removed Bismillah using regex pattern from ${surahNumber}:${ayahNumber}`, {
               matched: match[0].trim(),
               pattern: pattern.toString()
             });
@@ -93,11 +93,6 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
     
     // Final cleanup and text normalization
     processedText = normalizeArabicText(processedText);
-    
-    // Special handling for Surah At-Tawbah (Surah 9) which traditionally doesn't start with Bismillah
-    if (surahNumber === 9) {
-      console.log(`Surah At-Tawbah (9) - no Bismillah expected`);
-    }
     
     // Log the processing result
     console.log(`Processed ayah ${surahNumber}:${ayahNumber}`, {
@@ -143,6 +138,9 @@ export function normalizeArabicText(text: string): string {
   
   // Remove any remaining double spaces
   normalizedText = normalizedText.replace(/\s+/g, ' ');
+  
+  // Fix common Unicode normalization issues
+  normalizedText = normalizedText.normalize('NFC');
   
   return normalizedText.trim();
 }

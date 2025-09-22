@@ -1,6 +1,5 @@
 
-import { TajweedData, TajweedSegment, Ayah } from '../types';
-import { processAyahText } from '../utils/textProcessor';
+import { TajweedData, TajweedSegment } from '../types';
 
 class TajweedService {
   private cache = new Map<string, TajweedData>();
@@ -73,37 +72,37 @@ class TajweedService {
     const rules = [
       {
         name: 'ghunna',
-        pattern: /[نم](?=[\u064B-\u0652])/g,
+        pattern: /[نم](?=[\u064B-\u0652])/gu,
         color: '#FF6B6B',
         type: 'ghunna'
       },
       {
         name: 'qalqala',
-        pattern: /[قطبجد](?=[\u064B-\u0652])/g,
+        pattern: /[قطبجد](?=[\u064B-\u0652])/gu,
         color: '#4ECDC4',
         type: 'qalqala'
       },
       {
         name: 'madd',
-        pattern: /[اوي](?=[\u064B-\u0652]?[اوي])/g,
+        pattern: /[اوي](?=[\u064B-\u0652]?[اوي])/gu,
         color: '#45B7D1',
         type: 'madd'
       },
       {
         name: 'idgham',
-        pattern: /ن(?=[\u064B-\u0652]?[يرملو])/g,
+        pattern: /ن(?=[\u064B-\u0652]?[يرملو])/gu,
         color: '#96CEB4',
         type: 'idgham'
       },
       {
         name: 'ikhfa',
-        pattern: /ن(?=[\u064B-\u0652]?[تثجحخسشصضطظفقك])/g,
+        pattern: /ن(?=[\u064B-\u0652]?[تثجحخسشصضطظفقك])/gu,
         color: '#FFEAA7',
         type: 'ikhfa'
       },
       {
         name: 'iqlab',
-        pattern: /ن(?=[\u064B-\u0652]?ب)/g,
+        pattern: /ن(?=[\u064B-\u0652]?ب)/gu,
         color: '#DDA0DD',
         type: 'iqlab'
       }

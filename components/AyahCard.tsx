@@ -160,7 +160,10 @@ export default function AyahCard({
       marginHorizontal: 16,
       borderRadius: 12,
       overflow: 'hidden',
-      boxShadow: '0px 2px 12px rgba(0,0,0,0.08)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
       elevation: 4,
     },
     ayahRow: {
@@ -175,9 +178,12 @@ export default function AyahCard({
       backgroundColor: '#d4af37', // Gold color
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 15, // Changed from marginLeft to marginRight
+      marginRight: 15,
       marginTop: 5,
-      boxShadow: '0px 2px 6px rgba(212, 175, 55, 0.3)',
+      shadowColor: '#d4af37',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
       elevation: 3,
     },
     ayahNumber: {
@@ -198,14 +204,14 @@ export default function AyahCard({
       textAlign: 'right',
       lineHeight: Math.max(38, (textSizes.arabic * 0.9) * 1.9),
       marginBottom: 12,
-      paddingLeft: 10, // Changed from paddingRight to paddingLeft
+      paddingLeft: 10,
       width: '100%',
       writingDirection: 'rtl',
     },
     tajweedContainer: {
       textAlign: 'right',
       marginBottom: 12,
-      paddingLeft: 10, // Changed from paddingRight to paddingLeft
+      paddingLeft: 10,
       width: '100%',
       alignItems: 'flex-end', // Align tajweed text to the right
     },
@@ -297,7 +303,7 @@ export default function AyahCard({
     playingIndicator: {
       position: 'absolute',
       top: -5,
-      left: -5, // Changed from right to left
+      left: -5,
       width: 12,
       height: 12,
       borderRadius: 6,
@@ -306,7 +312,7 @@ export default function AyahCard({
     tajweedIndicator: {
       position: 'absolute',
       top: -5,
-      right: -5, // Changed from left to right
+      right: -5,
       width: 12,
       height: 12,
       borderRadius: 6,

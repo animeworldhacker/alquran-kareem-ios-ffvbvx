@@ -110,6 +110,20 @@ export default function SurahScreen() {
     }
   };
 
+  const handleRetry = () => {
+    setError(null);
+    // Force a reload by clearing the error and trying again
+    try {
+      const surahData = getSurah(surahNumber);
+      if (surahData) {
+        setSurah(surahData);
+      }
+    } catch (err) {
+      console.error('Retry failed:', err);
+      setError('فشل في إعادة المحاولة');
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -201,7 +215,10 @@ export default function SurahScreen() {
       margin: 16,
       borderRadius: 12,
       overflow: 'hidden',
-      boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
       elevation: 8,
     },
     decorativeBorder: {
@@ -250,57 +267,6 @@ export default function SurahScreen() {
       paddingVertical: 15,
       backgroundColor: '#f8f6f0',
     },
-    ayahRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 20,
-    },
-    ayahNumberCircle: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      backgroundColor: '#d4af37',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginLeft: 15,
-      marginTop: 5,
-    },
-    ayahNumber: {
-      fontSize: 14,
-      fontFamily: 'Amiri_700Bold',
-      color: '#fff',
-      fontWeight: 'bold',
-    },
-    ayahTextContainer: {
-      flex: 1,
-    },
-    ayahText: {
-      fontSize: 22,
-      fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F',
-      textAlign: 'right',
-      lineHeight: 40,
-      marginBottom: 10,
-    },
-    ayahTranslation: {
-      fontSize: 14,
-      fontFamily: 'Amiri_400Regular',
-      color: '#8B4513',
-      textAlign: 'left',
-      lineHeight: 20,
-      fontStyle: 'italic',
-    },
-    audioButton: {
-      position: 'absolute',
-      right: 10,
-      top: 10,
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      backgroundColor: '#d4af37',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
     footer: {
       padding: 30,
       alignItems: 'center',
@@ -320,7 +286,10 @@ export default function SurahScreen() {
       margin: 16,
       borderRadius: 12,
       overflow: 'hidden',
-      boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
       elevation: 8,
     },
     pageHeader: {
@@ -403,11 +372,7 @@ export default function SurahScreen() {
             </Text>
             <TouchableOpacity 
               style={styles.retryButton}
-              onPress={() => {
-                setError(null);
-                // Trigger a reload
-                window.location.reload();
-              }}
+              onPress={handleRetry}
             >
               <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
             </TouchableOpacity>
@@ -506,7 +471,7 @@ export default function SurahScreen() {
             <Text style={styles.pageNumber}>{surah.name || 'السورة'}</Text>
           </View>
 
-          {currentPage === 0 && surahNumber !== 1 && (
+          {currentPage === 0 && surahNumber !== 1 && surahNumber !== 9 && (
             <View style={styles.bismillahContainer}>
               <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
             </View>
@@ -591,7 +556,7 @@ export default function SurahScreen() {
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {surahNumber !== 1 && (
+        {surahNumber !== 1 && surahNumber !== 9 && (
           <View style={styles.bismillahContainer}>
             <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
           </View>
