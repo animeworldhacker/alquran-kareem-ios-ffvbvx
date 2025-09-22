@@ -6,6 +6,7 @@ import { ScheherazadeNew_400Regular } from '@expo-google-fonts/scheherazade-new'
 import SplashScreen from '../components/SplashScreen';
 import { commonStyles } from '../styles/commonStyles';
 import { Redirect } from 'expo-router';
+import { runTextProcessorTests } from '../utils/testTextProcessor';
 
 export default function MainScreen() {
   const [showSplash, setShowSplash] = useState(true);
@@ -19,6 +20,13 @@ export default function MainScreen() {
 
   useEffect(() => {
     console.log('Main screen loaded');
+    
+    // Run text processor tests
+    try {
+      runTextProcessorTests();
+    } catch (testError) {
+      console.error('Text processor test error:', testError);
+    }
     
     if (fontError) {
       console.error('Font loading error:', fontError);

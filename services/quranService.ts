@@ -1,5 +1,6 @@
 
 import { QuranData, Surah, Ayah } from '../types';
+import { processAyahText } from '../utils/textProcessor';
 
 class QuranService {
   private baseUrl = 'https://api.alquran.cloud/v1';
@@ -21,8 +22,10 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
-        this.cachedQuran = data.data;
-        console.log('Quran data fetched successfully');
+        // Process the Quran data to remove Bismillah from first verses
+        const processedData = this.processQuranData(data.data);
+        this.cachedQuran = processedData;
+        console.log('Quran data fetched and processed successfully');
         return this.cachedQuran;
       } else {
         throw new Error(`API error: ${data.status || 'Unknown error'}`);
@@ -50,8 +53,10 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
-        console.log(`Surah ${surahNumber} fetched successfully`);
-        return data.data;
+        // Process the surah data to remove Bismillah from first verse
+        const processedSurah = this.processSurahData(data.data, surahNumber);
+        console.log(`Surah ${surahNumber} fetched and processed successfully`);
+        return processedSurah;
       } else {
         throw new Error(`API error: ${data.status || 'Unknown error'}`);
       }
@@ -81,6 +86,61 @@ class QuranService {
       console.error('Error getting surahs:', error);
       throw new Error(`Failed to get surahs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  private processQuranData(quranData: QuranData): QuranData {
+    console.log('Processing Quran data to remove Bismillah from first verses...');
+    
+    // Process each surah to remove Bismillah from first verses
+    const processedSurahs = quranData.surahs.map(surah => {
+      if (surah.ayahs && Array.isArray(surah.ayahs)) {
+        const processedAyahs = surah.ayahs.map(ayah => {
+          // Process the text to remove Bismillah from first verse
+          const processedText = processAyahText(ayah.text || '', surah.number, ayah.numberInSurah);
+          return {
+            ...ayah,
+            text: processedText
+          };
+        });
+        
+        return {
+          ...surah,
+          ayahs: processedAyahs
+        };
+      }
+      
+      return surah;
+    });
+
+    console.log('Finished processing Quran data');
+    return {
+      ...quranData,
+      surahs: processedSurahs
+    };
+  }
+
+  private processSurahData(surahData: any, surahNumber: number): any {
+    console.log(`Processing individual Surah ${surahNumber} data to remove Bismillah...`);
+    
+    // Process individual surah data to remove Bismillah from first verse
+    if (surahData.ayahs && Array.isArray(surahData.ayahs)) {
+      const processedAyahs = surahData.ayahs.map((ayah: any) => {
+        // Process the text to remove Bismillah from first verse
+        const processedText = processAyahText(ayah.text || '', surahNumber, ayah.numberInSurah);
+        return {
+          ...ayah,
+          text: processedText
+        };
+      });
+      
+      console.log(`Finished processing Surah ${surahNumber} data`);
+      return {
+        ...surahData,
+        ayahs: processedAyahs
+      };
+    }
+    
+    return surahData;
   }
 }
 

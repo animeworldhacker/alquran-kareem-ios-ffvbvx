@@ -1,5 +1,6 @@
 
 import { Ayah } from '../types';
+import { processAyahText } from '../utils/textProcessor';
 
 export interface TajweedSegment {
   text: string;
@@ -65,8 +66,11 @@ class TajweedService {
       const data = await response.json();
       
       if (data && data.arabic1) {
+        // Process the text to remove Bismillah if it's the first verse
+        const processedText = processAyahText(data.arabic1, surahNumber, ayahNumber);
+        
         // The new API provides arabic1 with tajweed markup
-        const tajweedData = this.parseTajweedText(data.arabic1, surahNumber, ayahNumber);
+        const tajweedData = this.parseTajweedText(processedText, surahNumber, ayahNumber);
         this.tajweedCache.set(cacheKey, tajweedData);
         console.log(`Tajweed data fetched successfully for ${surahNumber}:${ayahNumber}`);
         return tajweedData;
@@ -233,7 +237,9 @@ class TajweedService {
       if (response.ok) {
         const data = await response.json();
         if (data.code === 200 && data.data && data.data.text) {
-          const segments = this.applyBasicTajweedRules(data.data.text);
+          // Process the text to remove Bismillah if it's the first verse
+          const processedText = processAyahText(data.data.text, surahNumber, ayahNumber);
+          const segments = this.applyBasicTajweedRules(processedText);
           return {
             surah: surahNumber,
             ayah: ayahNumber,

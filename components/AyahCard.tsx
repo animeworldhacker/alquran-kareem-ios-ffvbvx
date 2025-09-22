@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { tafsirService } from '../services/tafsirService';
 import { tajweedService } from '../services/tajweedService';
+import { processAyahText } from '../utils/textProcessor';
 import { router } from 'expo-router';
 import TajweedText from './TajweedText';
 import Icon from './Icon';
@@ -38,6 +39,9 @@ export default function AyahCard({
   // Check if this ayah is bookmarked
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
+  // Process the ayah text to remove Bismillah from first verses
+  const processedAyahText = processAyahText(ayah.text || '', surahNumber, ayah.numberInSurah);
+
   useEffect(() => {
     const loadTajweedData = async () => {
       if (settings.showTajweed && !tajweedData && !loadingTajweed) {
@@ -47,8 +51,8 @@ export default function AyahCard({
           if (data && data.segments && data.segments.length > 0) {
             setTajweedData(data);
           } else {
-            // Fallback to basic tajweed rules
-            const segments = tajweedService.applyBasicTajweedRules(ayah.text || '');
+            // Fallback to basic tajweed rules using processed text
+            const segments = tajweedService.applyBasicTajweedRules(processedAyahText);
             setTajweedData({
               surah: surahNumber,
               ayah: ayah.numberInSurah,
@@ -57,9 +61,9 @@ export default function AyahCard({
           }
         } catch (error) {
           console.log('Error loading tajweed data:', error);
-          // Fallback to basic tajweed rules
+          // Fallback to basic tajweed rules using processed text
           try {
-            const segments = tajweedService.applyBasicTajweedRules(ayah.text || '');
+            const segments = tajweedService.applyBasicTajweedRules(processedAyahText);
             setTajweedData({
               surah: surahNumber,
               ayah: ayah.numberInSurah,
@@ -76,7 +80,7 @@ export default function AyahCard({
     };
 
     loadTajweedData();
-  }, [settings.showTajweed, surahNumber, ayah.numberInSurah, ayah.text, tajweedData, loadingTajweed]);
+  }, [settings.showTajweed, surahNumber, ayah.numberInSurah, processedAyahText, tajweedData, loadingTajweed]);
 
   const handleTafsirToggle = async () => {
     if (!showTafsir && !tafsir && !loadingTafsir) {
@@ -115,7 +119,7 @@ export default function AyahCard({
           surahName,
           surahEnglishName,
           ayahNumber: ayah.numberInSurah,
-          ayahText: ayah.text || '',
+          ayahText: processedAyahText, // Use processed text for bookmarks
         });
       }
     } catch (error) {
@@ -304,7 +308,7 @@ export default function AyahCard({
               style={styles.tajweedContainer}
             />
           ) : (
-            <Text style={styles.ayahText}>{ayah.text || ''}</Text>
+            <Text style={styles.ayahText}>{processedAyahText}</Text>
           )}
         </View>
         <View style={styles.ayahNumberCircle}>
