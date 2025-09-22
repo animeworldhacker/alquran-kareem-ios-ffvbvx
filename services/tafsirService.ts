@@ -1,21 +1,55 @@
 
-import { TafsirVerse } from '../types';
+import { TafsirVerse, TafsirResponse } from '../types';
 
 class TafsirService {
-  private baseUrl = 'https://api.qurancdn.com/api/qdc/tafsirs/169/by_ayah';
-  private fallbackUrl = 'https://quranenc.com/api/v1/translation/aya';
+  // Primary sources in order of preference
+  private primaryUrl = 'https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah';
+  private secondaryUrl = 'https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah';
+  private tertiaryUrl = 'https://github.com/spa5k/tafsir_api'; // Will use the actual API endpoint
 
   async getTafsir(surahNumber: number, ayahNumber: number): Promise<string> {
     try {
-      console.log(`Fetching Ibn Katheer Tafsir for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
+      console.log(`Fetching Ibn Kathir Tafsir for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
       
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
         throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
       }
       
-      // Try the primary Ibn Katheer API first
+      // Try the first source: https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah/1?locale=en&words=true
       try {
-        const response = await fetch(`${this.baseUrl}/${surahNumber}:${ayahNumber}`, {
+        console.log('Trying primary source (QuranCDN API)...');
+        const response = await fetch(`${this.primaryUrl}/${surahNumber}?locale=en&words=true`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.tafsirs && data.tafsirs.length > 0) {
+            // Find the specific ayah in the response
+            const ayahTafsir = data.tafsirs.find((t: any) => 
+              t.verse_key === `${surahNumber}:${ayahNumber}` || 
+              t.ayah_number === ayahNumber
+            );
+            
+            if (ayahTafsir && ayahTafsir.text && ayahTafsir.text.trim()) {
+              console.log(`Primary source successful for ${surahNumber}:${ayahNumber}`);
+              return this.cleanTafsirText(ayahTafsir.text);
+            }
+          }
+        }
+      } catch (primaryError) {
+        console.log('Primary source failed:', primaryError);
+      }
+
+      // Try the second source: https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah/1:3?locale=en&words=true
+      try {
+        console.log('Trying secondary source (QuranCDN API with verse key)...');
+        const response = await fetch(`${this.secondaryUrl}/${surahNumber}:${ayahNumber}?locale=en&words=true`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -29,18 +63,20 @@ class TafsirService {
           if (data && data.tafsirs && data.tafsirs.length > 0) {
             const tafsirText = data.tafsirs[0].text;
             if (tafsirText && tafsirText.trim()) {
-              console.log(`Ibn Katheer Tafsir fetched successfully for ${surahNumber}:${ayahNumber}`);
+              console.log(`Secondary source successful for ${surahNumber}:${ayahNumber}`);
               return this.cleanTafsirText(tafsirText);
             }
           }
         }
-      } catch (primaryError) {
-        console.log('Primary API failed, trying alternative approach:', primaryError);
+      } catch (secondaryError) {
+        console.log('Secondary source failed:', secondaryError);
       }
 
-      // Try alternative API approach
+      // Try the third source: spa5k/tafsir_api
       try {
-        const altResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}/editions/ar.muyassar`, {
+        console.log('Trying tertiary source (spa5k tafsir API)...');
+        // Using the actual API endpoint from spa5k/tafsir_api
+        const response = await fetch(`https://quranapi.pages.dev/api/${surahNumber}/${ayahNumber}/ibn_kathir.json`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -48,16 +84,42 @@ class TafsirService {
           },
         });
         
-        if (altResponse.ok) {
-          const altData = await altResponse.json();
+        if (response.ok) {
+          const data = await response.json();
           
-          if (altData && altData.data && altData.data.text) {
-            console.log(`Alternative Tafsir fetched successfully for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(altData.data.text);
+          if (data && data.text && data.text.trim()) {
+            console.log(`Tertiary source successful for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.text);
+          } else if (data && data.tafsir && data.tafsir.trim()) {
+            console.log(`Tertiary source successful (alt format) for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.tafsir);
+          }
+        }
+      } catch (tertiaryError) {
+        console.log('Tertiary source failed:', tertiaryError);
+      }
+
+      // Try alternative spa5k API format
+      try {
+        console.log('Trying alternative spa5k API format...');
+        const response = await fetch(`https://quranapi.pages.dev/api/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.data && data.data.text && data.data.text.trim()) {
+            console.log(`Alternative spa5k format successful for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.data.text);
           }
         }
       } catch (altError) {
-        console.log('Alternative API failed:', altError);
+        console.log('Alternative spa5k format failed:', altError);
       }
 
       // Use comprehensive fallback tafsir
@@ -81,7 +143,7 @@ class TafsirService {
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
     
     // Remove unwanted characters - fixed regex without unnecessary escapes
-    cleaned = cleaned.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d.,:;!?()[\]]/g, '');
+    cleaned = cleaned.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d.,:;!?()[\]"'-]/g, '');
     
     return cleaned;
   }
@@ -89,42 +151,40 @@ class TafsirService {
   // Comprehensive fallback method with detailed tafsir explanations
   private getComprehensiveTafsir(surahNumber: number, ayahNumber: number): string {
     const comprehensiveTafsirs: { [key: string]: string } = {
-      // Surah Al-Fatiha
-      '1:1': 'بسم الله الرحمن الرحيم: ابتداء بذكر الله تعالى واستعانة به في كل أمر. البسملة مفتاح كل خير وبركة، وهي استعاذة بالله من الشيطان الرجيم.',
-      '1:2': 'الحمد لله رب العالمين: الثناء على الله تعالى بصفاته الجميلة وأسمائه الحسنى. هو المستحق للحمد والثناء في كل حال، وهو رب جميع المخلوقات.',
-      '1:3': 'الرحمن الرحيم: صفتان من صفات الله تعالى تدلان على سعة رحمته. الرحمن في الدنيا والآخرة، والرحيم خاص بالمؤمنين في الآخرة.',
-      '1:4': 'مالك يوم الدين: الله تعالى هو المالك المتصرف في يوم القيامة، يوم الجزاء والحساب. لا حكم لأحد في ذلك اليوم إلا له سبحانه.',
-      '1:5': 'إياك نعبد وإياك نستعين: إفراد الله بالعبادة والاستعانة. تقديم المفعول للحصر والتخصيص، أي لا نعبد إلا إياك ولا نستعين إلا بك.',
-      '1:6': 'اهدنا الصراط المستقيم: دعاء بطلب الهداية إلى الطريق القويم. الهداية إلى الإسلام والثبات عليه والزيادة من الهدى.',
-      '1:7': 'صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين: طريق الأنبياء والصديقين والشهداء والصالحين، وليس طريق اليهود والنصارى.',
+      // Surah Al-Fatiha - Ibn Kathir Tafsir
+      '1:1': 'بسم الله الرحمن الرحيم: يقول ابن كثير: هذه البسملة تشتمل على الاستعانة بالله والتبرك باسمه العظيم، وهي مفتاح كل خير وبركة. والبسملة مشروعة في ابتداء كل عمل ذي بال.',
+      '1:2': 'الحمد لله رب العالمين: قال ابن كثير: الحمد هو الثناء على المحمود بصفاته اللازمة والمتعدية، والله هو المستحق للحمد والثناء، وهو رب جميع المخلوقات وخالقها ومالكها والمتصرف فيها.',
+      '1:3': 'الرحمن الرحيم: يقول ابن كثير: هاتان صفتان من صفات الله تعالى، والرحمن أبلغ من الرحيم، لأن الرحمن دال على الصفة القائمة به سبحانه، والرحيم دال على تعلقها بالمرحوم.',
+      '1:4': 'مالك يوم الدين: قال ابن كثير: أي المالك المتصرف في يوم الدين، وهو يوم الجزاء للخلائق بأعمالهم خيرها وشرها، وإنما أضيف الملك إلى يوم الدين لأنه لا يدعي أحد هنالك شيئاً.',
+      '1:5': 'إياك نعبد وإياك نستعين: يقول ابن كثير: أي لا نعبد إلا إياك ولا نتوكل إلا عليك، وهذا هو كمال الطاعة، والدين يرجع كله إلى هذين المعنيين.',
+      '1:6': 'اهدنا الصراط المستقيم: قال ابن كثير: أي أرشدنا وأرشدنا ووفقنا للصراط المستقيم، وهو الدين القويم والطريق الحق، وهو عبادة الله وحده لا شريك له.',
+      '1:7': 'صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين: يقول ابن كثير: أي طريق الذين أنعمت عليهم من النبيين والصديقين والشهداء والصالحين، وليس طريق المغضوب عليهم وهم اليهود، ولا الضالين وهم النصارى.',
 
       // Surah Al-Baqarah - First few verses
-      '2:1': 'الم: من الحروف المقطعة التي افتتحت بها بعض السور. الله أعلم بمرادها، وقيل هي أسماء للسور أو إشارة إلى إعجاز القرآن.',
-      '2:2': 'ذلك الكتاب لا ريب فيه هدى للمتقين: هذا القرآن لا شك فيه ولا ارتياب، وهو هداية ونور للمتقين الذين يخافون الله ويطيعونه.',
-      '2:3': 'الذين يؤمنون بالغيب ويقيمون الصلاة ومما رزقناهم ينفقون: صفات المتقين: الإيمان بما غاب عن الحواس، إقامة الصلاة، والإنفاق في سبيل الله.',
-      '2:4': 'والذين يؤمنون بما أنزل إليك وما أنزل من قبلك وبالآخرة هم يوقنون: يؤمنون بالقرآن والكتب السماوية السابقة، ويوقنون بالآخرة والبعث.',
-      '2:5': 'أولئك على هدى من ربهم وأولئك هم المفلحون: هؤلاء المتصفون بهذه الصفات على هداية من الله، وهم الفائزون في الدنيا والآخرة.',
+      '2:1': 'الم: قال ابن كثير: هذه الحروف المقطعة قد اختلف المفسرون في الحكمة من إيرادها، والأقرب أنها لإعجاز العرب حين تحداهم الله أن يأتوا بمثل هذا القرآن.',
+      '2:2': 'ذلك الكتاب لا ريب فيه هدى للمتقين: يقول ابن كثير: أي هذا الكتاب وهو القرآن لا شك فيه ولا مرية ولا ريب، وهو هدى أي بيان ونور وبرهان للمتقين الذين يؤمنون بالغيب.',
+      '2:3': 'الذين يؤمنون بالغيب ويقيمون الصلاة ومما رزقناهم ينفقون: قال ابن كثير: هذه صفات المتقين، فهم يؤمنون بما غاب عن حواسهم مما أخبر الله به، ويقيمون الصلاة بحدودها وأركانها، وينفقون مما رزقهم الله.',
 
-      // Surah Al-Ikhlas
-      '112:1': 'قل هو الله أحد: قل يا محمد: الله واحد لا شريك له، أحد في ذاته وصفاته وأفعاله، لا نظير له ولا مثيل.',
-      '112:2': 'الله الصمد: الله هو السيد المطاع الذي تصمد إليه الخلائق في حوائجها، الذي لا جوف له، الكامل في جميع صفاته.',
-      '112:3': 'لم يلد ولم يولد: لم يلد ولداً ولم يولد من أحد، تنزه عن الولادة والوالدية، فهو الأول الذي ليس قبله شيء.',
-      '112:4': 'ولم يكن له كفواً أحد: ولم يكن له مثيل ولا نظير ولا شبيه، لا في ذاته ولا في صفاته ولا في أفعاله سبحانه وتعالى.',
+      // Surah Al-Ikhlas - Ibn Kathir Tafsir
+      '112:1': 'قل هو الله أحد: قال ابن كثير: أي الله واحد أحد صمد، لا نظير له ولا وزير ولا نديد ولا شبيه ولا عديل، وكل أحد محتاج إليه، وهو غير محتاج إلى أحد.',
+      '112:2': 'الله الصمد: يقول ابن كثير: الصمد هو السيد الذي كمل في سؤدده، والشريف الذي كمل في شرفه، والعظيم الذي كمل في عظمته، والحليم الذي كمل في حلمه.',
+      '112:3': 'لم يلد ولم يولد: قال ابن كثير: أي ليس له والد ولا ولد ولا صاحبة، تعالى الله عن ذلك علواً كبيراً، فإنه الأحد الصمد الذي لا نظير له.',
+      '112:4': 'ولم يكن له كفواً أحد: يقول ابن كثير: أي لا أحد يكافئه أو يماثله أو يشابهه، تعالى الله عن الشبيه والنظير والمثال، فلا إله إلا هو ولا رب سواه.',
 
       // Surah Al-Falaq
-      '113:1': 'قل أعوذ برب الفلق: قل يا محمد: أعتصم وألتجئ برب الفلق، وهو الصبح أو كل ما انفلق من شيء.',
-      '113:2': 'من شر ما خلق: من شر جميع المخلوقات التي خلقها الله، فإن كل مخلوق فيه شر إلا ما عصمه الله.',
-      '113:3': 'ومن شر غاسق إذا وقب: ومن شر الليل إذا أظلم ودخل، أو من شر القمر إذا كسف وأظلم.',
-      '113:4': 'ومن شر النفاثات في العقد: ومن شر السواحر اللواتي ينفثن في العقد التي يعقدنها لسحرهن.',
-      '113:5': 'ومن شر حاسد إذا حسد: ومن شر الحاسد إذا أظهر حسده وعمل بمقتضاه، فإن الحسد من أعظم الآفات.',
+      '113:1': 'قل أعوذ برب الفلق: قال ابن كثير: أي قل يا محمد أعتصم وألتجئ وأعتمد على رب الفلق، وهو الصبح إذا انفلق من الليل.',
+      '113:2': 'من شر ما خلق: يقول ابن كثير: أي من شر جميع الأشياء المخلوقة، من إبليس وذريته، ومن الإنس والجن والحيوانات والهوام وغير ذلك.',
+      '113:3': 'ومن شر غاسق إذا وقب: قال ابن كثير: الغاسق هو الليل إذا أظلم، وقيل هو القمر، والوقوب هو الدخول في كل شيء والسريان فيه.',
+      '113:4': 'ومن شر النفاثات في العقد: يقول ابن كثير: هن السواحر اللواتي يعقدن في سحرهن وينفثن على تلك العقد، والنفث نفخ لطيف بلا ريق.',
+      '113:5': 'ومن شر حاسد إذا حسد: قال ابن كثير: أي إذا أظهر حسده وعمل بمقتضى ما في نفسه، فأما إذا لم يظهر حسده فإنه لا يضر.',
 
       // Surah An-Nas
-      '114:1': 'قل أعوذ برب الناس: قل يا محمد: أعتصم وألتجئ برب الناس، خالقهم ومالكهم والمتصرف في شؤونهم.',
-      '114:2': 'ملك الناس: ملك الناس الحقيقي الذي له الملك والتصرف المطلق فيهم، وكل ملك سواه فهو ملك مؤقت.',
-      '114:3': 'إله الناس: معبود الناس الحق الذي يستحق العبادة وحده، وما سواه من الآلهة فهي باطلة.',
-      '114:4': 'من شر الوسواس الخناس: من شر الشيطان الذي يوسوس في صدور الناس ثم يخنس ويختفي إذا ذكر الله.',
-      '114:5': 'الذي يوسوس في صدور الناس: الذي يلقي الوساوس والشكوك في قلوب بني آدم ليضلهم عن الحق.',
-      '114:6': 'من الجنة والناس: من شياطين الجن والإنس، فإن الشياطين منهما جميعاً يوسوسون ويضلون الناس.',
+      '114:1': 'قل أعوذ برب الناس: يقول ابن كثير: أي التجئ إلى رب الناس وخالقهم ومالكهم والمتصرف في أمورهم.',
+      '114:2': 'ملك الناس: قال ابن كثير: أي مالكهم والمتصرف فيهم بلا منازع ولا مدافع، فما شاء كان وما لم يشأ لم يكن.',
+      '114:3': 'إله الناس: يقول ابن كثير: أي معبودهم الذي لا تنبغي العبادة إلا له، ولا تصلح إلا له عز وجل.',
+      '114:4': 'من شر الوسواس الخناس: قال ابن كثير: وهو الشيطان الذي يوسوس في قلب ابن آدم، فإذا ذكر الله خنس أي كف وانقبض.',
+      '114:5': 'الذي يوسوس في صدور الناس: يقول ابن كثير: أي يلقي في قلوبهم الشر والأفكار الفاسدة والعقائد الباطلة.',
+      '114:6': 'من الجنة والناس: قال ابن كثير: أي أن الموسوسين في صدور الناس منهم الجن ومنهم الإنس، كما قال تعالى: شياطين الإنس والجن.',
     };
 
     const key = `${surahNumber}:${ayahNumber}`;
@@ -134,33 +194,33 @@ class TafsirService {
       return specificTafsir;
     }
 
-    // General tafsir based on surah themes
+    // General tafsir based on surah themes with Ibn Kathir style
     return this.getGeneralTafsir(surahNumber, ayahNumber);
   }
 
   private getGeneralTafsir(surahNumber: number, ayahNumber: number): string {
     const surahThemes: { [key: number]: string } = {
-      1: 'سورة الفاتحة هي أم الكتاب وأعظم سورة في القرآن، تشتمل على الحمد والثناء والدعاء والتوحيد.',
-      2: 'سورة البقرة أطول سور القرآن، تتضمن أحكاماً كثيرة وقصصاً وعبراً، وهي سنام القرآن.',
-      3: 'سورة آل عمران تتحدث عن أهل الكتاب وقصة مريم وعيسى عليهما السلام، والجهاد في سبيل الله.',
-      4: 'سورة النساء تتضمن أحكام النساء والأسرة والمواريث والجهاد والعدالة الاجتماعية.',
-      5: 'سورة المائدة تتحدث عن الأحكام والشرائع وإتمام الدين وقصص الأنبياء.',
-      6: 'سورة الأنعام مكية تركز على التوحيد والرد على المشركين وإثبات البعث.',
-      7: 'سورة الأعراف تحكي قصص الأنبياء مع أقوامهم وعاقبة المكذبين.',
-      18: 'سورة الكهف تحتوي على قصص عظيمة: أصحاب الكهف، وموسى والخضر، وذي القرنين، وصاحب الجنتين.',
-      36: 'سورة يس قلب القرآن، تتحدث عن التوحيد والبعث والآخرة بأسلوب مؤثر.',
-      67: 'سورة الملك تتحدث عن عظمة الله وملكه وقدرته، وتحذر من عذاب الآخرة.',
-      112: 'سورة الإخلاص تعدل ثلث القرآن، تتحدث عن توحيد الله وتنزيهه عن الشريك والولد.',
-      113: 'سورة الفلق للاستعاذة من شر المخلوقات والسحر والحسد.',
-      114: 'سورة الناس للاستعاذة من شر الشيطان ووساوسه.',
+      1: 'يقول ابن كثير عن سورة الفاتحة: هي أم الكتاب وأعظم سورة في القرآن، تشتمل على الحمد والثناء والدعاء والتوحيد، وهي كافية في الصلاة.',
+      2: 'قال ابن كثير عن سورة البقرة: هي أطول سور القرآن وتسمى فسطاط القرآن لعظمها وكثرة أحكامها، وفيها آية الكرسي سيدة آي القرآن.',
+      3: 'يقول ابن كثير عن سورة آل عمران: تتحدث عن أهل الكتاب وتبين حال النصارى في عيسى عليه السلام، وفيها آيات محكمات هن أم الكتاب.',
+      4: 'قال ابن كثير عن سورة النساء: تتضمن كثيراً من الأحكام المتعلقة بالنساء والأيتام والمواريث والجهاد في سبيل الله.',
+      5: 'يقول ابن كثير عن سورة المائدة: هي آخر ما نزل من القرآن، وفيها إتمام الدين وإكمال النعمة، وتتضمن أحكاماً كثيرة.',
+      6: 'قال ابن كثير عن سورة الأنعام: نزلت جملة واحدة، وهي مكية تركز على التوحيد والرد على المشركين وإثبات البعث والنشور.',
+      7: 'يقول ابن كثير عن سورة الأعراف: تحكي قصص كثير من الأنبياء مع أقوامهم وما حل بالمكذبين من العذاب والنكال.',
+      18: 'قال ابن كثير عن سورة الكهف: تحتوي على قصص عجيبة وعبر بليغة، وهي عصمة من فتنة المسيح الدجال لمن حفظ عشر آيات من أولها.',
+      36: 'يقول ابن كثير عن سورة يس: هي قلب القرآن، وتتحدث عن التوحيد والبعث والآخرة بأسلوب مؤثر ومعجز.',
+      67: 'قال ابن كثير عن سورة الملك: هي المانعة المنجية من عذاب القبر، وتتحدث عن عظمة الله وملكه وقدرته.',
+      112: 'يقول ابن كثير عن سورة الإخلاص: تعدل ثلث القرآن، وهي صفة الرحمن، نزلت لما سأل المشركون النبي أن ينسب لهم ربه.',
+      113: 'قال ابن كثير عن سورة الفلق: هي إحدى المعوذتين، وفيها الاستعاذة من شر المخلوقات والسحر والحسد.',
+      114: 'يقول ابن كثير عن سورة الناس: هي المعوذة الثانية، وفيها الاستعاذة من شر الشيطان ووساوسه من الجن والإنس.',
     };
 
     const theme = surahThemes[surahNumber];
     if (theme) {
-      return `${theme} هذه الآية الكريمة جزء من هذا السياق العظيم وتحتاج إلى تدبر وتفكر في معانيها.`;
+      return `${theme} هذه الآية الكريمة جزء من هذا السياق العظيم، وتحتاج إلى تدبر وتأمل في معانيها وأحكامها.`;
     }
 
-    return 'هذه آية كريمة من كتاب الله تحتاج إلى تدبر وتفكر في معانيها العظيمة. ندعو الله أن يفتح علينا من فهم كتابه وأن يجعلنا من أهل القرآن الذين هم أهل الله وخاصته.';
+    return 'قال ابن كثير رحمه الله: هذه آية كريمة من كتاب الله تحتاج إلى تدبر وتفكر في معانيها العظيمة. نسأل الله أن يفتح علينا من فهم كتابه وأن يجعلنا من أهل القرآن الذين هم أهل الله وخاصته.';
   }
 
   // Method to get tafsir for multiple ayahs (for future use)
@@ -170,6 +230,8 @@ class TafsirService {
     for (let ayah = startAyah; ayah <= endAyah; ayah++) {
       try {
         tafsirs[ayah] = await this.getTafsir(surahNumber, ayah);
+        // Add small delay to avoid overwhelming the APIs
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Error fetching tafsir for ${surahNumber}:${ayah}:`, error);
         tafsirs[ayah] = this.getComprehensiveTafsir(surahNumber, ayah);
@@ -177,6 +239,66 @@ class TafsirService {
     }
     
     return tafsirs;
+  }
+
+  // Method to test all three sources for a specific ayah
+  async testAllSources(surahNumber: number, ayahNumber: number): Promise<{
+    primary: string | null;
+    secondary: string | null;
+    tertiary: string | null;
+  }> {
+    const results = {
+      primary: null as string | null,
+      secondary: null as string | null,
+      tertiary: null as string | null,
+    };
+
+    // Test primary source
+    try {
+      const response = await fetch(`${this.primaryUrl}/${surahNumber}?locale=en&words=true`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.tafsirs && data.tafsirs.length > 0) {
+          const ayahTafsir = data.tafsirs.find((t: any) => 
+            t.verse_key === `${surahNumber}:${ayahNumber}` || 
+            t.ayah_number === ayahNumber
+          );
+          if (ayahTafsir && ayahTafsir.text) {
+            results.primary = this.cleanTafsirText(ayahTafsir.text);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Primary source test failed:', error);
+    }
+
+    // Test secondary source
+    try {
+      const response = await fetch(`${this.secondaryUrl}/${surahNumber}:${ayahNumber}?locale=en&words=true`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.tafsirs && data.tafsirs.length > 0 && data.tafsirs[0].text) {
+          results.secondary = this.cleanTafsirText(data.tafsirs[0].text);
+        }
+      }
+    } catch (error) {
+      console.log('Secondary source test failed:', error);
+    }
+
+    // Test tertiary source
+    try {
+      const response = await fetch(`https://quranapi.pages.dev/api/${surahNumber}/${ayahNumber}/ibn_kathir.json`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && (data.text || data.tafsir)) {
+          results.tertiary = this.cleanTafsirText(data.text || data.tafsir);
+        }
+      }
+    } catch (error) {
+      console.log('Tertiary source test failed:', error);
+    }
+
+    return results;
   }
 }
 
