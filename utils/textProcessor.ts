@@ -17,44 +17,76 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
   if (ayahNumber === 1) {
     console.log(`Processing first ayah of Surah ${surahNumber}:${ayahNumber}`);
     
-    // The Bismillah text to remove
-    const bismillah = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
-    
-    // Remove Bismillah from the beginning of the text
-    // We'll check for various possible formats and spacing
-    let processedText = text;
-    const originalText = text;
-    
-    // Remove if it's at the very beginning
-    if (processedText.startsWith(bismillah)) {
-      processedText = processedText.substring(bismillah.length).trim();
-      console.log(`Removed Bismillah from start of ${surahNumber}:${ayahNumber}`);
-    }
-    
-    // Remove if it's at the beginning with some whitespace
-    const bismillahWithSpaces = new RegExp(`^\\s*${bismillah.replace(/[\u064B-\u0652\u0670\u0640]/g, '\\s*')}\\s*`, 'g');
-    processedText = processedText.replace(bismillahWithSpaces, '').trim();
-    
-    // More aggressive removal - remove any occurrence of Bismillah at the start
-    const patterns = [
-      bismillah,
-      `${bismillah} `,
-      ` ${bismillah}`,
-      ` ${bismillah} `,
+    // Multiple variations of Bismillah to handle different API formats
+    const bismillahVariations = [
+      'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+      'بسم الله الرحمن الرحيم',
+      'بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ',
+      'بِسْمِ ٱللهِ ٱلرَّحْمنِ ٱلرَّحِيمِ',
     ];
     
-    for (const pattern of patterns) {
-      if (processedText.startsWith(pattern)) {
-        processedText = processedText.substring(pattern.length).trim();
-        console.log(`Removed Bismillah pattern from ${surahNumber}:${ayahNumber}`);
+    let processedText = text;
+    const originalText = text;
+    let wasRemoved = false;
+    
+    // Try to remove each variation
+    for (const bismillah of bismillahVariations) {
+      // Remove from the very beginning
+      if (processedText.startsWith(bismillah)) {
+        processedText = processedText.substring(bismillah.length).trim();
+        wasRemoved = true;
+        console.log(`Removed Bismillah variation from start of ${surahNumber}:${ayahNumber}`);
+        break;
+      }
+      
+      // Remove with potential whitespace at the beginning
+      if (processedText.startsWith(` ${bismillah}`)) {
+        processedText = processedText.substring(bismillah.length + 1).trim();
+        wasRemoved = true;
+        console.log(`Removed Bismillah variation with space from start of ${surahNumber}:${ayahNumber}`);
+        break;
+      }
+      
+      // Remove with potential whitespace after
+      if (processedText.startsWith(`${bismillah} `)) {
+        processedText = processedText.substring(bismillah.length + 1).trim();
+        wasRemoved = true;
+        console.log(`Removed Bismillah variation with trailing space from start of ${surahNumber}:${ayahNumber}`);
         break;
       }
     }
     
-    const wasRemoved = originalText !== processedText;
+    // More aggressive pattern matching for edge cases
+    if (!wasRemoved) {
+      // Create a regex pattern that matches Bismillah with flexible diacritics and spacing
+      const bismillahPattern = /^[\s]*بِسْمِ[\s]*اللَّهِ[\s]*الرَّحْمَٰنِ[\s]*الرَّحِيمِ[\s]*/;
+      const alternativePattern = /^[\s]*بِسْمِ[\s]*ٱللَّهِ[\s]*ٱلرَّحْمَٰنِ[\s]*ٱلرَّحِيمِ[\s]*/;
+      const simplePattern = /^[\s]*بسم[\s]*الله[\s]*الرحمن[\s]*الرحيم[\s]*/;
+      
+      const patterns = [bismillahPattern, alternativePattern, simplePattern];
+      
+      for (const pattern of patterns) {
+        if (pattern.test(processedText)) {
+          processedText = processedText.replace(pattern, '').trim();
+          wasRemoved = true;
+          console.log(`Removed Bismillah using regex pattern from ${surahNumber}:${ayahNumber}`);
+          break;
+        }
+      }
+    }
+    
+    // Final cleanup - remove any remaining leading/trailing whitespace
+    processedText = processedText.trim();
+    
+    // Special handling for Surah At-Tawbah (Surah 9) which traditionally doesn't start with Bismillah
+    if (surahNumber === 9) {
+      console.log(`Surah At-Tawbah (9) - no Bismillah expected`);
+    }
+    
     console.log(`Processed ayah ${surahNumber}:${ayahNumber}`, {
-      original: originalText.substring(0, 80) + '...',
-      processed: processedText.substring(0, 80) + '...',
+      original: originalText.substring(0, 80) + (originalText.length > 80 ? '...' : ''),
+      processed: processedText.substring(0, 80) + (processedText.length > 80 ? '...' : ''),
       removed: wasRemoved,
       originalLength: originalText.length,
       processedLength: processedText.length
@@ -67,15 +99,22 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
 }
 
 /**
- * Checks if text contains Bismillah
+ * Checks if text contains any variation of Bismillah
  * @param text - The text to check
  * @returns True if text contains Bismillah
  */
 export function containsBismillah(text: string): boolean {
   if (!text) return false;
   
-  const bismillah = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
-  return text.includes(bismillah);
+  const bismillahVariations = [
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+    'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    'بسم الله الرحمن الرحيم',
+    'بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ',
+    'بِسْمِ ٱللهِ ٱلرَّحْمنِ ٱلرَّحِيمِ',
+  ];
+  
+  return bismillahVariations.some(bismillah => text.includes(bismillah));
 }
 
 /**
@@ -86,6 +125,48 @@ export function containsBismillah(text: string): boolean {
 export function extractBismillah(text: string): string {
   if (!text) return '';
   
-  const bismillah = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
-  return text.includes(bismillah) ? bismillah : '';
+  const bismillahVariations = [
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+    'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    'بسم الله الرحمن الرحيم',
+    'بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ',
+    'بِسْمِ ٱللهِ ٱلرَّحْمنِ ٱلرَّحِيمِ',
+  ];
+  
+  for (const bismillah of bismillahVariations) {
+    if (text.includes(bismillah)) {
+      return bismillah;
+    }
+  }
+  
+  return '';
+}
+
+/**
+ * Force removes Bismillah from any text regardless of position
+ * @param text - The text to clean
+ * @returns The text with all Bismillah occurrences removed
+ */
+export function forceRemoveBismillah(text: string): string {
+  if (!text) return text;
+  
+  let cleanedText = text;
+  
+  const bismillahVariations = [
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+    'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    'بسم الله الرحمن الرحيم',
+    'بِسْمِ اللهِ الرَّحْمنِ الرَّحِيمِ',
+    'بِسْمِ ٱللهِ ٱلرَّحْمنِ ٱلرَّحِيمِ',
+  ];
+  
+  // Remove all variations
+  for (const bismillah of bismillahVariations) {
+    cleanedText = cleanedText.replace(new RegExp(bismillah, 'g'), '');
+  }
+  
+  // Clean up extra whitespace
+  cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+  
+  return cleanedText;
 }

@@ -4,17 +4,18 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } f
 import { useTheme } from '../../contexts/ThemeContext';
 import { AppSettings } from '../../types';
 import { tajweedService } from '../../services/tajweedService';
-import Icon from '../../components/Icon';
+import { quranService } from '../../services/quranService';
 import TajweedLegend from '../../components/TajweedLegend';
+import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
-  const { settings, colors, textSizes, updateSettings } = useTheme();
+  const { settings, updateSettings, colors, textSizes } = useTheme();
   const [showTajweedLegend, setShowTajweedLegend] = useState(false);
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
       await updateSettings({ [key]: value });
-      console.log(`Setting ${key} updated to:`, value);
+      console.log(`Updated setting ${key} to ${value}`);
     } catch (error) {
       console.error('Failed to update setting:', error);
       Alert.alert('خطأ', 'فشل في حفظ الإعدادات');
@@ -37,8 +38,8 @@ export default function SettingsTab() {
                 theme: 'light',
                 showBanner: true,
                 readingMode: 'scroll',
-                squareAdjustment: 50,
                 showTajweed: true,
+                squareAdjustment: 50,
               });
               Alert.alert('تم', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
@@ -51,9 +52,29 @@ export default function SettingsTab() {
     );
   };
 
-  if (showTajweedLegend) {
-    return <TajweedLegend onClose={() => setShowTajweedLegend(false)} />;
-  }
+  const handleRefreshQuranData = () => {
+    Alert.alert(
+      'تحديث بيانات القرآن',
+      'هل تريد إعادة تحميل بيانات القرآن من الخادم؟ سيتم حذف البيانات المحفوظة وإعادة تحميلها.',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تحديث',
+          onPress: async () => {
+            try {
+              console.log('Clearing Quran cache and refreshing data...');
+              quranService.clearCache();
+              await tajweedService.clearCache();
+              Alert.alert('تم', 'تم تحديث بيانات القرآن. سيتم إعادة تحميل البيانات عند الحاجة.');
+            } catch (error) {
+              console.error('Failed to refresh Quran data:', error);
+              Alert.alert('خطأ', 'فشل في تحديث بيانات القرآن');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -61,55 +82,58 @@ export default function SettingsTab() {
       backgroundColor: colors.background,
     },
     scrollContainer: {
-      flex: 1,
       padding: 20,
     },
     title: {
       fontSize: textSizes.heading,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
-      textAlign: 'right',
+      textAlign: 'center',
       marginBottom: 30,
     },
     section: {
-      marginBottom: 30,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
+      boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
+      elevation: 3,
     },
     sectionTitle: {
       fontSize: textSizes.title,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
-      textAlign: 'right',
       marginBottom: 15,
+      textAlign: 'right',
     },
-    settingItem: {
+    settingRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 15,
-      paddingHorizontal: 20,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      marginBottom: 10,
-      boxShadow: '0px 2px 8px rgba(0,0,0,0.05)',
-      elevation: 2,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    settingRowLast: {
+      borderBottomWidth: 0,
     },
     settingLabel: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_400Regular',
       color: colors.text,
-      textAlign: 'right',
       flex: 1,
+      textAlign: 'right',
     },
     settingValue: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
       color: colors.primary,
-      marginRight: 10,
+      marginLeft: 10,
     },
     buttonRow: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginTop: 10,
+      flexWrap: 'wrap',
+      gap: 10,
     },
     optionButton: {
       paddingHorizontal: 15,
@@ -129,41 +153,72 @@ export default function SettingsTab() {
       color: colors.text,
     },
     optionTextActive: {
-      color: colors.background,
+      color: '#fff',
       fontWeight: 'bold',
     },
-    resetButton: {
-      backgroundColor: colors.error,
-      paddingVertical: 15,
-      paddingHorizontal: 30,
+    actionButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
       borderRadius: 25,
       alignItems: 'center',
-      marginTop: 30,
-      boxShadow: '0px 4px 12px rgba(244, 67, 54, 0.3)',
-      elevation: 4,
+      marginVertical: 8,
     },
-    resetButtonText: {
+    actionButtonSecondary: {
+      backgroundColor: colors.secondary,
+    },
+    actionButtonDanger: {
+      backgroundColor: colors.error,
+    },
+    actionButtonText: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: colors.background,
+      color: '#fff',
     },
     legendButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
       backgroundColor: colors.accent,
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 25,
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderRadius: 20,
       marginTop: 10,
-      boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
-      elevation: 3,
     },
     legendButtonText: {
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_700Bold',
+      color: '#fff',
+      marginLeft: 8,
+    },
+    infoText: {
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_400Regular',
+      color: colors.textSecondary,
+      textAlign: 'right',
+      marginTop: 8,
+      fontStyle: 'italic',
+    },
+    debugSection: {
+      backgroundColor: '#fff3cd',
+      borderRadius: 12,
+      padding: 15,
+      marginBottom: 20,
+      borderLeftWidth: 4,
+      borderLeftColor: '#ffc107',
+    },
+    debugTitle: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: colors.background,
-      marginRight: 8,
+      color: '#856404',
+      marginBottom: 10,
+      textAlign: 'right',
+    },
+    debugText: {
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_400Regular',
+      color: '#856404',
+      textAlign: 'right',
+      marginBottom: 5,
     },
   });
 
@@ -172,12 +227,13 @@ export default function SettingsTab() {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>الإعدادات</Text>
 
-        {/* Text Size Settings */}
+        {/* Display Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>حجم النص</Text>
-          <View style={styles.settingItem}>
+          <Text style={styles.sectionTitle}>إعدادات العرض</Text>
+          
+          <View style={styles.settingRow}>
             <View style={styles.buttonRow}>
-              {(['small', 'medium', 'large', 'extra-large'] as const).map((size) => (
+              {['small', 'medium', 'large', 'xlarge'].map((size) => (
                 <TouchableOpacity
                   key={size}
                   style={[
@@ -192,141 +248,131 @@ export default function SettingsTab() {
                       settings.textSize === size && styles.optionTextActive,
                     ]}
                   >
-                    {size === 'small' && 'صغير'}
-                    {size === 'medium' && 'متوسط'}
-                    {size === 'large' && 'كبير'}
-                    {size === 'extra-large' && 'كبير جداً'}
+                    {size === 'small' ? 'صغير' : 
+                     size === 'medium' ? 'متوسط' : 
+                     size === 'large' ? 'كبير' : 'كبير جداً'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+            <Text style={styles.settingLabel}>حجم النص</Text>
           </View>
-        </View>
 
-        {/* Theme Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>المظهر</Text>
-          <View style={styles.settingItem}>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  settings.theme === 'light' && styles.optionButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('theme', 'light')}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    settings.theme === 'light' && styles.optionTextActive,
-                  ]}
-                >
-                  فاتح
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  settings.theme === 'dark' && styles.optionButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('theme', 'dark')}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    settings.theme === 'dark' && styles.optionTextActive,
-                  ]}
-                >
-                  داكن
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.settingRow}>
+            <Switch
+              value={settings.theme === 'dark'}
+              onValueChange={(value) => handleUpdateSetting('theme', value ? 'dark' : 'light')}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={settings.theme === 'dark' ? '#fff' : colors.backgroundAlt}
+            />
+            <Text style={styles.settingLabel}>الوضع الليلي</Text>
           </View>
-        </View>
 
-        {/* Reading Mode Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>وضع القراءة</Text>
-          <View style={styles.settingItem}>
+          <View style={styles.settingRow}>
+            <Switch
+              value={settings.showBanner}
+              onValueChange={(value) => handleUpdateSetting('showBanner', value)}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={settings.showBanner ? '#fff' : colors.backgroundAlt}
+            />
+            <Text style={styles.settingLabel}>عرض رسالة الإهداء</Text>
+          </View>
+
+          <View style={[styles.settingRow, styles.settingRowLast]}>
             <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  settings.readingMode === 'scroll' && styles.optionButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('readingMode', 'scroll')}
-              >
-                <Text
+              {['scroll', 'page'].map((mode) => (
+                <TouchableOpacity
+                  key={mode}
                   style={[
-                    styles.optionText,
-                    settings.readingMode === 'scroll' && styles.optionTextActive,
+                    styles.optionButton,
+                    settings.readingMode === mode && styles.optionButtonActive,
                   ]}
+                  onPress={() => handleUpdateSetting('readingMode', mode)}
                 >
-                  تمرير
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.optionButton,
-                  settings.readingMode === 'flip' && styles.optionButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('readingMode', 'flip')}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    settings.readingMode === 'flip' && styles.optionTextActive,
-                  ]}
-                >
-                  تقليب
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      settings.readingMode === mode && styles.optionTextActive,
+                    ]}
+                  >
+                    {mode === 'scroll' ? 'تمرير' : 'صفحات'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
+            <Text style={styles.settingLabel}>وضع القراءة</Text>
           </View>
         </View>
 
         {/* Tajweed Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>التجويد</Text>
-          <View style={styles.settingItem}>
+          <Text style={styles.sectionTitle}>إعدادات التجويد</Text>
+          
+          <View style={[styles.settingRow, styles.settingRowLast]}>
             <Switch
               value={settings.showTajweed}
               onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={settings.showTajweed ? colors.background : colors.textSecondary}
+              thumbColor={settings.showTajweed ? '#fff' : colors.backgroundAlt}
             />
             <Text style={styles.settingLabel}>عرض ألوان التجويد</Text>
           </View>
-          
+
           {settings.showTajweed && (
             <TouchableOpacity
               style={styles.legendButton}
-              onPress={() => setShowTajweedLegend(true)}
+              onPress={() => setShowTajweedLegend(!showTajweedLegend)}
             >
-              <Icon name="color-palette" size={20} style={{ color: colors.background }} />
-              <Text style={styles.legendButtonText}>دليل ألوان التجويد</Text>
+              <Icon name="color-palette" size={16} style={{ color: '#fff' }} />
+              <Text style={styles.legendButtonText}>
+                {showTajweedLegend ? 'إخفاء' : 'عرض'} دليل ألوان التجويد
+              </Text>
             </TouchableOpacity>
           )}
+
+          <Text style={styles.infoText}>
+            ألوان التجويد تساعد في تعلم القراءة الصحيحة للقرآن الكريم
+          </Text>
         </View>
 
-        {/* Banner Settings */}
+        {/* Data Management */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>عام</Text>
-          <View style={styles.settingItem}>
-            <Switch
-              value={settings.showBanner}
-              onValueChange={(value) => handleUpdateSetting('showBanner', value)}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={settings.showBanner ? colors.background : colors.textSecondary}
-            />
-            <Text style={styles.settingLabel}>عرض رسالة الإهداء</Text>
-          </View>
+          <Text style={styles.sectionTitle}>إدارة البيانات</Text>
+          
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleRefreshQuranData}
+          >
+            <Text style={styles.actionButtonText}>تحديث بيانات القرآن</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            إعادة تحميل بيانات القرآن من الخادم وإزالة البسملة من الآيات الأولى
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionButtonDanger]}
+            onPress={handleResetSettings}
+          >
+            <Text style={styles.actionButtonText}>إعادة تعيين الإعدادات</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Reset Settings */}
-        <TouchableOpacity style={styles.resetButton} onPress={handleResetSettings}>
-          <Text style={styles.resetButtonText}>إعادة تعيين الإعدادات</Text>
-        </TouchableOpacity>
+        {/* Debug Information (Development only) */}
+        {__DEV__ && (
+          <View style={styles.debugSection}>
+            <Text style={styles.debugTitle}>معلومات التطوير</Text>
+            <Text style={styles.debugText}>
+              حالة الكاش: {quranService.isCached() ? 'محفوظ' : 'غير محفوظ'}
+            </Text>
+            <Text style={styles.debugText}>
+              إعدادات حالية: {JSON.stringify(settings, null, 2)}
+            </Text>
+          </View>
+        )}
+
+        {/* Tajweed Legend */}
+        {showTajweedLegend && <TajweedLegend />}
       </ScrollView>
     </View>
   );

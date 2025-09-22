@@ -8,11 +8,12 @@ class QuranService {
 
   async getFullQuran(): Promise<QuranData> {
     if (this.cachedQuran) {
+      console.log('Returning cached Quran data');
       return this.cachedQuran;
     }
 
     try {
-      console.log('Fetching Quran data...');
+      console.log('Fetching Quran data from API...');
       const response = await fetch(`${this.baseUrl}/quran/quran-uthmani`);
       
       if (!response.ok) {
@@ -22,6 +23,7 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
+        console.log('Processing Quran data to remove Bismillah from all first verses...');
         // Process the Quran data to remove Bismillah from first verses
         const processedData = this.processQuranData(data.data);
         this.cachedQuran = processedData;
@@ -38,12 +40,30 @@ class QuranService {
 
   async getSurah(surahNumber: number): Promise<any> {
     try {
-      console.log(`Fetching Surah ${surahNumber}...`);
+      console.log(`Fetching individual Surah ${surahNumber}...`);
       
       if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
         throw new Error(`Invalid surah number: ${surahNumber}`);
       }
       
+      // Try to get from cached data first
+      if (this.cachedQuran && this.cachedQuran.surahs) {
+        const cachedSurah = this.cachedQuran.surahs.find(s => s.number === surahNumber);
+        if (cachedSurah) {
+          console.log(`Returning cached Surah ${surahNumber}`);
+          return {
+            number: cachedSurah.number,
+            name: cachedSurah.name,
+            englishName: cachedSurah.englishName,
+            englishNameTranslation: cachedSurah.englishNameTranslation,
+            numberOfAyahs: cachedSurah.numberOfAyahs,
+            revelationType: cachedSurah.revelationType,
+            ayahs: cachedSurah.ayahs
+          };
+        }
+      }
+      
+      // Fetch individual surah if not in cache
       const response = await fetch(`${this.baseUrl}/surah/${surahNumber}/ar.asad`);
       
       if (!response.ok) {
@@ -90,13 +110,21 @@ class QuranService {
 
   private processQuranData(quranData: QuranData): QuranData {
     console.log('Processing Quran data to remove Bismillah from first verses...');
+    let processedCount = 0;
     
     // Process each surah to remove Bismillah from first verses
     const processedSurahs = quranData.surahs.map(surah => {
       if (surah.ayahs && Array.isArray(surah.ayahs)) {
         const processedAyahs = surah.ayahs.map(ayah => {
           // Process the text to remove Bismillah from first verse
-          const processedText = processAyahText(ayah.text || '', surah.number, ayah.numberInSurah);
+          const originalText = ayah.text || '';
+          const processedText = processAyahText(originalText, surah.number, ayah.numberInSurah);
+          
+          // Count processed first verses
+          if (ayah.numberInSurah === 1 && originalText !== processedText) {
+            processedCount++;
+          }
+          
           return {
             ...ayah,
             text: processedText
@@ -112,7 +140,7 @@ class QuranService {
       return surah;
     });
 
-    console.log('Finished processing Quran data');
+    console.log(`Finished processing Quran data. Processed ${processedCount} first verses.`);
     return {
       ...quranData,
       surahs: processedSurahs
@@ -126,7 +154,9 @@ class QuranService {
     if (surahData.ayahs && Array.isArray(surahData.ayahs)) {
       const processedAyahs = surahData.ayahs.map((ayah: any) => {
         // Process the text to remove Bismillah from first verse
-        const processedText = processAyahText(ayah.text || '', surahNumber, ayah.numberInSurah);
+        const originalText = ayah.text || '';
+        const processedText = processAyahText(originalText, surahNumber, ayah.numberInSurah);
+        
         return {
           ...ayah,
           text: processedText
@@ -141,6 +171,17 @@ class QuranService {
     }
     
     return surahData;
+  }
+
+  // Clear cache to force refresh
+  clearCache(): void {
+    console.log('Clearing Quran cache');
+    this.cachedQuran = null;
+  }
+
+  // Get cache status
+  isCached(): boolean {
+    return this.cachedQuran !== null;
   }
 }
 

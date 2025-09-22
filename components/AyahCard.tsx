@@ -40,6 +40,7 @@ export default function AyahCard({
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
   // Process the ayah text to remove Bismillah from first verses
+  // Apply processing regardless of whether it was already processed in the service
   const processedAyahText = processAyahText(ayah.text || '', surahNumber, ayah.numberInSurah);
 
   useEffect(() => {
@@ -295,7 +296,23 @@ export default function AyahCard({
       borderRadius: 6,
       backgroundColor: '#FF6B6B',
     },
+    debugInfo: {
+      backgroundColor: '#fff3cd',
+      padding: 8,
+      marginTop: 8,
+      borderRadius: 4,
+      borderLeftWidth: 4,
+      borderLeftColor: '#ffc107',
+    },
+    debugText: {
+      fontSize: 12,
+      fontFamily: 'Amiri_400Regular',
+      color: '#856404',
+    },
   });
+
+  // Debug information (only show in development)
+  const showDebug = __DEV__ && ayah.numberInSurah === 1;
 
   return (
     <View style={styles.card}>
@@ -309,6 +326,23 @@ export default function AyahCard({
             />
           ) : (
             <Text style={styles.ayahText}>{processedAyahText}</Text>
+          )}
+          
+          {showDebug && (
+            <View style={styles.debugInfo}>
+              <Text style={styles.debugText}>
+                Debug - Surah {surahNumber}:1
+              </Text>
+              <Text style={styles.debugText}>
+                Original: {(ayah.text || '').substring(0, 50)}...
+              </Text>
+              <Text style={styles.debugText}>
+                Processed: {processedAyahText.substring(0, 50)}...
+              </Text>
+              <Text style={styles.debugText}>
+                Bismillah removed: {(ayah.text || '') !== processedAyahText ? 'Yes' : 'No'}
+              </Text>
+            </View>
           )}
         </View>
         <View style={styles.ayahNumberCircle}>
