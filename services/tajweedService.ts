@@ -1,22 +1,10 @@
 
-import { Ayah } from '../types';
+import { TajweedData, TajweedSegment, Ayah } from '../types';
 import { processAyahText } from '../utils/textProcessor';
 
-export interface TajweedSegment {
-  text: string;
-  rule?: string;
-  color?: string;
-}
-
-export interface TajweedData {
-  surah: number;
-  ayah: number;
-  segments: TajweedSegment[];
-}
-
 class TajweedService {
-  private cache: Map<string, TajweedData> = new Map();
-  private baseUrl = 'https://api.fcat97.com/quran/v1';
+  private cache = new Map<string, TajweedData>();
+  private baseUrl = 'https://api.github.com/repos/fcat97/QuranApi/contents/tajweed';
 
   async getTajweedData(surahNumber: number, ayahNumber: number): Promise<TajweedData | null> {
     const cacheKey = `${surahNumber}:${ayahNumber}`;
@@ -24,39 +12,50 @@ class TajweedService {
     // Check cache first
     if (this.cache.has(cacheKey)) {
       console.log(`Returning cached tajweed data for ${cacheKey}`);
-      return this.cache.get(cacheKey)!;
+      return this.cache.get(cacheKey) || null;
     }
 
     try {
       console.log(`Fetching tajweed data for ${surahNumber}:${ayahNumber}`);
       
-      // Try the new API first
-      const response = await fetch(`${this.baseUrl}/tajweed/${surahNumber}/${ayahNumber}`);
+      // Try to fetch from the GitHub API
+      const response = await fetch(`${this.baseUrl}/${surahNumber}.json`);
       
-      if (response.ok) {
-        const data = await response.json();
+      if (!response.ok) {
+        console.log(`Tajweed API returned ${response.status}, falling back to basic rules`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      // Parse the GitHub API response
+      if (data.content) {
+        const decodedContent = atob(data.content);
+        const tajweedData = JSON.parse(decodedContent);
         
-        if (data && data.segments && Array.isArray(data.segments)) {
-          const tajweedData: TajweedData = {
+        // Find the specific ayah
+        const ayahData = tajweedData.find((item: any) => item.ayah === ayahNumber);
+        
+        if (ayahData && ayahData.segments) {
+          const result: TajweedData = {
             surah: surahNumber,
             ayah: ayahNumber,
-            segments: data.segments.map((segment: any) => ({
+            segments: ayahData.segments.map((segment: any) => ({
               text: segment.text || '',
-              rule: segment.rule || '',
-              color: this.getRuleColor(segment.rule || '')
+              type: segment.type || 'default',
+              color: this.getTajweedColor(segment.type || 'default')
             }))
           };
           
           // Cache the result
-          this.cache.set(cacheKey, tajweedData);
+          this.cache.set(cacheKey, result);
           console.log(`Cached tajweed data for ${cacheKey}`);
-          return tajweedData;
+          
+          return result;
         }
       }
       
-      console.log(`API failed for ${cacheKey}, falling back to basic rules`);
       return null;
-      
     } catch (error) {
       console.log(`Error fetching tajweed data for ${cacheKey}:`, error);
       return null;
@@ -64,104 +63,126 @@ class TajweedService {
   }
 
   applyBasicTajweedRules(text: string): TajweedSegment[] {
-    if (!text) return [];
+    if (!text) {
+      return [];
+    }
 
     console.log('Applying basic tajweed rules to text:', text.substring(0, 50) + '...');
-    
-    const segments: TajweedSegment[] = [];
-    let currentIndex = 0;
-    
-    // Define tajweed rules with their patterns and colors
+
+    // Basic tajweed rules with regex patterns
     const rules = [
       {
-        name: 'Ghunna',
-        pattern: /[نم](?=[\u064B-\u0652]*[نم])/g,
-        color: '#FF6B6B'
+        name: 'ghunna',
+        pattern: /[نم](?=[\u064B-\u0652])/g,
+        color: '#FF6B6B',
+        type: 'ghunna'
       },
       {
-        name: 'Qalqala',
-        pattern: /[قطبجد](?=[\u064B-\u0652]*[\s]|$)/g,
-        color: '#4ECDC4'
+        name: 'qalqala',
+        pattern: /[قطبجد](?=[\u064B-\u0652])/g,
+        color: '#4ECDC4',
+        type: 'qalqala'
       },
       {
-        name: 'Madd',
-        pattern: /[اوي][\u064E\u064F\u0650]?/g,
-        color: '#45B7D1'
+        name: 'madd',
+        pattern: /[اوي](?=[\u064B-\u0652]?[اوي])/g,
+        color: '#45B7D1',
+        type: 'madd'
       },
       {
-        name: 'Idgham',
-        pattern: /[نم][\u064B-\u0652]*[يرملنو]/g,
-        color: '#96CEB4'
+        name: 'idgham',
+        pattern: /ن(?=[\u064B-\u0652]?[يرملو])/g,
+        color: '#96CEB4',
+        type: 'idgham'
       },
       {
-        name: 'Ikhfa',
-        pattern: /ن[\u064B-\u0652]*[تثجحخسشصضطظفقك]/g,
-        color: '#FFEAA7'
+        name: 'ikhfa',
+        pattern: /ن(?=[\u064B-\u0652]?[تثجحخسشصضطظفقك])/g,
+        color: '#FFEAA7',
+        type: 'ikhfa'
       },
       {
-        name: 'Iqlab',
-        pattern: /ن[\u064B-\u0652]*ب/g,
-        color: '#DDA0DD'
+        name: 'iqlab',
+        pattern: /ن(?=[\u064B-\u0652]?ب)/g,
+        color: '#DDA0DD',
+        type: 'iqlab'
       }
     ];
 
-    // Create a combined pattern to find all matches
-    const allMatches: Array<{match: RegExpMatchArray, rule: string, color: string}> = [];
-    
+    const segments: TajweedSegment[] = [];
+    let lastIndex = 0;
+    const matches: Array<{ index: number; length: number; rule: any }> = [];
+
+    // Find all matches
     rules.forEach(rule => {
       let match;
-      const regex = new RegExp(rule.pattern.source, 'g');
+      const regex = new RegExp(rule.pattern.source, rule.pattern.flags);
+      
       while ((match = regex.exec(text)) !== null) {
-        allMatches.push({
-          match,
-          rule: rule.name,
-          color: rule.color
+        matches.push({
+          index: match.index,
+          length: match[0].length,
+          rule: rule
         });
       }
     });
 
     // Sort matches by position
-    allMatches.sort((a, b) => a.match.index! - b.match.index!);
+    matches.sort((a, b) => a.index - b.index);
 
-    // Build segments
-    allMatches.forEach(({match, rule, color}) => {
-      const matchStart = match.index!;
-      const matchEnd = matchStart + match[0].length;
+    // Remove overlapping matches (keep the first one)
+    const filteredMatches = [];
+    let lastEndIndex = -1;
+    
+    for (const match of matches) {
+      if (match.index >= lastEndIndex) {
+        filteredMatches.push(match);
+        lastEndIndex = match.index + match.length;
+      }
+    }
 
-      // Add text before this match
-      if (currentIndex < matchStart) {
-        segments.push({
-          text: text.substring(currentIndex, matchStart),
-          rule: 'normal',
-          color: '#2F4F4F'
-        });
+    // Create segments
+    filteredMatches.forEach(match => {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        const beforeText = text.substring(lastIndex, match.index);
+        if (beforeText.trim()) {
+          segments.push({
+            text: beforeText,
+            type: 'default',
+            color: '#2F4F4F'
+          });
+        }
       }
 
-      // Add the matched segment
-      if (currentIndex <= matchStart) {
-        segments.push({
-          text: match[0],
-          rule,
-          color
-        });
-        currentIndex = matchEnd;
-      }
+      // Add the matched text with tajweed coloring
+      const matchedText = text.substring(match.index, match.index + match.length);
+      segments.push({
+        text: matchedText,
+        type: match.rule.type,
+        color: match.rule.color
+      });
+
+      lastIndex = match.index + match.length;
     });
 
     // Add remaining text
-    if (currentIndex < text.length) {
-      segments.push({
-        text: text.substring(currentIndex),
-        rule: 'normal',
-        color: '#2F4F4F'
-      });
+    if (lastIndex < text.length) {
+      const remainingText = text.substring(lastIndex);
+      if (remainingText.trim()) {
+        segments.push({
+          text: remainingText,
+          type: 'default',
+          color: '#2F4F4F'
+        });
+      }
     }
 
-    // If no rules matched, return the whole text as normal
+    // If no matches found, return the entire text as default
     if (segments.length === 0) {
       segments.push({
-        text,
-        rule: 'normal',
+        text: text,
+        type: 'default',
         color: '#2F4F4F'
       });
     }
@@ -170,22 +191,22 @@ class TajweedService {
     return segments;
   }
 
-  private getRuleColor(rule: string): string {
+  private getTajweedColor(type: string): string {
     const colorMap: { [key: string]: string } = {
       'ghunna': '#FF6B6B',
-      'qalqala': '#4ECDC4', 
+      'qalqala': '#4ECDC4',
       'madd': '#45B7D1',
       'idgham': '#96CEB4',
       'ikhfa': '#FFEAA7',
       'iqlab': '#DDA0DD',
-      'normal': '#2F4F4F'
+      'default': '#2F4F4F'
     };
 
-    return colorMap[rule.toLowerCase()] || '#2F4F4F';
+    return colorMap[type] || colorMap['default'];
   }
 
   // Clear cache
-  async clearCache(): Promise<void> {
+  clearCache(): void {
     console.log('Clearing tajweed cache');
     this.cache.clear();
   }
@@ -193,6 +214,11 @@ class TajweedService {
   // Get cache size
   getCacheSize(): number {
     return this.cache.size;
+  }
+
+  // Get cache keys
+  getCacheKeys(): string[] {
+    return Array.from(this.cache.keys());
   }
 }
 

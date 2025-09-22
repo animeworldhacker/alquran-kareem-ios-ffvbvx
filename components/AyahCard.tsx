@@ -6,7 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { tafsirService } from '../services/tafsirService';
 import { tajweedService } from '../services/tajweedService';
-import { processAyahText } from '../utils/textProcessor';
+import { processAyahText, validateTextProcessing, normalizeArabicText } from '../utils/textProcessor';
 import { router } from 'expo-router';
 import TajweedText from './TajweedText';
 import Icon from './Icon';
@@ -35,13 +35,28 @@ export default function AyahCard({
   const [tajweedData, setTajweedData] = useState<TajweedData | null>(null);
   const [loadingTajweed, setLoadingTajweed] = useState(false);
   const [loadingTafsir, setLoadingTafsir] = useState(false);
+  const [textProcessingInfo, setTextProcessingInfo] = useState<any>(null);
 
   // Check if this ayah is bookmarked
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
-  // Process the ayah text to remove Bismillah from first verses
-  // Apply processing regardless of whether it was already processed in the service
+  // Process the ayah text to remove Bismillah from first verses and normalize text
   const processedAyahText = processAyahText(ayah.text || '', surahNumber, ayah.numberInSurah);
+  
+  // Validate text processing
+  useEffect(() => {
+    const validation = validateTextProcessing(
+      ayah.text || '', 
+      processedAyahText, 
+      surahNumber, 
+      ayah.numberInSurah
+    );
+    setTextProcessingInfo(validation);
+    
+    if (validation.hasIssues) {
+      console.warn(`Text processing issue: ${validation.details}`);
+    }
+  }, [ayah.text, processedAyahText, surahNumber, ayah.numberInSurah]);
 
   useEffect(() => {
     const loadTajweedData = async () => {
@@ -181,10 +196,11 @@ export default function AyahCard({
       fontFamily: 'ScheherazadeNew_400Regular',
       color: '#2F4F4F', // Dark slate gray
       textAlign: 'right',
-      lineHeight: 38,
+      lineHeight: Math.max(38, (textSizes.arabic * 0.9) * 1.9),
       marginBottom: 12,
       paddingLeft: 10, // Changed from paddingRight to paddingLeft
       width: '100%',
+      writingDirection: 'rtl',
     },
     tajweedContainer: {
       textAlign: 'right',
@@ -308,11 +324,27 @@ export default function AyahCard({
       fontSize: 12,
       fontFamily: 'Amiri_400Regular',
       color: '#856404',
+      textAlign: 'left',
+    },
+    warningInfo: {
+      backgroundColor: '#f8d7da',
+      padding: 8,
+      marginTop: 8,
+      borderRadius: 4,
+      borderLeftWidth: 4,
+      borderLeftColor: '#dc3545',
+    },
+    warningText: {
+      fontSize: 12,
+      fontFamily: 'Amiri_400Regular',
+      color: '#721c24',
+      textAlign: 'left',
     },
   });
 
-  // Debug information (only show in development)
+  // Debug information (only show in development for first verses)
   const showDebug = __DEV__ && ayah.numberInSurah === 1;
+  const showWarning = textProcessingInfo?.hasIssues && __DEV__;
 
   return (
     <View style={styles.card}>
@@ -331,16 +363,27 @@ export default function AyahCard({
           {showDebug && (
             <View style={styles.debugInfo}>
               <Text style={styles.debugText}>
-                Debug - Surah {surahNumber}:1
+                Debug - Surah {surahNumber}:{ayah.numberInSurah}
               </Text>
               <Text style={styles.debugText}>
-                Original: {(ayah.text || '').substring(0, 50)}...
+                Original Length: {(ayah.text || '').length}
               </Text>
               <Text style={styles.debugText}>
-                Processed: {processedAyahText.substring(0, 50)}...
+                Processed Length: {processedAyahText.length}
               </Text>
               <Text style={styles.debugText}>
-                Bismillah removed: {(ayah.text || '') !== processedAyahText ? 'Yes' : 'No'}
+                Length Difference: {(ayah.text || '').length - processedAyahText.length}
+              </Text>
+              <Text style={styles.debugText}>
+                Bismillah Removed: {(ayah.text || '') !== processedAyahText ? 'Yes' : 'No'}
+              </Text>
+            </View>
+          )}
+          
+          {showWarning && (
+            <View style={styles.warningInfo}>
+              <Text style={styles.warningText}>
+                Warning: {textProcessingInfo.details}
               </Text>
             </View>
           )}
