@@ -359,37 +359,91 @@ class TajweedService {
 
   private hasGhunna(word: string): boolean {
     // Ghunna: نون ساكنة أو میم ساكنة
-    return /[ن][ْ]/.test(word) || /[م][ْ]/.test(word) || /[ن][ّ]/.test(word) || /[م][ّ]/.test(word);
+    // Fixed regex patterns to avoid combined character issues
+    const nunSukun = /ن\u0652/u.test(word); // نون with sukun
+    const mimSukun = /م\u0652/u.test(word); // میم with sukun
+    const nunShaddah = /ن\u0651/u.test(word); // نون with shaddah
+    const mimShaddah = /م\u0651/u.test(word); // میم with shaddah
+    
+    return nunSukun || mimSukun || nunShaddah || mimShaddah;
   }
 
   private hasQalqala(word: string): boolean {
     // Qalqala letters: ق ط ب ج د with sukun
-    return /[قطبجد][ْ]/.test(word);
+    // Using Unicode escape sequences to avoid character class issues
+    const qalqalaLetters = ['ق', 'ط', 'ب', 'ج', 'د'];
+    const sukun = '\u0652';
+    
+    return qalqalaLetters.some(letter => {
+      const pattern = new RegExp(letter + sukun, 'u');
+      return pattern.test(word);
+    });
   }
 
   private hasMadd(word: string): boolean {
     // Madd: prolonged vowels
-    return /[ا][ٰ]/.test(word) || /[و][ٰ]/.test(word) || /[ي][ٰ]/.test(word) || /[اوي]{2,}/.test(word);
+    // Using separate patterns to avoid combined character issues
+    const alifMadd = /ا\u0670/u.test(word); // ا with superscript alif
+    const wawMadd = /و\u0670/u.test(word); // و with superscript alif
+    const yaMadd = /ي\u0670/u.test(word); // ي with superscript alif
+    const longVowels = /[اوي]{2,}/u.test(word); // Multiple consecutive long vowels
+    
+    return alifMadd || wawMadd || yaMadd || longVowels;
   }
 
   private hasIdgham(word: string): boolean {
     // Idgham: نون ساكنة أو تنوين followed by يرملنو
-    return /[ن][ْ]\s*[يرملنو]/.test(word) || /[م][ْ]\s*[يرملنو]/.test(word);
+    const idghamLetters = ['ي', 'ر', 'م', 'ل', 'ن', 'و'];
+    const nunSukun = 'ن\u0652';
+    const mimSukun = 'م\u0652';
+    
+    return idghamLetters.some(letter => {
+      const nunPattern = new RegExp(nunSukun + '\\s*' + letter, 'u');
+      const mimPattern = new RegExp(mimSukun + '\\s*' + letter, 'u');
+      return nunPattern.test(word) || mimPattern.test(word);
+    });
   }
 
   private hasIkhfa(word: string): boolean {
     // Ikhfa: نون ساكنة أو تنوين followed by تثجدذزسشصضطظفقك
-    return /[ن][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word) || /[م][ْ]\s*[تثجدذزسشصضطظفقك]/.test(word);
+    const ikhfaLetters = ['ت', 'ث', 'ج', 'د', 'ذ', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ف', 'ق', 'ك'];
+    const nunSukun = 'ن\u0652';
+    const mimSukun = 'م\u0652';
+    
+    return ikhfaLetters.some(letter => {
+      const nunPattern = new RegExp(nunSukun + '\\s*' + letter, 'u');
+      const mimPattern = new RegExp(mimSukun + '\\s*' + letter, 'u');
+      return nunPattern.test(word) || mimPattern.test(word);
+    });
   }
 
   private hasIqlab(word: string): boolean {
     // Iqlab: نون ساكنة أو تنوين followed by ب
-    return /[ن][ْ]\s*[ب]/.test(word) || /[م][ْ]\s*[ب]/.test(word);
+    const nunSukun = 'ن\u0652';
+    const mimSukun = 'م\u0652';
+    const ba = 'ب';
+    
+    const nunPattern = new RegExp(nunSukun + '\\s*' + ba, 'u');
+    const mimPattern = new RegExp(mimSukun + '\\s*' + ba, 'u');
+    
+    return nunPattern.test(word) || mimPattern.test(word);
   }
 
   private hasWaqf(word: string): boolean {
-    // Waqf signs
-    return /[۝۞ۖۗۘۙۚۛۜ]/.test(word);
+    // Waqf signs - using individual Unicode code points to avoid character class issues
+    const waqfSigns = [
+      '\u06DD', // ۝
+      '\u06DE', // ۞
+      '\u0616', // ۖ
+      '\u0617', // ۗ
+      '\u0618', // ۘ
+      '\u0619', // ۙ
+      '\u061A', // ۚ
+      '\u061B', // ۛ
+      '\u061C'  // ۜ
+    ];
+    
+    return waqfSigns.some(sign => word.includes(sign));
   }
 
   getTajweedColorLegend(): { [key: string]: { color: string; name: string; description: string } } {
