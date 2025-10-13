@@ -4,8 +4,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } f
 import { useTheme } from '../../contexts/ThemeContext';
 import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
-import { tajweedService } from '../../services/tajweedService';
-import TajweedLegend from '../../components/TajweedLegend';
 import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
@@ -39,7 +37,6 @@ export default function SettingsTab() {
                 showBanner: true,
                 readingMode: 'scroll',
                 squareAdjustment: 50,
-                showTajweed: false,
               });
               Alert.alert('تم', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
@@ -67,7 +64,6 @@ export default function SettingsTab() {
               
               // Clear all caches
               quranService.clearCache();
-              tajweedService.clearCache();
               
               // Force reprocess
               await quranService.forceReprocess();
@@ -252,12 +248,6 @@ export default function SettingsTab() {
       color: '#fff',
       marginLeft: 10,
     },
-    legendContainer: {
-      marginTop: 15,
-      padding: 15,
-      backgroundColor: colors.backgroundAlt,
-      borderRadius: 12,
-    },
   });
 
   return (
@@ -286,22 +276,6 @@ export default function SettingsTab() {
             />
             <Text style={styles.settingLabel}>عرض الشعار</Text>
           </View>
-
-          <View style={styles.settingItem}>
-            <Switch
-              value={settings.showTajweed}
-              onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.surface}
-            />
-            <Text style={styles.settingLabel}>عرض أحكام التجويد</Text>
-          </View>
-
-          {settings.showTajweed && (
-            <View style={styles.legendContainer}>
-              <TajweedLegend />
-            </View>
-          )}
         </View>
 
         {/* Text Settings */}

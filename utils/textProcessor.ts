@@ -101,7 +101,8 @@ export function processAyahText(text: string, surahNumber: number, ayahNumber: n
       removed: wasRemoved,
       originalLength: originalText.length,
       processedLength: processedText.length,
-      lengthDifference: originalText.length - processedText.length
+      lengthDifference: originalText.length - processedText.length,
+      isEmpty: processedText.trim().length === 0
     });
     
     return processedText;
@@ -248,6 +249,7 @@ export function validateTextProcessing(
   
   const lengthDifference = originalText.length - processedText.length;
   const stillContainsBismillah = containsBismillah(processedText);
+  const processedIsEmpty = processedText.trim().length === 0;
   
   // For first verses, we expect Bismillah to be removed (except Surah 9)
   if (ayahNumber === 1 && surahNumber !== 9) {
@@ -264,6 +266,15 @@ export function validateTextProcessing(
         isValid: false,
         details: `No text change detected for ${surahNumber}:${ayahNumber} (expected Bismillah removal)`,
         hasIssues: true
+      };
+    }
+    
+    // Check if the processed text is empty (this would indicate Bismillah was the only content)
+    if (processedIsEmpty) {
+      return {
+        isValid: true, // This is actually valid - some first verses might only contain Bismillah
+        details: `First verse ${surahNumber}:${ayahNumber} became empty after Bismillah removal (this is expected for some surahs)`,
+        hasIssues: false
       };
     }
   }

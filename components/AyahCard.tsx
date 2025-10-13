@@ -1,14 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { Ayah, TajweedData } from '../types';
+import { Ayah } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { tafsirService } from '../services/tafsirService';
-import { tajweedService } from '../services/tajweedService';
 import { processAyahText, validateTextProcessing, normalizeArabicText } from '../utils/textProcessor';
 import { router } from 'expo-router';
-import TajweedText from './TajweedText';
 import Icon from './Icon';
 
 interface AyahCardProps {
@@ -32,8 +30,6 @@ export default function AyahCard({
   const { bookmarks, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsir, setTafsir] = useState<string>('');
-  const [tajweedData, setTajweedData] = useState<TajweedData | null>(null);
-  const [loadingTajweed, setLoadingTajweed] = useState(false);
   const [loadingTafsir, setLoadingTafsir] = useState(false);
   const [textProcessingInfo, setTextProcessingInfo] = useState<any>(null);
 
@@ -57,46 +53,6 @@ export default function AyahCard({
       console.warn(`Text processing issue: ${validation.details}`);
     }
   }, [ayah.text, processedAyahText, surahNumber, ayah.numberInSurah]);
-
-  useEffect(() => {
-    const loadTajweedData = async () => {
-      if (settings.showTajweed && !tajweedData && !loadingTajweed) {
-        setLoadingTajweed(true);
-        try {
-          const data = await tajweedService.getTajweedData(surahNumber, ayah.numberInSurah);
-          if (data && data.segments && data.segments.length > 0) {
-            setTajweedData(data);
-          } else {
-            // Fallback to basic tajweed rules using processed text
-            const segments = tajweedService.applyBasicTajweedRules(processedAyahText);
-            setTajweedData({
-              surah: surahNumber,
-              ayah: ayah.numberInSurah,
-              segments
-            });
-          }
-        } catch (error) {
-          console.log('Error loading tajweed data:', error);
-          // Fallback to basic tajweed rules using processed text
-          try {
-            const segments = tajweedService.applyBasicTajweedRules(processedAyahText);
-            setTajweedData({
-              surah: surahNumber,
-              ayah: ayah.numberInSurah,
-              segments
-            });
-          } catch (fallbackError) {
-            console.error('Error in tajweed fallback:', fallbackError);
-            setTajweedData(null);
-          }
-        } finally {
-          setLoadingTajweed(false);
-        }
-      }
-    };
-
-    loadTajweedData();
-  }, [settings.showTajweed, surahNumber, ayah.numberInSurah, processedAyahText, tajweedData, loadingTajweed]);
 
   const handleTafsirToggle = async () => {
     if (!showTafsir && !tafsir && !loadingTafsir) {
@@ -153,6 +109,12 @@ export default function AyahCard({
     }
   };
 
+  // Skip rendering if the processed text is empty (happens when Bismillah is removed and nothing else remains)
+  if (!processedAyahText.trim()) {
+    console.log(`Skipping empty ayah ${surahNumber}:${ayah.numberInSurah} after processing`);
+    return null;
+  }
+
   const styles = StyleSheet.create({
     card: {
       backgroundColor: '#f8f6f0', // Cream background
@@ -207,13 +169,6 @@ export default function AyahCard({
       paddingLeft: 10,
       width: '100%',
       writingDirection: 'rtl',
-    },
-    tajweedContainer: {
-      textAlign: 'right',
-      marginBottom: 12,
-      paddingLeft: 10,
-      width: '100%',
-      alignItems: 'flex-end', // Align tajweed text to the right
     },
     ayahTranslation: {
       fontSize: textSizes.body,
@@ -309,15 +264,6 @@ export default function AyahCard({
       borderRadius: 6,
       backgroundColor: '#d4af37',
     },
-    tajweedIndicator: {
-      position: 'absolute',
-      top: -5,
-      right: -5,
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: '#FF6B6B',
-    },
     debugInfo: {
       backgroundColor: '#fff3cd',
       padding: 8,
@@ -356,15 +302,7 @@ export default function AyahCard({
     <View style={styles.card}>
       <View style={styles.ayahRow}>
         <View style={styles.ayahTextContainer}>
-          {settings.showTajweed && tajweedData && tajweedData.segments ? (
-            <TajweedText
-              segments={tajweedData.segments}
-              fontSize={Math.max(20, textSizes.arabic * 0.9)}
-              style={styles.tajweedContainer}
-            />
-          ) : (
-            <Text style={styles.ayahText}>{processedAyahText}</Text>
-          )}
+          <Text style={styles.ayahText}>{processedAyahText}</Text>
           
           {showDebug && (
             <View style={styles.debugInfo}>
@@ -397,7 +335,6 @@ export default function AyahCard({
         <View style={styles.ayahNumberCircle}>
           <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
           {isPlaying && <View style={styles.playingIndicator} />}
-          {settings.showTajweed && tajweedData && <View style={styles.tajweedIndicator} />}
         </View>
       </View>
 

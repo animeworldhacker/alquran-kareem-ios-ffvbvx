@@ -41,7 +41,7 @@ export default function SurahScreen() {
       if (surahData) {
         setSurah(surahData);
         setError(null);
-        console.log(`Loaded Surah ${surahNumber}:`, surahData?.name);
+        console.log(`Loaded Surah ${surahNumber}:`, surahData?.name, `with ${surahData?.ayahs?.length} ayahs`);
       } else if (!quranLoading) {
         setError(`لم يتم العثور على السورة رقم ${surahNumber}`);
       }
@@ -440,7 +440,12 @@ export default function SurahScreen() {
     );
   }
 
+  // Filter out any ayahs with empty text (shouldn't happen after our processing, but safety check)
+  const validAyahs = surah.ayahs.filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
+
   if (settings.readingMode === 'flip') {
+    const currentPageAyahs = getCurrentPageAyahs().filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
+    
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -457,7 +462,7 @@ export default function SurahScreen() {
           </View>
           
           <View style={styles.headerInfo}>
-            <Text style={styles.ayahCount}>{surah.numberOfAyahs || surah.ayahs.length} آية</Text>
+            <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
           </View>
         </View>
 
@@ -478,9 +483,9 @@ export default function SurahScreen() {
           )}
 
           <ScrollView style={styles.ayahContainer} showsVerticalScrollIndicator={false}>
-            {getCurrentPageAyahs().map((ayah: any) => (
+            {currentPageAyahs.map((ayah: any) => (
               <AyahCard
-                key={ayah.number || ayah.numberInSurah}
+                key={`${surahNumber}-${ayah.numberInSurah}`}
                 ayah={ayah}
                 surahNumber={surahNumber}
                 surahName={surah.name || 'السورة'}
@@ -551,7 +556,7 @@ export default function SurahScreen() {
         </View>
         
         <View style={styles.headerInfo}>
-          <Text style={styles.ayahCount}>{surah.numberOfAyahs || surah.ayahs.length} آية</Text>
+          <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
         </View>
       </View>
       
@@ -562,9 +567,9 @@ export default function SurahScreen() {
           </View>
         )}
         
-        {surah.ayahs.map((ayah: any) => (
+        {validAyahs.map((ayah: any) => (
           <AyahCard
-            key={ayah.number || ayah.numberInSurah}
+            key={`${surahNumber}-${ayah.numberInSurah}`}
             ayah={ayah}
             surahNumber={surahNumber}
             surahName={surah.name || 'السورة'}

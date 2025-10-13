@@ -30,7 +30,7 @@ class QuranService {
       
       if (data.code === 200 && data.data) {
         console.log('Processing Quran data to remove Bismillah from all first verses...');
-        // Process the Quran data to remove Bismillah from first verses
+        // Process the Quran data to remove Bismillah from first verses and fix verse numbering
         const processedData = this.processQuranData(data.data);
         this.cachedQuran = processedData;
         
@@ -82,7 +82,7 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
-        // Process the surah data to remove Bismillah from first verse
+        // Process the surah data to remove Bismillah from first verse and fix verse numbering
         const processedSurah = this.processSurahData(data.data, surahNumber);
         console.log(`Surah ${surahNumber} fetched and processed successfully`);
         return processedSurah;
@@ -118,7 +118,7 @@ class QuranService {
   }
 
   private processQuranData(quranData: QuranData): QuranData {
-    console.log('Processing Quran data to remove Bismillah from first verses...');
+    console.log('Processing Quran data to remove Bismillah from first verses and fix verse numbering...');
     
     // Reset processing stats
     this.processingStats = {
@@ -128,7 +128,7 @@ class QuranService {
       processingErrors: 0
     };
     
-    // Process each surah to remove Bismillah from first verses
+    // Process each surah to remove Bismillah from first verses and fix verse numbering
     const processedSurahs = quranData.surahs.map(surah => {
       try {
         this.processingStats.processedSurahs++;
@@ -165,10 +165,31 @@ class QuranService {
             }
           });
           
-          return {
+          // Filter out empty ayahs (where Bismillah was the only content)
+          const filteredAyahs = processedAyahs.filter(ayah => {
+            const hasContent = ayah.text && ayah.text.trim().length > 0;
+            if (!hasContent) {
+              console.log(`Filtering out empty ayah ${surah.number}:${ayah.numberInSurah} after Bismillah removal`);
+            }
+            return hasContent;
+          });
+          
+          // Renumber ayahs to start from 1 and be consecutive
+          const renumberedAyahs = filteredAyahs.map((ayah, index) => ({
+            ...ayah,
+            numberInSurah: index + 1
+          }));
+          
+          // Update the numberOfAyahs to reflect the actual count after processing
+          const updatedSurah = {
             ...surah,
-            ayahs: processedAyahs
+            ayahs: renumberedAyahs,
+            numberOfAyahs: renumberedAyahs.length
           };
+          
+          console.log(`Surah ${surah.number}: ${surah.ayahs.length} → ${renumberedAyahs.length} ayahs after processing`);
+          
+          return updatedSurah;
         }
         
         return surah;
@@ -200,9 +221,9 @@ class QuranService {
   }
 
   private processSurahData(surahData: any, surahNumber: number): any {
-    console.log(`Processing individual Surah ${surahNumber} data to remove Bismillah...`);
+    console.log(`Processing individual Surah ${surahNumber} data to remove Bismillah and fix verse numbering...`);
     
-    // Process individual surah data to remove Bismillah from first verse
+    // Process individual surah data to remove Bismillah from first verse and fix verse numbering
     if (surahData.ayahs && Array.isArray(surahData.ayahs)) {
       const processedAyahs = surahData.ayahs.map((ayah: any) => {
         try {
@@ -227,10 +248,27 @@ class QuranService {
         }
       });
       
-      console.log(`Finished processing individual Surah ${surahNumber} data`);
+      // Filter out empty ayahs (where Bismillah was the only content)
+      const filteredAyahs = processedAyahs.filter((ayah: any) => {
+        const hasContent = ayah.text && ayah.text.trim().length > 0;
+        if (!hasContent) {
+          console.log(`Filtering out empty ayah ${surahNumber}:${ayah.numberInSurah} after Bismillah removal`);
+        }
+        return hasContent;
+      });
+      
+      // Renumber ayahs to start from 1 and be consecutive
+      const renumberedAyahs = filteredAyahs.map((ayah: any, index: number) => ({
+        ...ayah,
+        numberInSurah: index + 1
+      }));
+      
+      console.log(`Individual Surah ${surahNumber}: ${surahData.ayahs.length} → ${renumberedAyahs.length} ayahs after processing`);
+      
       return {
         ...surahData,
-        ayahs: processedAyahs
+        ayahs: renumberedAyahs,
+        numberOfAyahs: renumberedAyahs.length
       };
     }
     
