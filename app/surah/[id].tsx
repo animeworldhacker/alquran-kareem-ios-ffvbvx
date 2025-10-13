@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, Animated } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useAudio } from '../../hooks/useAudio';
@@ -28,7 +28,15 @@ export default function SurahScreen() {
   const [surah, setSurah] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  
   const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     try {
@@ -62,6 +70,26 @@ export default function SurahScreen() {
     }
   }, [targetAyah, surah]);
 
+  // Show/hide scroll indicator based on content
+  useEffect(() => {
+    if (contentHeight > scrollViewHeight && scrollViewHeight > 0) {
+      setShowScrollIndicator(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowScrollIndicator(false);
+      });
+    }
+  }, [contentHeight, scrollViewHeight, fadeAnim]);
+
   const handlePlayAyah = async (ayahNumber: number) => {
     try {
       console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
@@ -76,6 +104,42 @@ export default function SurahScreen() {
     return audioState.isPlaying && 
            audioState.currentSurah === surahNumber && 
            audioState.currentAyah === ayahNumber;
+  };
+
+  // Handle scroll events
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    setScrollPosition(contentOffset.y);
+    setContentHeight(contentSize.height);
+    setScrollViewHeight(layoutMeasurement.height);
+  };
+
+  // Handle scroll indicator press
+  const handleScrollIndicatorPress = (event: any) => {
+    const { locationY } = event.nativeEvent;
+    const scrollIndicatorHeight = screenHeight * 0.6; // Height of the scroll indicator area
+    const scrollRatio = locationY / scrollIndicatorHeight;
+    const targetScrollY = scrollRatio * (contentHeight - scrollViewHeight);
+    
+    scrollViewRef.current?.scrollTo({
+      y: Math.max(0, Math.min(targetScrollY, contentHeight - scrollViewHeight)),
+      animated: true,
+    });
+  };
+
+  // Calculate scroll indicator position and size
+  const getScrollIndicatorStyle = () => {
+    if (contentHeight <= scrollViewHeight) return { height: 0, top: 0 };
+    
+    const scrollIndicatorHeight = screenHeight * 0.6;
+    const scrollRatio = scrollPosition / (contentHeight - scrollViewHeight);
+    const indicatorSize = Math.max(20, (scrollViewHeight / contentHeight) * scrollIndicatorHeight);
+    const indicatorPosition = scrollRatio * (scrollIndicatorHeight - indicatorSize);
+    
+    return {
+      height: indicatorSize,
+      top: indicatorPosition,
+    };
   };
 
   // Split ayahs into pages for flip mode (10 ayahs per page)
@@ -344,6 +408,37 @@ export default function SurahScreen() {
       color: '#8B4513',
       fontFamily: 'Amiri_400Regular',
     },
+    // Right-side scroll indicator styles
+    scrollIndicatorContainer: {
+      position: 'absolute',
+      right: 8,
+      top: screenHeight * 0.15, // Start below header
+      width: 6,
+      height: screenHeight * 0.6, // Take up 60% of screen height
+      backgroundColor: 'rgba(212, 175, 55, 0.2)', // Semi-transparent gold
+      borderRadius: 3,
+      zIndex: 1000,
+    },
+    scrollIndicator: {
+      position: 'absolute',
+      right: 0,
+      width: 6,
+      backgroundColor: '#d4af37', // Gold color
+      borderRadius: 3,
+      minHeight: 20,
+    },
+    scrollIndicatorThumb: {
+      position: 'absolute',
+      right: -2,
+      width: 10,
+      backgroundColor: '#b8941f', // Darker gold
+      borderRadius: 5,
+      minHeight: 20,
+    },
+    contentContainer: {
+      position: 'relative',
+      flex: 1,
+    },
   });
 
   // Show error state
@@ -539,7 +634,7 @@ export default function SurahScreen() {
     );
   }
 
-  // Default scroll mode with AyahCard components
+  // Default scroll mode with AyahCard components and right-side scroller
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -560,29 +655,53 @@ export default function SurahScreen() {
         </View>
       </View>
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {surahNumber !== 1 && surahNumber !== 9 && (
-          <View style={styles.bismillahContainer}>
-            <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+      <View style={styles.contentContainer}>
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {surahNumber !== 1 && surahNumber !== 9 && (
+            <View style={styles.bismillahContainer}>
+              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+            </View>
+          )}
+          
+          {validAyahs.map((ayah: any) => (
+            <AyahCard
+              key={`${surahNumber}-${ayah.numberInSurah}`}
+              ayah={ayah}
+              surahNumber={surahNumber}
+              surahName={surah.name || 'السورة'}
+              surahEnglishName={surah.englishName || ''}
+              onPlayAudio={handlePlayAyah}
+              isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
+            />
+          ))}
+          
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>صدق الله العظيم</Text>
           </View>
+        </ScrollView>
+        
+        {/* Right-side scroll indicator */}
+        {showScrollIndicator && (
+          <Animated.View 
+            style={[styles.scrollIndicatorContainer, { opacity: fadeAnim }]}
+          >
+            <TouchableOpacity
+              style={StyleSheet.absoluteFillObject}
+              onPress={handleScrollIndicatorPress}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.scrollIndicator, getScrollIndicatorStyle()]} />
+              <View style={[styles.scrollIndicatorThumb, getScrollIndicatorStyle()]} />
+            </TouchableOpacity>
+          </Animated.View>
         )}
-        
-        {validAyahs.map((ayah: any) => (
-          <AyahCard
-            key={`${surahNumber}-${ayah.numberInSurah}`}
-            ayah={ayah}
-            surahNumber={surahNumber}
-            surahName={surah.name || 'السورة'}
-            surahEnglishName={surah.englishName || ''}
-            onPlayAudio={handlePlayAyah}
-            isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-          />
-        ))}
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>صدق الله العظيم</Text>
-        </View>
-      </ScrollView>
+      </View>
       
       <AudioPlayer
         audioState={audioState}

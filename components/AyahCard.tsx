@@ -115,10 +115,14 @@ export default function AyahCard({
     return null;
   }
 
+  // Increased text sizes - making them significantly larger
+  const increasedArabicTextSize = Math.max(26, textSizes.arabic * 1.3); // Increased from 20 to 26+ base
+  const increasedLineHeight = Math.max(50, increasedArabicTextSize * 1.9); // Increased line height proportionally
+
   const styles = StyleSheet.create({
     card: {
       backgroundColor: '#f8f6f0', // Cream background
-      marginVertical: 8,
+      marginVertical: 10, // Increased margin for larger cards
       marginHorizontal: 16,
       borderRadius: 12,
       overflow: 'hidden',
@@ -127,21 +131,22 @@ export default function AyahCard({
       shadowOpacity: 0.08,
       shadowRadius: 12,
       elevation: 4,
+      minHeight: 120, // Minimum height to accommodate larger text
     },
     ayahRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      padding: 20,
+      padding: 24, // Increased padding for larger text
     },
     ayahNumberCircle: {
-      width: 35,
-      height: 35,
-      borderRadius: 17.5,
+      width: 40, // Increased from 35 to 40
+      height: 40, // Increased from 35 to 40
+      borderRadius: 20, // Adjusted for new size
       backgroundColor: '#d4af37', // Gold color
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 15,
-      marginTop: 5,
+      marginRight: 18, // Increased margin
+      marginTop: 8, // Adjusted for better alignment with larger text
       shadowColor: '#d4af37',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
@@ -149,7 +154,7 @@ export default function AyahCard({
       elevation: 3,
     },
     ayahNumber: {
-      fontSize: 16,
+      fontSize: 18, // Increased from 16 to 18
       fontFamily: 'Amiri_700Bold',
       color: '#fff',
       fontWeight: 'bold',
@@ -158,88 +163,91 @@ export default function AyahCard({
       flex: 1,
       position: 'relative',
       alignItems: 'flex-end', // Align content to the right
+      minHeight: 60, // Minimum height for text container
     },
     ayahText: {
-      fontSize: Math.max(20, textSizes.arabic * 0.9),
+      fontSize: increasedArabicTextSize, // Significantly increased text size
       fontFamily: 'ScheherazadeNew_400Regular',
       color: '#2F4F4F', // Dark slate gray
       textAlign: 'right',
-      lineHeight: Math.max(38, (textSizes.arabic * 0.9) * 1.9),
-      marginBottom: 12,
-      paddingLeft: 10,
+      lineHeight: increasedLineHeight, // Increased line height
+      marginBottom: 16, // Increased margin
+      paddingLeft: 12, // Increased padding
+      paddingRight: 4, // Added right padding
       width: '100%',
       writingDirection: 'rtl',
     },
     ayahTranslation: {
-      fontSize: textSizes.body,
+      fontSize: textSizes.body + 2, // Slightly increased translation text
       fontFamily: 'Amiri_400Regular',
       color: '#8B4513', // Brown color
       textAlign: 'left',
-      lineHeight: 22,
+      lineHeight: 24, // Increased line height
       fontStyle: 'italic',
-      marginBottom: 10,
+      marginBottom: 12, // Increased margin
     },
     actionsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingBottom: 15,
+      paddingHorizontal: 24, // Increased padding
+      paddingBottom: 18, // Increased padding
       borderTopWidth: 1,
       borderTopColor: '#e8e6e0',
-      marginTop: 10,
-      paddingTop: 15,
+      marginTop: 12, // Increased margin
+      paddingTop: 18, // Increased padding
     },
     actionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      borderRadius: 20,
+      paddingHorizontal: 12, // Increased padding
+      paddingVertical: 10, // Increased padding
+      borderRadius: 22, // Increased border radius
       backgroundColor: 'transparent',
+      minWidth: 80, // Minimum width for better touch targets
     },
     actionButtonActive: {
       backgroundColor: '#d4af37',
     },
     actionText: {
-      fontSize: textSizes.caption - 1,
+      fontSize: textSizes.caption, // Kept same size for action text
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
-      marginLeft: 6,
+      marginLeft: 8, // Increased margin
     },
     actionTextActive: {
       color: '#fff',
     },
     tafsirContainer: {
       backgroundColor: '#f0ede5',
-      padding: 20,
+      padding: 24, // Increased padding
       borderTopWidth: 1,
       borderTopColor: '#e8e6e0',
     },
     tafsirTitle: {
-      fontSize: textSizes.body + 2,
+      fontSize: textSizes.body + 4, // Increased tafsir title size
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
-      marginBottom: 12,
+      marginBottom: 16, // Increased margin
       textAlign: 'right',
     },
     tafsirText: {
-      fontSize: textSizes.body,
+      fontSize: textSizes.body + 2, // Increased tafsir text size
       fontFamily: 'Amiri_400Regular',
       color: '#2F4F4F',
-      lineHeight: 26,
+      lineHeight: 30, // Increased line height
       textAlign: 'right',
-      marginBottom: 15,
+      marginBottom: 18, // Increased margin
     },
     fullTafsirButton: {
       alignSelf: 'flex-end',
-      paddingHorizontal: 15,
-      paddingVertical: 8,
+      paddingHorizontal: 18, // Increased padding
+      paddingVertical: 10, // Increased padding
       backgroundColor: '#d4af37',
-      borderRadius: 20,
+      borderRadius: 22, // Increased border radius
     },
     fullTafsirText: {
-      fontSize: textSizes.caption,
+      fontSize: textSizes.caption + 1, // Slightly increased button text
       fontFamily: 'Amiri_700Bold',
       color: '#fff',
     },
@@ -247,50 +255,52 @@ export default function AyahCard({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 20,
+      paddingVertical: 24, // Increased padding
     },
     loadingText: {
-      fontSize: textSizes.body,
+      fontSize: textSizes.body + 1, // Increased loading text size
       fontFamily: 'Amiri_400Regular',
       color: '#8B4513',
-      marginLeft: 10,
+      marginLeft: 12, // Increased margin
     },
     playingIndicator: {
       position: 'absolute',
-      top: -5,
-      left: -5,
-      width: 12,
-      height: 12,
-      borderRadius: 6,
+      top: -6, // Adjusted for larger circle
+      left: -6, // Adjusted for larger circle
+      width: 14, // Increased size
+      height: 14, // Increased size
+      borderRadius: 7, // Adjusted for new size
       backgroundColor: '#d4af37',
     },
     debugInfo: {
       backgroundColor: '#fff3cd',
-      padding: 8,
-      marginTop: 8,
-      borderRadius: 4,
+      padding: 10, // Increased padding
+      marginTop: 10, // Increased margin
+      borderRadius: 6, // Increased border radius
       borderLeftWidth: 4,
       borderLeftColor: '#ffc107',
     },
     debugText: {
-      fontSize: 12,
+      fontSize: 13, // Slightly increased debug text
       fontFamily: 'Amiri_400Regular',
       color: '#856404',
       textAlign: 'left',
+      lineHeight: 18, // Added line height
     },
     warningInfo: {
       backgroundColor: '#f8d7da',
-      padding: 8,
-      marginTop: 8,
-      borderRadius: 4,
+      padding: 10, // Increased padding
+      marginTop: 10, // Increased margin
+      borderRadius: 6, // Increased border radius
       borderLeftWidth: 4,
       borderLeftColor: '#dc3545',
     },
     warningText: {
-      fontSize: 12,
+      fontSize: 13, // Slightly increased warning text
       fontFamily: 'Amiri_400Regular',
       color: '#721c24',
       textAlign: 'left',
+      lineHeight: 18, // Added line height
     },
   });
 
@@ -321,6 +331,12 @@ export default function AyahCard({
               <Text style={styles.debugText}>
                 Bismillah Removed: {(ayah.text || '') !== processedAyahText ? 'Yes' : 'No'}
               </Text>
+              <Text style={styles.debugText}>
+                Text Size: {increasedArabicTextSize}px
+              </Text>
+              <Text style={styles.debugText}>
+                Line Height: {increasedLineHeight}px
+              </Text>
             </View>
           )}
           
@@ -345,7 +361,7 @@ export default function AyahCard({
         >
           <Icon 
             name={isPlaying ? "pause" : "play"} 
-            size={16} 
+            size={18} // Increased icon size
             style={{ color: isPlaying ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, isPlaying && styles.actionTextActive]}>
@@ -359,7 +375,7 @@ export default function AyahCard({
         >
           <Icon 
             name="book" 
-            size={16} 
+            size={18} // Increased icon size
             style={{ color: showTafsir ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, showTafsir && styles.actionTextActive]}>
@@ -373,7 +389,7 @@ export default function AyahCard({
         >
           <Icon 
             name={bookmarked ? "bookmark" : "bookmark-outline"} 
-            size={16} 
+            size={18} // Increased icon size
             style={{ color: bookmarked ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
@@ -393,9 +409,9 @@ export default function AyahCard({
           ) : (
             <>
               <Text style={styles.tafsirText}>
-                {tafsir ? tafsir.substring(0, 200) + (tafsir.length > 200 ? '...' : '') : 'تفسير غير متوفر حاليا'}
+                {tafsir ? tafsir.substring(0, 250) + (tafsir.length > 250 ? '...' : '') : 'تفسير غير متوفر حاليا'}
               </Text>
-              {tafsir && tafsir.length > 200 && (
+              {tafsir && tafsir.length > 250 && (
                 <TouchableOpacity style={styles.fullTafsirButton} onPress={handleFullTafsir}>
                   <Text style={styles.fullTafsirText}>اقرأ التفسير كاملاً</Text>
                 </TouchableOpacity>

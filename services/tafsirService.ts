@@ -2,11 +2,9 @@
 import { TafsirVerse, TafsirResponse } from '../types';
 
 class TafsirService {
-  // Primary sources in order of preference
-  private primaryUrl = 'https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah';
-  private secondaryUrl = 'https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah';
-  private tertiaryUrl = 'https://github.com/spa5k/tafsir_api'; // Will use the actual API endpoint
-
+  // New primary API from https://quranapi.pages.dev/getting-started/get-tafsir
+  private primaryUrl = 'https://quranapi.pages.dev/api';
+  
   async getTafsir(surahNumber: number, ayahNumber: number): Promise<string> {
     try {
       console.log(`Fetching Ibn Kathir Tafsir for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
@@ -15,10 +13,10 @@ class TafsirService {
         throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
       }
       
-      // Try the first source: https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah/1?locale=en&words=true
+      // Try the new API: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/tafsirs/ibn_kathir
       try {
-        console.log('Trying primary source (QuranCDN API)...');
-        const response = await fetch(`${this.primaryUrl}/${surahNumber}?locale=en&words=true`, {
+        console.log('Trying new QuranAPI.pages.dev API...');
+        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/tafsirs/ibn_kathir`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -29,27 +27,22 @@ class TafsirService {
         if (response.ok) {
           const data = await response.json();
           
-          if (data && data.tafsirs && data.tafsirs.length > 0) {
-            // Find the specific ayah in the response
-            const ayahTafsir = data.tafsirs.find((t: any) => 
-              t.verse_key === `${surahNumber}:${ayahNumber}` || 
-              t.ayah_number === ayahNumber
-            );
-            
-            if (ayahTafsir && ayahTafsir.text && ayahTafsir.text.trim()) {
-              console.log(`Primary source successful for ${surahNumber}:${ayahNumber}`);
-              return this.cleanTafsirText(ayahTafsir.text);
-            }
+          if (data && data.tafsir && data.tafsir.trim()) {
+            console.log(`New API successful for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.tafsir);
+          } else if (data && data.text && data.text.trim()) {
+            console.log(`New API successful (alt format) for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.text);
           }
         }
       } catch (primaryError) {
-        console.log('Primary source failed:', primaryError);
+        console.log('New API failed:', primaryError);
       }
 
-      // Try the second source: https://api.qurancdn.com/api/v4/tafsirs/en-tafisr-ibn-kathir/by_ayah/1:3?locale=en&words=true
+      // Try alternative format: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/ibn_kathir
       try {
-        console.log('Trying secondary source (QuranCDN API with verse key)...');
-        const response = await fetch(`${this.secondaryUrl}/${surahNumber}:${ayahNumber}?locale=en&words=true`, {
+        console.log('Trying alternative new API format...');
+        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -60,66 +53,68 @@ class TafsirService {
         if (response.ok) {
           const data = await response.json();
           
-          if (data && data.tafsirs && data.tafsirs.length > 0) {
-            const tafsirText = data.tafsirs[0].text;
-            if (tafsirText && tafsirText.trim()) {
-              console.log(`Secondary source successful for ${surahNumber}:${ayahNumber}`);
-              return this.cleanTafsirText(tafsirText);
-            }
-          }
-        }
-      } catch (secondaryError) {
-        console.log('Secondary source failed:', secondaryError);
-      }
-
-      // Try the third source: spa5k/tafsir_api
-      try {
-        console.log('Trying tertiary source (spa5k tafsir API)...');
-        // Using the actual API endpoint from spa5k/tafsir_api
-        const response = await fetch(`https://quranapi.pages.dev/api/${surahNumber}/${ayahNumber}/ibn_kathir.json`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.text && data.text.trim()) {
-            console.log(`Tertiary source successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.text);
-          } else if (data && data.tafsir && data.tafsir.trim()) {
-            console.log(`Tertiary source successful (alt format) for ${surahNumber}:${ayahNumber}`);
+          if (data && data.tafsir && data.tafsir.trim()) {
+            console.log(`Alternative new API successful for ${surahNumber}:${ayahNumber}`);
             return this.cleanTafsirText(data.tafsir);
-          }
-        }
-      } catch (tertiaryError) {
-        console.log('Tertiary source failed:', tertiaryError);
-      }
-
-      // Try alternative spa5k API format
-      try {
-        console.log('Trying alternative spa5k API format...');
-        const response = await fetch(`https://quranapi.pages.dev/api/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.data && data.data.text && data.data.text.trim()) {
-            console.log(`Alternative spa5k format successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.data.text);
+          } else if (data && data.text && data.text.trim()) {
+            console.log(`Alternative new API successful (text format) for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.text);
           }
         }
       } catch (altError) {
-        console.log('Alternative spa5k format failed:', altError);
+        console.log('Alternative new API format failed:', altError);
+      }
+
+      // Try another format: https://quranapi.pages.dev/api/surah/{surah_number}/ayah/{ayah_number}/tafsir/ibn_kathir
+      try {
+        console.log('Trying third new API format...');
+        const response = await fetch(`${this.primaryUrl}/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.tafsir && data.tafsir.trim()) {
+            console.log(`Third new API format successful for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.tafsir);
+          } else if (data && data.text && data.text.trim()) {
+            console.log(`Third new API format successful (text) for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.text);
+          }
+        }
+      } catch (thirdError) {
+        console.log('Third new API format failed:', thirdError);
+      }
+
+      // Try direct JSON file format: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/ibn_kathir.json
+      try {
+        console.log('Trying JSON file format...');
+        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir.json`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.tafsir && data.tafsir.trim()) {
+            console.log(`JSON format successful for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.tafsir);
+          } else if (data && data.text && data.text.trim()) {
+            console.log(`JSON format successful (text) for ${surahNumber}:${ayahNumber}`);
+            return this.cleanTafsirText(data.text);
+          }
+        }
+      } catch (jsonError) {
+        console.log('JSON format failed:', jsonError);
       }
 
       // Use comprehensive fallback tafsir
@@ -241,31 +236,27 @@ class TafsirService {
     return tafsirs;
   }
 
-  // Method to test all three sources for a specific ayah
+  // Method to test all sources for a specific ayah
   async testAllSources(surahNumber: number, ayahNumber: number): Promise<{
     primary: string | null;
     secondary: string | null;
     tertiary: string | null;
+    quaternary: string | null;
   }> {
     const results = {
       primary: null as string | null,
       secondary: null as string | null,
       tertiary: null as string | null,
+      quaternary: null as string | null,
     };
 
     // Test primary source
     try {
-      const response = await fetch(`${this.primaryUrl}/${surahNumber}?locale=en&words=true`);
+      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/tafsirs/ibn_kathir`);
       if (response.ok) {
         const data = await response.json();
-        if (data && data.tafsirs && data.tafsirs.length > 0) {
-          const ayahTafsir = data.tafsirs.find((t: any) => 
-            t.verse_key === `${surahNumber}:${ayahNumber}` || 
-            t.ayah_number === ayahNumber
-          );
-          if (ayahTafsir && ayahTafsir.text) {
-            results.primary = this.cleanTafsirText(ayahTafsir.text);
-          }
+        if (data && (data.tafsir || data.text)) {
+          results.primary = this.cleanTafsirText(data.tafsir || data.text);
         }
       }
     } catch (error) {
@@ -274,11 +265,11 @@ class TafsirService {
 
     // Test secondary source
     try {
-      const response = await fetch(`${this.secondaryUrl}/${surahNumber}:${ayahNumber}?locale=en&words=true`);
+      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir`);
       if (response.ok) {
         const data = await response.json();
-        if (data && data.tafsirs && data.tafsirs.length > 0 && data.tafsirs[0].text) {
-          results.secondary = this.cleanTafsirText(data.tafsirs[0].text);
+        if (data && (data.tafsir || data.text)) {
+          results.secondary = this.cleanTafsirText(data.tafsir || data.text);
         }
       }
     } catch (error) {
@@ -287,15 +278,28 @@ class TafsirService {
 
     // Test tertiary source
     try {
-      const response = await fetch(`https://quranapi.pages.dev/api/${surahNumber}/${ayahNumber}/ibn_kathir.json`);
+      const response = await fetch(`${this.primaryUrl}/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`);
       if (response.ok) {
         const data = await response.json();
-        if (data && (data.text || data.tafsir)) {
-          results.tertiary = this.cleanTafsirText(data.text || data.tafsir);
+        if (data && (data.tafsir || data.text)) {
+          results.tertiary = this.cleanTafsirText(data.tafsir || data.text);
         }
       }
     } catch (error) {
       console.log('Tertiary source test failed:', error);
+    }
+
+    // Test quaternary source
+    try {
+      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir.json`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && (data.tafsir || data.text)) {
+          results.quaternary = this.cleanTafsirText(data.tafsir || data.text);
+        }
+      }
+    } catch (error) {
+      console.log('Quaternary source test failed:', error);
     }
 
     return results;
