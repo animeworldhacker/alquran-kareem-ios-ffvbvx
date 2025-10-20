@@ -18,16 +18,16 @@ class AudioService {
   private currentAyah: number | null = null;
   private totalAyahs: number = 0;
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
+  private currentReciterId: number = 2;
 
   // Updated recitation IDs based on Quran.com API
   // These are verified recitation IDs from https://api.quran.com/api/v4/resources/recitations
-  private recitationIds: { [key: string]: number } = {
-    'Ali Jaber': 7,           // Ali Jaber
-    'Ahmed Al Ajmy': 5,       // Ahmed ibn Ali al-Ajamy
-    'Abdulbasit (Murattal)': 2, // AbdulBaset AbdulSamad (Murattal)
-    'Maher Al-Muaiqly': 6,    // Maher Al Muaiqly
-    'Yasser Al-Dosari': 12,   // Yasser Ad-Dussary
-    'Mishary Rashid': 7,      // Fallback - Mishari Rashid al-Afasy
+  private recitationIds: { [key: number]: number } = {
+    7: 7,   // Ali Jaber
+    5: 5,   // Ahmed Al Ajmy
+    2: 2,   // Abdulbasit (Murattal)
+    6: 6,   // Maher Al-Muaiqly
+    12: 12, // Yasser Al-Dosari
   };
 
   async initializeAudio() {
@@ -47,6 +47,7 @@ class AudioService {
       // Load cached reciter from localStorage
       const savedReciter = await AsyncStorage.getItem('selectedReciter');
       if (savedReciter) {
+        this.currentReciterId = parseInt(savedReciter, 10);
         console.log('Loaded saved reciter:', savedReciter);
       }
       
@@ -70,7 +71,7 @@ class AudioService {
       this.reciters = [
         { 
           id: 7, 
-          name: 'Ali Jaber', 
+          name: 'علي جابر', 
           letter: 'أ', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
@@ -79,7 +80,7 @@ class AudioService {
         },
         { 
           id: 5, 
-          name: 'Ahmed Al Ajmy', 
+          name: 'أحمد العجمي', 
           letter: 'أ', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
@@ -88,7 +89,7 @@ class AudioService {
         },
         { 
           id: 2, 
-          name: 'Abdulbasit (Murattal)', 
+          name: 'عبد الباسط عبد الصمد', 
           letter: 'ع', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
@@ -97,7 +98,7 @@ class AudioService {
         },
         { 
           id: 6, 
-          name: 'Maher Al-Muaiqly', 
+          name: 'ماهر المعيقلي', 
           letter: 'م', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
@@ -106,7 +107,7 @@ class AudioService {
         },
         { 
           id: 12, 
-          name: 'Yasser Al-Dosari', 
+          name: 'ياسر الدوسري', 
           letter: 'ي', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
@@ -143,9 +144,17 @@ class AudioService {
   private async checkAudioUrl(url: string): Promise<boolean> {
     try {
       console.log('Checking audio URL availability:', url);
-      const response = await fetch(url, { method: 'HEAD' });
-      const isAvailable = response.ok;
-      console.log('Audio URL check result:', isAvailable ? 'Available' : 'Not available');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      const isAvailable = response.ok && response.status === 200;
+      console.log('Audio URL check result:', isAvailable ? 'Available' : 'Not available', 'Status:', response.status);
       return isAvailable;
     } catch (error) {
       console.error('Error checking audio URL:', error);
@@ -166,9 +175,8 @@ class AudioService {
       return this.audioCache[cacheKey];
     }
 
-    // Get reciter info
-    const reciter = this.reciters.find(r => r.id === reciterId);
-    const recitationId = reciter?.recitationId || reciterId;
+    // Get recitation ID
+    const recitationId = this.recitationIds[reciterId] || reciterId;
     
     console.log(`Getting audio for reciter ID ${reciterId} (recitation ID ${recitationId}), Surah ${surahNumber}, Ayah ${ayahNumber}`);
     
@@ -177,9 +185,9 @@ class AudioService {
     let isAvailable = await this.checkAudioUrl(audioUrl);
     
     if (!isAvailable) {
-      console.log('Primary audio not available, trying fallback (Mishary Rashid - recitation ID 7)...');
-      // Fallback to Mishary Rashid (recitation ID 7)
-      audioUrl = this.buildQuranCdnUrl(7, surahNumber, ayahNumber);
+      console.log('Primary audio not available, trying fallback (Abdulbasit - recitation ID 2)...');
+      // Fallback to Abdulbasit (recitation ID 2)
+      audioUrl = this.buildQuranCdnUrl(2, surahNumber, ayahNumber);
       
       const fallbackAvailable = await this.checkAudioUrl(audioUrl);
       if (!fallbackAvailable) {
@@ -234,6 +242,7 @@ class AudioService {
       this.currentSurah = surahNumber;
       this.currentAyah = ayahNumber;
       this.totalAyahs = totalAyahsInSurah;
+      this.currentReciterId = reciterId;
       this.currentlyPlayingKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
 
       // Get audio URL with fallback
@@ -255,6 +264,7 @@ class AudioService {
     } catch (error) {
       console.error('Error playing audio:', error);
       this.currentlyPlayingKey = null;
+      this.continuousPlayback = false;
       throw new Error(`Failed to play audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -275,19 +285,21 @@ class AudioService {
             this.onAyahEndCallback(this.currentSurah, nextAyah);
           }
           
-          // Get current reciter ID from playing key
-          const reciterId = this.currentlyPlayingKey 
-            ? parseInt(this.currentlyPlayingKey.split(':')[0]) 
-            : 2;
-          
-          // Play next ayah
-          await this.playAyah(
-            this.currentSurah, 
-            nextAyah, 
-            reciterId, 
-            true, 
-            this.totalAyahs
-          );
+          // Play next ayah with a small delay
+          setTimeout(async () => {
+            try {
+              await this.playAyah(
+                this.currentSurah!, 
+                nextAyah, 
+                this.currentReciterId, 
+                true, 
+                this.totalAyahs
+              );
+            } catch (error) {
+              console.error('Error playing next ayah:', error);
+              this.continuousPlayback = false;
+            }
+          }, 500);
         } else {
           console.log('Reached end of surah');
           this.continuousPlayback = false;
@@ -367,6 +379,7 @@ class AudioService {
   async saveSelectedReciter(reciterId: number): Promise<void> {
     try {
       await AsyncStorage.setItem('selectedReciter', reciterId.toString());
+      this.currentReciterId = reciterId;
       console.log('Saved selected reciter:', reciterId);
     } catch (error) {
       console.error('Error saving selected reciter:', error);
@@ -377,7 +390,8 @@ class AudioService {
     try {
       const saved = await AsyncStorage.getItem('selectedReciter');
       if (saved) {
-        return parseInt(saved, 10);
+        this.currentReciterId = parseInt(saved, 10);
+        return this.currentReciterId;
       }
       return null;
     } catch (error) {

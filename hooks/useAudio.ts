@@ -92,7 +92,8 @@ export const useAudio = () => {
       console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber} successfully`);
     } catch (error) {
       console.error('Error playing ayah:', error);
-      setError(error instanceof Error ? error.message : 'فشل في تشغيل الآية');
+      const errorMessage = error instanceof Error ? error.message : 'فشل في تشغيل الآية';
+      setError(errorMessage);
       setAudioState(prev => ({
         ...prev,
         isPlaying: false,
@@ -153,20 +154,40 @@ export const useAudio = () => {
         throw new Error(`Invalid reciter ID: ${reciterId}`);
       }
       
+      const wasPlaying = audioState.isPlaying;
+      const currentSurah = audioState.currentSurah;
+      const currentAyah = audioState.currentAyah;
+      
       setSelectedReciterState(reciterId);
       await audioService.saveSelectedReciter(reciterId);
       
       // If currently playing, switch to the new reciter for the current ayah
-      if (audioState.isPlaying && audioState.currentSurah && audioState.currentAyah) {
+      if (wasPlaying && currentSurah && currentAyah) {
         console.log('Switching reciter during playback...');
         await audioService.stopAudio();
-        await audioService.playAyah(
-          audioState.currentSurah,
-          audioState.currentAyah,
-          reciterId,
-          continuousPlayback,
-          0
-        );
+        
+        // Small delay before playing with new reciter
+        setTimeout(async () => {
+          try {
+            await audioService.playAyah(
+              currentSurah,
+              currentAyah,
+              reciterId,
+              continuousPlayback,
+              0
+            );
+            
+            setAudioState(prev => ({
+              ...prev,
+              isPlaying: true,
+              currentSurah: currentSurah,
+              currentAyah: currentAyah,
+            }));
+          } catch (error) {
+            console.error('Error switching reciter:', error);
+            setError('فشل في تبديل القارئ');
+          }
+        }, 300);
       }
       
       console.log(`Reciter changed to ID: ${reciterId}`);

@@ -23,9 +23,8 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       backgroundColor: '#E8DCC4',
       borderBottomWidth: 1,
       borderBottomColor: '#D4C5A9',
-      paddingVertical: 16,
-      paddingHorizontal: 0,
       flexDirection: 'row',
+      minHeight: 90,
     },
     greenSection: {
       width: 90,
@@ -33,7 +32,6 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 10,
-      position: 'relative',
     },
     decorativeFrame: {
       width: 70,
@@ -61,6 +59,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       flex: 1,
       paddingHorizontal: 20,
       justifyContent: 'center',
+      paddingVertical: 16,
     },
     cardContent: {
       flexDirection: 'row',
@@ -108,7 +107,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
         <View style={styles.cardContent}>
           <View style={styles.leftSection}>
             <Text style={styles.ayahCount}>
-              {surah.numberOfAyahs} ayas
+              {toArabicNumerals(surah.numberOfAyahs)} آيات
             </Text>
             <Text style={styles.arabicName}>{surah.name}</Text>
           </View>

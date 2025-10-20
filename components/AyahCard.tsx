@@ -20,6 +20,12 @@ interface AyahCardProps {
   isContinuousPlaying?: boolean;
 }
 
+// Arabic numerals conversion
+const toArabicNumerals = (num: number): string => {
+  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+};
+
 export default function AyahCard({
   ayah,
   surahNumber,
@@ -252,7 +258,7 @@ export default function AyahCard({
         </View>
 
         <View style={styles.ayahNumber}>
-          <Text style={styles.ayahNumberText}>{ayah.numberInSurah}</Text>
+          <Text style={styles.ayahNumberText}>{toArabicNumerals(ayah.numberInSurah)}</Text>
         </View>
       </View>
 
