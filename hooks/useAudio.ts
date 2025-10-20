@@ -12,13 +12,15 @@ export const useAudio = () => {
     position: 0,
   });
   const [reciters, setReciters] = useState<Reciter[]>([]);
-  const [selectedReciter, setSelectedReciter] = useState<number>(1);
+  const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [continuousPlayback, setContinuousPlayback] = useState(false);
 
   useEffect(() => {
     initializeAudio();
     loadReciters();
+    loadSavedReciter();
   }, []);
 
   const initializeAudio = async () => {
@@ -44,7 +46,24 @@ export const useAudio = () => {
     }
   };
 
-  const playAyah = async (surahNumber: number, ayahNumber: number) => {
+  const loadSavedReciter = async () => {
+    try {
+      const saved = await audioService.loadSelectedReciter();
+      if (saved) {
+        setSelectedReciterState(saved);
+        console.log('Loaded saved reciter:', saved);
+      }
+    } catch (error) {
+      console.error('Error loading saved reciter:', error);
+    }
+  };
+
+  const playAyah = async (
+    surahNumber: number, 
+    ayahNumber: number, 
+    continuousPlay: boolean = false,
+    totalAyahs: number = 0
+  ) => {
     try {
       setLoading(true);
       setError(null);
@@ -53,17 +72,27 @@ export const useAudio = () => {
         throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
       }
       
-      await audioService.playAyah(surahNumber, ayahNumber, selectedReciter);
+      setContinuousPlayback(continuousPlay);
+      
+      await audioService.playAyah(
+        surahNumber, 
+        ayahNumber, 
+        selectedReciter,
+        continuousPlay,
+        totalAyahs
+      );
+      
       setAudioState(prev => ({
         ...prev,
         isPlaying: true,
         currentSurah: surahNumber,
         currentAyah: ayahNumber,
       }));
+      
       console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber} successfully`);
     } catch (error) {
       console.error('Error playing ayah:', error);
-      setError('فشل في تشغيل الآية');
+      setError(error instanceof Error ? error.message : 'فشل في تشغيل الآية');
       setAudioState(prev => ({
         ...prev,
         isPlaying: false,
@@ -79,6 +108,7 @@ export const useAudio = () => {
   const stopAudio = async () => {
     try {
       await audioService.stopAudio();
+      setContinuousPlayback(false);
       setAudioState(prev => ({
         ...prev,
         isPlaying: false,
@@ -117,13 +147,28 @@ export const useAudio = () => {
     }
   };
 
-  const changeReciter = (reciterId: number) => {
+  const changeReciter = async (reciterId: number) => {
     try {
       if (!reciterId || reciterId < 1) {
         throw new Error(`Invalid reciter ID: ${reciterId}`);
       }
       
-      setSelectedReciter(reciterId);
+      setSelectedReciterState(reciterId);
+      await audioService.saveSelectedReciter(reciterId);
+      
+      // If currently playing, switch to the new reciter for the current ayah
+      if (audioState.isPlaying && audioState.currentSurah && audioState.currentAyah) {
+        console.log('Switching reciter during playback...');
+        await audioService.stopAudio();
+        await audioService.playAyah(
+          audioState.currentSurah,
+          audioState.currentAyah,
+          reciterId,
+          continuousPlayback,
+          0
+        );
+      }
+      
       console.log(`Reciter changed to ID: ${reciterId}`);
       setError(null);
     } catch (error) {
@@ -132,16 +177,22 @@ export const useAudio = () => {
     }
   };
 
+  const setOnAyahEnd = (callback: (surah: number, ayah: number) => void) => {
+    audioService.setOnAyahEndCallback(callback);
+  };
+
   return {
     audioState,
     reciters,
     selectedReciter,
     loading,
     error,
+    continuousPlayback,
     playAyah,
     stopAudio,
     pauseAudio,
     resumeAudio,
     setSelectedReciter: changeReciter,
+    setOnAyahEnd,
   };
 };

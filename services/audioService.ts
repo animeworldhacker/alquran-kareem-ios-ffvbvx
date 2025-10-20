@@ -1,11 +1,33 @@
 
 import { Audio } from 'expo-av';
 import { Reciter } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface AudioCache {
+  [key: string]: string;
+}
 
 class AudioService {
   private sound: Audio.Sound | null = null;
   private reciters: Reciter[] = [];
   private isInitialized = false;
+  private audioCache: AudioCache = {};
+  private currentlyPlayingKey: string | null = null;
+  private continuousPlayback = false;
+  private currentSurah: number | null = null;
+  private currentAyah: number | null = null;
+  private totalAyahs: number = 0;
+  private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
+
+  // Recitation IDs for Quran.com CDN
+  private recitationIds: { [key: string]: number } = {
+    'Ali Jaber': 7,
+    'Ahmed Al Ajmy': 3,
+    'Abdulbasit (Murattal)': 2,
+    'Maher Al-Muaiqly': 4,
+    'Yasser Al-Dosari': 8,
+    'Mishary Rashid': 1, // Fallback
+  };
 
   async initializeAudio() {
     try {
@@ -21,6 +43,12 @@ class AudioService {
         playThroughEarpieceAndroid: false,
       });
       
+      // Load cached reciter from localStorage
+      const savedReciter = await AsyncStorage.getItem('selectedReciter');
+      if (savedReciter) {
+        console.log('Loaded saved reciter:', savedReciter);
+      }
+      
       this.isInitialized = true;
       console.log('Audio initialized successfully');
     } catch (error) {
@@ -35,79 +63,136 @@ class AudioService {
     }
 
     try {
-      console.log('Fetching reciters...');
+      console.log('Setting up reciters with Quran.com CDN...');
       
-      // Try to fetch from the API
-      const response = await fetch('https://quranapi.pages.dev/api/reciters', {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data) && data.length > 0) {
-        this.reciters = data.slice(0, 15).map((r: any, idx: number) => ({
-          id: r.id ?? idx + 1,
-          name: r.name ?? `قارئ ${idx + 1}`,
-          letter: r.letter ?? '',
-          rewaya: r.rewaya ?? '',
-          count: r.count ?? 114,
-          server: r.server ?? 'AbdulSamad_64kbps_QuranExplorer.Com',
-        }));
-        console.log('Reciters fetched successfully from API');
-        return this.reciters;
-      }
-      
-      throw new Error('Invalid reciters response from API');
-    } catch (error) {
-      console.error('Error fetching reciters from API, using fallback:', error);
-      
-      // Fallback: use known reciters
+      // Define the 5 required reciters with their Quran.com recitation IDs
       this.reciters = [
-        { id: 1, name: 'عبد الباسط عبد الصمد (مرتل)', letter: 'أ', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdul_Basit_Murattal_192kbps' },
-        { id: 2, name: 'مشارى راشد العفاسى', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Alafasy_64kbps' },
-        { id: 3, name: 'الحصري (مرتل)', letter: 'ح', rewaya: 'حفص عن عاصم', count: 114, server: 'Husary_128kbps' },
-        { id: 4, name: 'المنشاوي (مجود)', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Minshawy_Mujawwad_128kbps' },
-        { id: 5, name: 'الغامدي', letter: 'غ', rewaya: 'حفص عن عاصم', count: 114, server: 'Ghamadi_40kbps' },
-        { id: 6, name: 'ماهر المعيقلي', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'MaherAlMuaiqly128kbps' },
-        { id: 7, name: 'أحمد العجمي', letter: 'أ', rewaya: 'حفص عن عاصم', count: 114, server: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net' },
-        { id: 8, name: 'محمد صديق المنشاوي', letter: 'م', rewaya: 'حفص عن عاصم', count: 114, server: 'Minshawy_Teacher_128kbps' },
-        { id: 9, name: 'عبد الرحمن السديس', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdurrahmaan_As-Sudais_192kbps' },
-        { id: 10, name: 'سعود الشريم', letter: 'س', rewaya: 'حفص عن عاصم', count: 114, server: 'Saood_ash-Shuraym_128kbps' },
-        { id: 11, name: 'ياسر الدوسري', letter: 'ي', rewaya: 'حفص عن عاصم', count: 114, server: 'Yasser_Ad-Dussary_128kbps' },
-        { id: 12, name: 'عبد الله بصفر', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdullah_Basfar_192kbps' },
-        { id: 13, name: 'خالد الجليل', letter: 'خ', rewaya: 'حفص عن عاصم', count: 114, server: 'Khalid_Al-Jaleel_128kbps' },
-        { id: 14, name: 'فارس عباد', letter: 'ف', rewaya: 'حفص عن عاصم', count: 114, server: 'Fares_Abbad_64kbps' },
-        { id: 15, name: 'عبد الله عواد الجهني', letter: 'ع', rewaya: 'حفص عن عاصم', count: 114, server: 'Abdullah_Awad_Al-Juhani_128kbps' },
+        { 
+          id: 7, 
+          name: 'Ali Jaber', 
+          letter: 'أ', 
+          rewaya: 'حفص عن عاصم', 
+          count: 114, 
+          server: 'quran_cdn',
+          recitationId: 7
+        },
+        { 
+          id: 3, 
+          name: 'Ahmed Al Ajmy', 
+          letter: 'أ', 
+          rewaya: 'حفص عن عاصم', 
+          count: 114, 
+          server: 'quran_cdn',
+          recitationId: 3
+        },
+        { 
+          id: 2, 
+          name: 'Abdulbasit (Murattal)', 
+          letter: 'ع', 
+          rewaya: 'حفص عن عاصم', 
+          count: 114, 
+          server: 'quran_cdn',
+          recitationId: 2
+        },
+        { 
+          id: 4, 
+          name: 'Maher Al-Muaiqly', 
+          letter: 'م', 
+          rewaya: 'حفص عن عاصم', 
+          count: 114, 
+          server: 'quran_cdn',
+          recitationId: 4
+        },
+        { 
+          id: 8, 
+          name: 'Yasser Al-Dosari', 
+          letter: 'ي', 
+          rewaya: 'حفص عن عاصم', 
+          count: 114, 
+          server: 'quran_cdn',
+          recitationId: 8
+        },
       ];
       
+      console.log('Reciters configured successfully');
       return this.reciters;
+    } catch (error) {
+      console.error('Error setting up reciters:', error);
+      throw error;
     }
   }
 
-  private buildEveryAyahUrl(folder: string, surahNumber: number, ayahNumber: number): string {
+  private buildQuranCdnUrl(recitationId: number, surahNumber: number, ayahNumber: number): string {
     try {
-      if (!folder || !surahNumber || !ayahNumber) {
+      if (!recitationId || !surahNumber || !ayahNumber) {
         throw new Error('Invalid parameters for building audio URL');
       }
       
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
-      return `https://everyayah.com/data/${folder}/${paddedSurah}${paddedAyah}.mp3`;
+      return `https://verses.quran.com/${recitationId}/${paddedSurah}${paddedAyah}.mp3`;
     } catch (error) {
       console.error('Error building audio URL:', error);
       throw error;
     }
   }
 
-  async playAyah(surahNumber: number, ayahNumber: number, reciterId: number = 1): Promise<void> {
+  private async checkAudioUrl(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.error('Error checking audio URL:', error);
+      return false;
+    }
+  }
+
+  private async getAudioUrlWithFallback(
+    reciterId: number, 
+    surahNumber: number, 
+    ayahNumber: number
+  ): Promise<string> {
+    const cacheKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
+    
+    // Check cache first
+    if (this.audioCache[cacheKey]) {
+      console.log('Using cached audio URL:', cacheKey);
+      return this.audioCache[cacheKey];
+    }
+
+    // Get reciter info
+    const reciter = this.reciters.find(r => r.id === reciterId);
+    const recitationId = reciter?.recitationId || reciterId;
+    
+    // Try primary reciter
+    let audioUrl = this.buildQuranCdnUrl(recitationId, surahNumber, ayahNumber);
+    console.log('Trying primary audio URL:', audioUrl);
+    
+    const isAvailable = await this.checkAudioUrl(audioUrl);
+    
+    if (!isAvailable) {
+      console.log('Primary audio not available, trying fallback (Mishary Rashid)...');
+      // Fallback to Mishary Rashid (recitation ID 1)
+      audioUrl = this.buildQuranCdnUrl(1, surahNumber, ayahNumber);
+      
+      const fallbackAvailable = await this.checkAudioUrl(audioUrl);
+      if (!fallbackAvailable) {
+        throw new Error('Audio file not available for this ayah');
+      }
+    }
+    
+    // Cache the URL
+    this.audioCache[cacheKey] = audioUrl;
+    return audioUrl;
+  }
+
+  async playAyah(
+    surahNumber: number, 
+    ayahNumber: number, 
+    reciterId: number = 2,
+    continuousPlay: boolean = false,
+    totalAyahsInSurah: number = 0
+  ): Promise<void> {
     try {
       // Validate parameters
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
@@ -134,23 +219,15 @@ class AudioService {
         await this.getReciters();
       }
 
-      let audioUrl = '';
-      const reciter = this.reciters.find(r => r.id === reciterId);
-      
-      if (reciter && reciter.server) {
-        if (reciter.server.startsWith('http')) {
-          const paddedSurah = surahNumber.toString().padStart(3, '0');
-          const paddedAyah = ayahNumber.toString().padStart(3, '0');
-          audioUrl = `${reciter.server}/${paddedSurah}${paddedAyah}.mp3`;
-        } else {
-          audioUrl = this.buildEveryAyahUrl(reciter.server, surahNumber, ayahNumber);
-        }
-      } else {
-        // Fallback to default reciter
-        const fallbackFolder = 'AbdulSamad_64kbps_QuranExplorer.Com';
-        audioUrl = this.buildEveryAyahUrl(fallbackFolder, surahNumber, ayahNumber);
-      }
+      // Set continuous playback state
+      this.continuousPlayback = continuousPlay;
+      this.currentSurah = surahNumber;
+      this.currentAyah = ayahNumber;
+      this.totalAyahs = totalAyahsInSurah;
+      this.currentlyPlayingKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
 
+      // Get audio URL with fallback
+      const audioUrl = await this.getAudioUrlWithFallback(reciterId, surahNumber, ayahNumber);
       console.log(`Playing audio: ${audioUrl}`);
       
       const { sound } = await Audio.Sound.createAsync(
@@ -159,7 +236,8 @@ class AudioService {
           shouldPlay: true,
           isLooping: false,
           volume: 1.0,
-        }
+        },
+        this.onPlaybackStatusUpdate.bind(this)
       );
       
       this.sound = sound;
@@ -170,8 +248,55 @@ class AudioService {
     }
   }
 
+  private async onPlaybackStatusUpdate(status: any) {
+    if (status.didJustFinish && !status.isLooping) {
+      console.log('Ayah playback finished');
+      
+      // If continuous playback is enabled, play next ayah
+      if (this.continuousPlayback && this.currentSurah && this.currentAyah) {
+        const nextAyah = this.currentAyah + 1;
+        
+        if (nextAyah <= this.totalAyahs) {
+          console.log(`Playing next ayah: ${this.currentSurah}:${nextAyah}`);
+          
+          // Notify callback if set
+          if (this.onAyahEndCallback) {
+            this.onAyahEndCallback(this.currentSurah, nextAyah);
+          }
+          
+          // Get current reciter ID from playing key
+          const reciterId = this.currentlyPlayingKey 
+            ? parseInt(this.currentlyPlayingKey.split(':')[0]) 
+            : 2;
+          
+          // Play next ayah
+          await this.playAyah(
+            this.currentSurah, 
+            nextAyah, 
+            reciterId, 
+            true, 
+            this.totalAyahs
+          );
+        } else {
+          console.log('Reached end of surah');
+          this.continuousPlayback = false;
+          this.currentlyPlayingKey = null;
+        }
+      }
+    }
+  }
+
+  setOnAyahEndCallback(callback: (surah: number, ayah: number) => void) {
+    this.onAyahEndCallback = callback;
+  }
+
   async stopAudio(): Promise<void> {
     try {
+      this.continuousPlayback = false;
+      this.currentlyPlayingKey = null;
+      this.currentSurah = null;
+      this.currentAyah = null;
+      
       if (this.sound) {
         await this.sound.stopAsync();
         await this.sound.unloadAsync();
@@ -218,6 +343,41 @@ class AudioService {
       console.error('Error getting audio status:', error);
       return null;
     }
+  }
+
+  getCurrentlyPlayingKey(): string | null {
+    return this.currentlyPlayingKey;
+  }
+
+  isContinuousPlayback(): boolean {
+    return this.continuousPlayback;
+  }
+
+  async saveSelectedReciter(reciterId: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem('selectedReciter', reciterId.toString());
+      console.log('Saved selected reciter:', reciterId);
+    } catch (error) {
+      console.error('Error saving selected reciter:', error);
+    }
+  }
+
+  async loadSelectedReciter(): Promise<number | null> {
+    try {
+      const saved = await AsyncStorage.getItem('selectedReciter');
+      if (saved) {
+        return parseInt(saved, 10);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error loading selected reciter:', error);
+      return null;
+    }
+  }
+
+  clearCache(): void {
+    this.audioCache = {};
+    console.log('Audio cache cleared');
   }
 }
 

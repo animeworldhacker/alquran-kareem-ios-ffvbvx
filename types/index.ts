@@ -55,6 +55,7 @@ export interface Reciter {
   rewaya: string;
   count: number;
   server: string;
+  recitationId?: number;
 }
 
 export interface AudioState {

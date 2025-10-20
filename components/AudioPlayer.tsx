@@ -10,9 +10,16 @@ interface AudioPlayerProps {
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
+  onNext?: () => void;
 }
 
-export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: AudioPlayerProps) {
+export default function AudioPlayer({ 
+  audioState, 
+  onPlay, 
+  onPause, 
+  onStop,
+  onNext 
+}: AudioPlayerProps) {
   const { colors, textSizes } = useTheme();
 
   // Safety checks
@@ -41,6 +48,16 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
       onStop();
     } catch (error) {
       console.error('Error in AudioPlayer onStop:', error);
+    }
+  };
+
+  const handleNext = () => {
+    try {
+      if (onNext) {
+        onNext();
+      }
+    } catch (error) {
+      console.error('Error in AudioPlayer onNext:', error);
     }
   };
 
@@ -108,6 +125,12 @@ export default function AudioPlayer({ audioState, onPlay, onPause, onStop }: Aud
             style={styles.controlIcon} 
           />
         </TouchableOpacity>
+
+        {onNext && (
+          <TouchableOpacity style={styles.controlButton} onPress={handleNext}>
+            <Icon name="play-skip-forward" size={24} style={styles.controlIcon} />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
