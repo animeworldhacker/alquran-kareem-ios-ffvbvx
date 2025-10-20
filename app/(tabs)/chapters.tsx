@@ -167,10 +167,6 @@ export default function ChaptersTab() {
       flex: 1,
       flexDirection: 'row',
     },
-    leftGreenBar: {
-      width: 8,
-      backgroundColor: '#4A7C59',
-    },
     mainContent: {
       flex: 1,
     },
@@ -452,8 +448,6 @@ export default function ChaptersTab() {
       </View>
       
       <View style={styles.contentWrapper}>
-        <View style={styles.leftGreenBar} />
-        
         <ScrollView 
           ref={scrollViewRef}
           style={styles.scrollView} 

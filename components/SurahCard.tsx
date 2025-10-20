@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Surah } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -20,11 +20,47 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#E8DCC4', // Beige background
+      backgroundColor: '#E8DCC4',
       borderBottomWidth: 1,
       borderBottomColor: '#D4C5A9',
       paddingVertical: 16,
+      paddingHorizontal: 0,
+      flexDirection: 'row',
+    },
+    greenSection: {
+      width: 90,
+      backgroundColor: '#4A7C59',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      position: 'relative',
+    },
+    decorativeFrame: {
+      width: 70,
+      height: 70,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    frameImage: {
+      width: 70,
+      height: 70,
+      position: 'absolute',
+      top: 0,
+      left: 0,
+    },
+    chapterNumber: {
+      fontSize: 24,
+      color: '#3D3D3D',
+      fontFamily: 'ScheherazadeNew_700Bold',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      zIndex: 1,
+    },
+    contentSection: {
+      flex: 1,
       paddingHorizontal: 20,
+      justifyContent: 'center',
     },
     cardContent: {
       flexDirection: 'row',
@@ -38,7 +74,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     },
     ayahCount: {
       fontSize: 14,
-      color: '#9B8B7E', // Gray color for ayah count
+      color: '#9B8B7E',
       fontFamily: 'Amiri_400Regular',
       marginRight: 20,
       minWidth: 70,
@@ -51,33 +87,31 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       fontFamily: 'ScheherazadeNew_700Bold',
       flex: 1,
     },
-    rightSection: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: 15,
-    },
-    chapterNumber: {
-      fontSize: 20,
-      color: '#3D3D3D',
-      fontFamily: 'ScheherazadeNew_700Bold',
-      fontWeight: 'bold',
-    },
   });
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.cardContent}>
-        <View style={styles.leftSection}>
-          <Text style={styles.ayahCount}>
-            {surah.numberOfAyahs} ayas
-          </Text>
-          <Text style={styles.arabicName}>{surah.name}</Text>
-        </View>
-        
-        <View style={styles.rightSection}>
+      <View style={styles.greenSection}>
+        <View style={styles.decorativeFrame}>
+          <Image 
+            source={require('../assets/images/5734b2e0-2cb8-482c-bac8-691a5b158c4a.png')}
+            style={styles.frameImage}
+            resizeMode="contain"
+          />
           <Text style={styles.chapterNumber}>
-            {toArabicNumerals(surah.number)}
+            {surah.number}
           </Text>
+        </View>
+      </View>
+      
+      <View style={styles.contentSection}>
+        <View style={styles.cardContent}>
+          <View style={styles.leftSection}>
+            <Text style={styles.ayahCount}>
+              {surah.numberOfAyahs} ayas
+            </Text>
+            <Text style={styles.arabicName}>{surah.name}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
