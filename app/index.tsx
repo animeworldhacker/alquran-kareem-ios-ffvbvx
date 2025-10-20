@@ -31,7 +31,8 @@ export default function Index() {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
-  return <Redirect href="/home" />;
+  // Redirect to tabs/chapters instead of home
+  return <Redirect href="/(tabs)/chapters" />;
 }
 
 const styles = StyleSheet.create({

@@ -83,6 +83,7 @@ export interface AppSettings {
   showBanner: boolean;
   readingMode: 'scroll' | 'flip';
   squareAdjustment: number; // 0-100 for square size adjustment
+  showTajweed: boolean;
 }
 
 export interface ReciterWithImage extends Reciter {

@@ -28,6 +28,7 @@ interface ThemeContextType {
     caption: number;
     arabic: number;
   };
+  isLoading: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -41,12 +42,14 @@ export const useTheme = (): ThemeContextType => {
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({
     textSize: 'medium',
     theme: 'light',
     showBanner: true,
     readingMode: 'scroll',
     squareAdjustment: 50,
+    showTajweed: true,
   });
 
   useEffect(() => {
@@ -55,20 +58,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const loadSettings = async () => {
     try {
+      setIsLoading(true);
       const savedSettings = await settingsService.getSettings();
-      if (savedSettings) {
-        setSettings(savedSettings);
-      }
+      const defaultSettings = settingsService.getDefaultSettings();
+      
+      // Merge saved settings with defaults to ensure all properties exist
+      const mergedSettings = { ...defaultSettings, ...savedSettings };
+      setSettings(mergedSettings);
+      console.log('Settings loaded successfully:', mergedSettings);
     } catch (error) {
       console.error('Error loading settings:', error);
+      // Use default settings on error
+      setSettings(settingsService.getDefaultSettings());
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
+      console.log('Updating settings:', newSettings);
       const updatedSettings = { ...settings, ...newSettings };
+      
+      // Save to storage first
       await settingsService.saveSettings(updatedSettings);
+      
+      // Then update state
       setSettings(updatedSettings);
+      console.log('Settings updated successfully:', updatedSettings);
     } catch (error) {
       console.error('Error updating settings:', error);
       throw error;
@@ -117,6 +134,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     updateSettings,
     colors: getColors(),
     textSizes: getTextSizes(),
+    isLoading,
   };
 
   return (

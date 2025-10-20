@@ -12,8 +12,9 @@ export default function SettingsTab() {
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
+      console.log(`Updating setting ${key} to:`, value);
       await updateSettings({ [key]: value });
-      console.log(`Updated setting ${key} to:`, value);
+      console.log(`Successfully updated setting ${key}`);
     } catch (error) {
       console.error('Error updating setting:', error);
       Alert.alert('خطأ', 'فشل في حفظ الإعدادات');
@@ -37,6 +38,7 @@ export default function SettingsTab() {
                 showBanner: true,
                 readingMode: 'scroll',
                 squareAdjustment: 50,
+                showTajweed: true,
               });
               Alert.alert('تم', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
@@ -166,6 +168,7 @@ export default function SettingsTab() {
     },
     scrollContainer: {
       padding: 20,
+      paddingBottom: 100,
     },
     section: {
       marginBottom: 30,
@@ -260,7 +263,10 @@ export default function SettingsTab() {
           <View style={styles.settingItem}>
             <Switch
               value={settings.theme === 'dark'}
-              onValueChange={(value) => handleUpdateSetting('theme', value ? 'dark' : 'light')}
+              onValueChange={(value) => {
+                console.log('Dark mode toggled:', value);
+                handleUpdateSetting('theme', value ? 'dark' : 'light');
+              }}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.surface}
             />
@@ -270,7 +276,10 @@ export default function SettingsTab() {
           <View style={styles.settingItem}>
             <Switch
               value={settings.showBanner}
-              onValueChange={(value) => handleUpdateSetting('showBanner', value)}
+              onValueChange={(value) => {
+                console.log('Show banner toggled:', value);
+                handleUpdateSetting('showBanner', value);
+              }}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.surface}
             />
@@ -291,7 +300,10 @@ export default function SettingsTab() {
                     styles.textSizeButton,
                     settings.textSize === size && styles.textSizeButtonActive,
                   ]}
-                  onPress={() => handleUpdateSetting('textSize', size)}
+                  onPress={() => {
+                    console.log('Text size changed to:', size);
+                    handleUpdateSetting('textSize', size);
+                  }}
                 >
                   <Text
                     style={[
@@ -313,7 +325,10 @@ export default function SettingsTab() {
           <View style={styles.settingItem}>
             <Switch
               value={settings.readingMode === 'flip'}
-              onValueChange={(value) => handleUpdateSetting('readingMode', value ? 'flip' : 'scroll')}
+              onValueChange={(value) => {
+                console.log('Reading mode toggled:', value);
+                handleUpdateSetting('readingMode', value ? 'flip' : 'scroll');
+              }}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.surface}
             />

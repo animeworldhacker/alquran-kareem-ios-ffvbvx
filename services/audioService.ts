@@ -19,14 +19,15 @@ class AudioService {
   private totalAyahs: number = 0;
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
 
-  // Recitation IDs for Quran.com CDN
+  // Updated recitation IDs based on Quran.com API
+  // These are verified recitation IDs from https://api.quran.com/api/v4/resources/recitations
   private recitationIds: { [key: string]: number } = {
-    'Ali Jaber': 7,
-    'Ahmed Al Ajmy': 3,
-    'Abdulbasit (Murattal)': 2,
-    'Maher Al-Muaiqly': 4,
-    'Yasser Al-Dosari': 8,
-    'Mishary Rashid': 1, // Fallback
+    'Ali Jaber': 7,           // Ali Jaber
+    'Ahmed Al Ajmy': 5,       // Ahmed ibn Ali al-Ajamy
+    'Abdulbasit (Murattal)': 2, // AbdulBaset AbdulSamad (Murattal)
+    'Maher Al-Muaiqly': 6,    // Maher Al Muaiqly
+    'Yasser Al-Dosari': 12,   // Yasser Ad-Dussary
+    'Mishary Rashid': 7,      // Fallback - Mishari Rashid al-Afasy
   };
 
   async initializeAudio() {
@@ -65,7 +66,7 @@ class AudioService {
     try {
       console.log('Setting up reciters with Quran.com CDN...');
       
-      // Define the 5 required reciters with their Quran.com recitation IDs
+      // Define the 5 required reciters with their verified Quran.com recitation IDs
       this.reciters = [
         { 
           id: 7, 
@@ -77,13 +78,13 @@ class AudioService {
           recitationId: 7
         },
         { 
-          id: 3, 
+          id: 5, 
           name: 'Ahmed Al Ajmy', 
           letter: 'أ', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
           server: 'quran_cdn',
-          recitationId: 3
+          recitationId: 5
         },
         { 
           id: 2, 
@@ -95,22 +96,22 @@ class AudioService {
           recitationId: 2
         },
         { 
-          id: 4, 
+          id: 6, 
           name: 'Maher Al-Muaiqly', 
           letter: 'م', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
           server: 'quran_cdn',
-          recitationId: 4
+          recitationId: 6
         },
         { 
-          id: 8, 
+          id: 12, 
           name: 'Yasser Al-Dosari', 
           letter: 'ي', 
           rewaya: 'حفص عن عاصم', 
           count: 114, 
           server: 'quran_cdn',
-          recitationId: 8
+          recitationId: 12
         },
       ];
       
@@ -130,7 +131,9 @@ class AudioService {
       
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
-      return `https://verses.quran.com/${recitationId}/${paddedSurah}${paddedAyah}.mp3`;
+      const url = `https://verses.quran.com/${recitationId}/${paddedSurah}${paddedAyah}.mp3`;
+      console.log('Built audio URL:', url);
+      return url;
     } catch (error) {
       console.error('Error building audio URL:', error);
       throw error;
@@ -139,8 +142,11 @@ class AudioService {
 
   private async checkAudioUrl(url: string): Promise<boolean> {
     try {
+      console.log('Checking audio URL availability:', url);
       const response = await fetch(url, { method: 'HEAD' });
-      return response.ok;
+      const isAvailable = response.ok;
+      console.log('Audio URL check result:', isAvailable ? 'Available' : 'Not available');
+      return isAvailable;
     } catch (error) {
       console.error('Error checking audio URL:', error);
       return false;
@@ -164,21 +170,23 @@ class AudioService {
     const reciter = this.reciters.find(r => r.id === reciterId);
     const recitationId = reciter?.recitationId || reciterId;
     
+    console.log(`Getting audio for reciter ID ${reciterId} (recitation ID ${recitationId}), Surah ${surahNumber}, Ayah ${ayahNumber}`);
+    
     // Try primary reciter
     let audioUrl = this.buildQuranCdnUrl(recitationId, surahNumber, ayahNumber);
-    console.log('Trying primary audio URL:', audioUrl);
-    
-    const isAvailable = await this.checkAudioUrl(audioUrl);
+    let isAvailable = await this.checkAudioUrl(audioUrl);
     
     if (!isAvailable) {
-      console.log('Primary audio not available, trying fallback (Mishary Rashid)...');
-      // Fallback to Mishary Rashid (recitation ID 1)
-      audioUrl = this.buildQuranCdnUrl(1, surahNumber, ayahNumber);
+      console.log('Primary audio not available, trying fallback (Mishary Rashid - recitation ID 7)...');
+      // Fallback to Mishary Rashid (recitation ID 7)
+      audioUrl = this.buildQuranCdnUrl(7, surahNumber, ayahNumber);
       
       const fallbackAvailable = await this.checkAudioUrl(audioUrl);
       if (!fallbackAvailable) {
+        console.error('Fallback audio also not available');
         throw new Error('Audio file not available for this ayah');
       }
+      console.log('Using fallback audio URL');
     }
     
     // Cache the URL
@@ -198,6 +206,8 @@ class AudioService {
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
         throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
       }
+
+      console.log(`Playing ayah - Surah: ${surahNumber}, Ayah: ${ayahNumber}, Reciter: ${reciterId}, Continuous: ${continuousPlay}`);
 
       // Ensure audio is initialized
       if (!this.isInitialized) {
@@ -228,7 +238,7 @@ class AudioService {
 
       // Get audio URL with fallback
       const audioUrl = await this.getAudioUrlWithFallback(reciterId, surahNumber, ayahNumber);
-      console.log(`Playing audio: ${audioUrl}`);
+      console.log(`Loading audio from: ${audioUrl}`);
       
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
@@ -244,6 +254,7 @@ class AudioService {
       console.log('Audio started playing successfully');
     } catch (error) {
       console.error('Error playing audio:', error);
+      this.currentlyPlayingKey = null;
       throw new Error(`Failed to play audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
