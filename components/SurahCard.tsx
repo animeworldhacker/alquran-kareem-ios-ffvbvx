@@ -34,21 +34,21 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       paddingVertical: 10,
     },
     decorativeFrame: {
-      width: 70,
-      height: 70,
+      width: 55,
+      height: 55,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
     },
     frameImage: {
-      width: 70,
-      height: 70,
+      width: 55,
+      height: 55,
       position: 'absolute',
       top: 0,
       left: 0,
     },
     chapterNumber: {
-      fontSize: 24,
+      fontSize: 20,
       color: '#3D3D3D',
       fontFamily: 'ScheherazadeNew_700Bold',
       fontWeight: 'bold',
@@ -93,7 +93,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       <View style={styles.greenSection}>
         <View style={styles.decorativeFrame}>
           <Image 
-            source={require('../assets/images/5734b2e0-2cb8-482c-bac8-691a5b158c4a.png')}
+            source={require('../assets/images/67b4eb70-7154-4fc3-a941-2149bf8c519c.png')}
             style={styles.frameImage}
             resizeMode="contain"
           />
