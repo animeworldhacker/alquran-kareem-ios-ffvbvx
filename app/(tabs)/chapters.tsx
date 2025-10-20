@@ -17,12 +17,10 @@ export default function ChaptersTab() {
   const { surahs, loading, error } = useQuran();
   const { settings, colors, textSizes } = useTheme();
   const [search, setSearch] = useState('');
-  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-  const chapterScrollRef = useRef<ScrollView>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const screenHeight = Dimensions.get('window').height;
-  const itemHeight = 50;
 
   const filteredSurahs = useMemo(() => {
     if (!search.trim()) return surahs;
@@ -39,59 +37,69 @@ export default function ChaptersTab() {
     router.push(`/surah/${surahNumber}`);
   };
 
-  const handleChapterSelect = (chapterNumber: number) => {
-    setSelectedChapter(chapterNumber);
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const contentHeight = event.nativeEvent.contentSize.height;
+    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
     
-    // Scroll to the selected surah in the main list
-    const surahIndex = surahs.findIndex(s => s.number === chapterNumber);
-    if (surahIndex !== -1 && scrollViewRef.current) {
-      // Calculate approximate position (each SurahCard is roughly 100px)
-      const position = surahIndex * 100;
-      scrollViewRef.current.scrollTo({ y: position, animated: true });
-    }
-    
-    // Navigate to the surah after a short delay
-    setTimeout(() => {
-      navigateToSurah(chapterNumber);
-    }, 300);
+    // Calculate scroll percentage
+    const scrollPercentage = offsetY / (contentHeight - scrollViewHeight);
+    setScrollPosition(scrollPercentage);
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#E8DCC4', // Beige/cream background matching the image
       flexDirection: 'row',
     },
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // Main content area (made larger)
+    // Audio sidebar on the left (green)
+    audioSidebar: {
+      width: 50,
+      backgroundColor: '#6B8E6F', // Green color from the image
+      paddingVertical: 10,
+    },
+    audioIconContainer: {
+      height: 80,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    audioIcon: {
+      width: 30,
+      height: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Main content area
     mainContent: {
-      flex: 1.2,
+      flex: 1,
     },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#E8DCC4',
       paddingHorizontal: 12,
       paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: '#D4C5A9',
     },
     iconBtn: {
-      width: 36 * (settings.squareAdjustment / 100),
-      height: 36 * (settings.squareAdjustment / 100),
-      borderRadius: 18 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.background,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#D4C5A9',
       alignItems: 'center',
       justifyContent: 'center',
     },
     title: {
-      fontFamily: 'Amiri_700Bold',
-      fontSize: textSizes.title,
-      color: colors.text,
+      fontFamily: 'ScheherazadeNew_700Bold',
+      fontSize: 28,
+      color: '#3D3D3D',
     },
     searchBox: {
       flexDirection: 'row',
@@ -102,14 +110,14 @@ export default function ChaptersTab() {
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 12,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#F5EFE0',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#D4C5A9',
     },
     searchInput: {
       flex: 1,
       fontFamily: 'Amiri_400Regular',
-      color: colors.text,
+      color: '#3D3D3D',
       fontSize: textSizes.body,
       paddingVertical: 4,
       textAlign: 'left',
@@ -124,99 +132,90 @@ export default function ChaptersTab() {
     },
     footerText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      color: '#8B7355',
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
-    // Instructions
-    instructionText: {
-      fontSize: textSizes.caption,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      fontFamily: 'Amiri_400Regular',
-      padding: 8,
-      backgroundColor: colors.backgroundAlt,
-      marginHorizontal: 12,
-      marginBottom: 8,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#d4af37',
-    },
-    // Chapter number scroller on the right (moved from left)
-    chapterScroller: {
-      width: 65,
-      backgroundColor: colors.surface,
-      borderLeftWidth: 2, // Changed from borderRightWidth to borderLeftWidth
-      borderLeftColor: '#d4af37', // Changed from borderRightColor to borderLeftColor
-    },
-    chapterScrollContainer: {
-      paddingVertical: 10,
-    },
-    chapterItem: {
-      height: 45,
+    // Dot indicators on the right
+    dotIndicators: {
+      width: 20,
+      backgroundColor: '#E8DCC4',
       justifyContent: 'center',
       alignItems: 'center',
-      marginVertical: 1,
-      marginHorizontal: 6,
-      borderRadius: 22,
-      backgroundColor: 'transparent',
+      paddingVertical: 20,
     },
-    chapterItemSelected: {
-      backgroundColor: '#d4af37',
-      boxShadow: '0px 2px 8px rgba(212, 175, 55, 0.3)',
-      elevation: 4,
+    dotContainer: {
+      height: '100%',
+      justifyContent: 'space-evenly',
+      alignItems: 'center',
     },
-    chapterNumber: {
-      fontSize: 16,
-      fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      fontWeight: 'bold',
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#B8A88A',
+      marginVertical: 3,
     },
-    chapterNumberSelected: {
-      color: '#fff',
+    dotActive: {
+      backgroundColor: '#6B8E6F',
+      width: 8,
+      height: 8,
+      borderRadius: 4,
     },
   });
 
   if (loading) {
     return (
-      <View style={[{ flex: 1, backgroundColor: colors.background }, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+      <View style={[{ flex: 1, backgroundColor: '#E8DCC4' }, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[{ flex: 1, backgroundColor: colors.background }, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+      <View style={[{ flex: 1, backgroundColor: '#E8DCC4' }, styles.centerContent]}>
+        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: textSizes.body, color: '#8B7355', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
 
+  // Calculate which dot should be active based on scroll position
+  const activeDotIndex = Math.floor(scrollPosition * 10);
+
   return (
     <View style={styles.container}>
+      {/* Audio Sidebar on the left */}
+      <View style={styles.audioSidebar}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {filteredSurahs.map((surah) => (
+            <View key={surah.number} style={styles.audioIconContainer}>
+              <TouchableOpacity style={styles.audioIcon}>
+                <Icon name="volume-high" size={20} style={{ color: '#FFFFFF' }} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+
       {/* Main Content */}
       <View style={styles.mainContent}>
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} style={styles.iconBtn}>
-            <Icon name="settings" size={20} style={{ color: colors.text }} />
+            <Icon name="settings" size={20} style={{ color: '#3D3D3D' }} />
           </TouchableOpacity>
           <Text style={styles.title}>السور</Text>
           <View style={styles.iconBtn} />
         </View>
 
-        <Text style={styles.instructionText}>
-          اضغط على رقم السورة من الجانب الأيمن للانتقال إليها مباشرة
-        </Text>
-
         <View style={styles.searchBox}>
-          <Icon name="search" size={18} style={{ color: colors.textSecondary }} />
+          <Icon name="search" size={18} style={{ color: '#8B7355' }} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="البحث في السور..."
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor="#8B7355"
             style={styles.searchInput}
           />
         </View>
@@ -225,6 +224,8 @@ export default function ChaptersTab() {
           ref={scrollViewRef}
           style={styles.scrollView} 
           showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         >
           {filteredSurahs.map((surah) => (
             <SurahCard
@@ -241,32 +242,19 @@ export default function ChaptersTab() {
         </ScrollView>
       </View>
 
-      {/* Chapter Number Scroller - Moved to the right */}
-      <View style={styles.chapterScroller}>
-        <ScrollView 
-          ref={chapterScrollRef}
-          style={styles.chapterScrollContainer}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 20 }}
-        >
-          {Array.from({ length: 114 }, (_, i) => i + 1).map((chapterNum) => (
-            <TouchableOpacity
-              key={chapterNum}
+      {/* Dot Indicators on the right */}
+      <View style={styles.dotIndicators}>
+        <View style={styles.dotContainer}>
+          {Array.from({ length: 11 }, (_, i) => (
+            <View 
+              key={i} 
               style={[
-                styles.chapterItem,
-                selectedChapter === chapterNum && styles.chapterItemSelected
-              ]}
-              onPress={() => handleChapterSelect(chapterNum)}
-            >
-              <Text style={[
-                styles.chapterNumber,
-                selectedChapter === chapterNum && styles.chapterNumberSelected
-              ]}>
-                {toArabicNumerals(chapterNum)}
-              </Text>
-            </TouchableOpacity>
+                styles.dot,
+                i === activeDotIndex && styles.dotActive
+              ]} 
+            />
           ))}
-        </ScrollView>
+        </View>
       </View>
     </View>
   );
