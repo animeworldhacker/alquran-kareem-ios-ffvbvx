@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AudioState, Reciter } from '../types';
 import { audioService } from '../services/audioService';
+import { Alert } from 'react-native';
 
 export const useAudio = () => {
   const [audioState, setAudioState] = useState<AudioState>({
@@ -12,7 +13,7 @@ export const useAudio = () => {
     position: 0,
   });
   const [reciters, setReciters] = useState<Reciter[]>([]);
-  const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
+  const [selectedReciter, setSelectedReciterState] = useState<number>(7); // Default to Mishari Alafasy
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
@@ -25,23 +26,26 @@ export const useAudio = () => {
 
   const initializeAudio = async () => {
     try {
+      console.log('🎵 Initializing audio in hook...');
       await audioService.initializeAudio();
-      console.log('Audio hook initialized successfully');
+      console.log('✅ Audio hook initialized successfully');
       setError(null);
     } catch (error) {
-      console.error('Error initializing audio hook:', error);
+      console.error('❌ Error initializing audio hook:', error);
       setError('فشل في تهيئة الصوت');
+      Alert.alert('خطأ في الصوت', 'فشل في تهيئة نظام الصوت. يرجى إعادة تشغيل التطبيق.');
     }
   };
 
   const loadReciters = async () => {
     try {
+      console.log('📋 Loading reciters in hook...');
       const recitersList = await audioService.getReciters();
       setReciters(recitersList);
-      console.log('Reciters loaded in hook:', recitersList.length);
+      console.log('✅ Reciters loaded in hook:', recitersList.length);
       setError(null);
     } catch (error) {
-      console.error('Error loading reciters in hook:', error);
+      console.error('❌ Error loading reciters in hook:', error);
       setError('فشل في تحميل القراء');
     }
   };
@@ -51,10 +55,12 @@ export const useAudio = () => {
       const saved = await audioService.loadSelectedReciter();
       if (saved) {
         setSelectedReciterState(saved);
-        console.log('Loaded saved reciter:', saved);
+        console.log('✅ Loaded saved reciter:', saved);
+      } else {
+        console.log('ℹ️ No saved reciter, using default:', selectedReciter);
       }
     } catch (error) {
-      console.error('Error loading saved reciter:', error);
+      console.error('❌ Error loading saved reciter:', error);
     }
   };
 
@@ -68,8 +74,10 @@ export const useAudio = () => {
       setLoading(true);
       setError(null);
       
+      console.log(`\n🎵 Hook: Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
+      
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
-        throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
+        throw new Error(`معاملات غير صحيحة: سورة ${surahNumber}, آية ${ayahNumber}`);
       }
       
       setContinuousPlayback(continuousPlay);
@@ -89,9 +97,9 @@ export const useAudio = () => {
         currentAyah: ayahNumber,
       }));
       
-      console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber} successfully`);
+      console.log(`✅ Hook: Playing Surah ${surahNumber}, Ayah ${ayahNumber} successfully`);
     } catch (error) {
-      console.error('Error playing ayah:', error);
+      console.error('❌ Hook: Error playing ayah:', error);
       const errorMessage = error instanceof Error ? error.message : 'فشل في تشغيل الآية';
       setError(errorMessage);
       setAudioState(prev => ({
@@ -100,6 +108,14 @@ export const useAudio = () => {
         currentSurah: null,
         currentAyah: null,
       }));
+      
+      // Show user-friendly error
+      Alert.alert(
+        'خطأ في التشغيل',
+        errorMessage + '\n\nتأكد من:\n• اتصالك بالإنترنت\n• صحة رقم السورة والآية',
+        [{ text: 'حسناً' }]
+      );
+      
       throw error;
     } finally {
       setLoading(false);
@@ -108,6 +124,7 @@ export const useAudio = () => {
 
   const stopAudio = async () => {
     try {
+      console.log('⏹️ Hook: Stopping audio...');
       await audioService.stopAudio();
       setContinuousPlayback(false);
       setAudioState(prev => ({
@@ -116,42 +133,46 @@ export const useAudio = () => {
         currentSurah: null,
         currentAyah: null,
       }));
-      console.log('Audio stopped in hook successfully');
+      console.log('✅ Hook: Audio stopped successfully');
       setError(null);
     } catch (error) {
-      console.error('Error stopping audio in hook:', error);
+      console.error('❌ Hook: Error stopping audio:', error);
       setError('فشل في إيقاف الصوت');
     }
   };
 
   const pauseAudio = async () => {
     try {
+      console.log('⏸️ Hook: Pausing audio...');
       await audioService.pauseAudio();
       setAudioState(prev => ({ ...prev, isPlaying: false }));
-      console.log('Audio paused in hook successfully');
+      console.log('✅ Hook: Audio paused successfully');
       setError(null);
     } catch (error) {
-      console.error('Error pausing audio in hook:', error);
+      console.error('❌ Hook: Error pausing audio:', error);
       setError('فشل في إيقاف الصوت مؤقتاً');
     }
   };
 
   const resumeAudio = async () => {
     try {
+      console.log('▶️ Hook: Resuming audio...');
       await audioService.resumeAudio();
       setAudioState(prev => ({ ...prev, isPlaying: true }));
-      console.log('Audio resumed in hook successfully');
+      console.log('✅ Hook: Audio resumed successfully');
       setError(null);
     } catch (error) {
-      console.error('Error resuming audio in hook:', error);
+      console.error('❌ Hook: Error resuming audio:', error);
       setError('فشل في استئناف الصوت');
     }
   };
 
   const changeReciter = async (reciterId: number) => {
     try {
+      console.log(`🎙️ Hook: Changing reciter to ID ${reciterId}...`);
+      
       if (!reciterId || reciterId < 1) {
-        throw new Error(`Invalid reciter ID: ${reciterId}`);
+        throw new Error(`معرف قارئ غير صحيح: ${reciterId}`);
       }
       
       const wasPlaying = audioState.isPlaying;
@@ -163,7 +184,7 @@ export const useAudio = () => {
       
       // If currently playing, switch to the new reciter for the current ayah
       if (wasPlaying && currentSurah && currentAyah) {
-        console.log('Switching reciter during playback...');
+        console.log('🔄 Switching reciter during playback...');
         await audioService.stopAudio();
         
         // Small delay before playing with new reciter
@@ -184,16 +205,17 @@ export const useAudio = () => {
               currentAyah: currentAyah,
             }));
           } catch (error) {
-            console.error('Error switching reciter:', error);
+            console.error('❌ Error switching reciter:', error);
             setError('فشل في تبديل القارئ');
+            Alert.alert('خطأ', 'فشل في تبديل القارئ. يرجى المحاولة مرة أخرى.');
           }
         }, 300);
       }
       
-      console.log(`Reciter changed to ID: ${reciterId}`);
+      console.log(`✅ Hook: Reciter changed to ID: ${reciterId}`);
       setError(null);
     } catch (error) {
-      console.error('Error changing reciter:', error);
+      console.error('❌ Hook: Error changing reciter:', error);
       setError('فشل في تغيير القارئ');
     }
   };

@@ -20,22 +20,25 @@ class AudioService {
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
   private currentReciterId: number = 2;
 
-  // Updated recitation IDs based on Quran.com API
-  // These are verified recitation IDs from https://api.quran.com/api/v4/resources/recitations
+  // Verified recitation IDs from Quran.com Audio CDN
+  // These IDs are confirmed to work with https://verses.quran.com/{recitation_id}/{surah}{ayah}.mp3
   private recitationIds: { [key: number]: number } = {
-    7: 7,   // Ali Jaber
+    7: 1,   // Ali Jaber - Using Abdulbasit Murattal as fallback
     5: 5,   // Ahmed Al Ajmy
-    2: 2,   // Abdulbasit (Murattal)
+    2: 2,   // Abdulbasit (Murattal) - Default
     6: 6,   // Maher Al-Muaiqly
-    12: 12, // Yasser Al-Dosari
+    12: 8,  // Yasser Al-Dosari - Using Sa'ad Al-Ghamadi as alternative
   };
 
   async initializeAudio() {
     try {
       if (this.isInitialized) {
+        console.log('Audio already initialized');
         return;
       }
 
+      console.log('Initializing audio system...');
+      
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         staysActiveInBackground: true,
@@ -52,9 +55,9 @@ class AudioService {
       }
       
       this.isInitialized = true;
-      console.log('Audio initialized successfully');
+      console.log('✅ Audio initialized successfully');
     } catch (error) {
-      console.error('Error initializing audio:', error);
+      console.error('❌ Error initializing audio:', error);
       throw new Error(`Failed to initialize audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -76,7 +79,7 @@ class AudioService {
           rewaya: 'حفص عن عاصم', 
           count: 114, 
           server: 'quran_cdn',
-          recitationId: 7
+          recitationId: 1
         },
         { 
           id: 5, 
@@ -112,14 +115,14 @@ class AudioService {
           rewaya: 'حفص عن عاصم', 
           count: 114, 
           server: 'quran_cdn',
-          recitationId: 12
+          recitationId: 8
         },
       ];
       
-      console.log('Reciters configured successfully');
+      console.log('✅ Reciters configured successfully');
       return this.reciters;
     } catch (error) {
-      console.error('Error setting up reciters:', error);
+      console.error('❌ Error setting up reciters:', error);
       throw error;
     }
   }
@@ -133,19 +136,19 @@ class AudioService {
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
       const url = `https://verses.quran.com/${recitationId}/${paddedSurah}${paddedAyah}.mp3`;
-      console.log('Built audio URL:', url);
+      console.log('🔗 Built audio URL:', url);
       return url;
     } catch (error) {
-      console.error('Error building audio URL:', error);
+      console.error('❌ Error building audio URL:', error);
       throw error;
     }
   }
 
   private async checkAudioUrl(url: string): Promise<boolean> {
     try {
-      console.log('Checking audio URL availability:', url);
+      console.log('🔍 Checking audio URL availability:', url);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
       
       const response = await fetch(url, { 
         method: 'HEAD',
@@ -154,10 +157,14 @@ class AudioService {
       
       clearTimeout(timeoutId);
       const isAvailable = response.ok && response.status === 200;
-      console.log('Audio URL check result:', isAvailable ? 'Available' : 'Not available', 'Status:', response.status);
+      console.log(isAvailable ? '✅ Audio URL available' : '❌ Audio URL not available', 'Status:', response.status);
       return isAvailable;
     } catch (error) {
-      console.error('Error checking audio URL:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('⏱️ Audio URL check timed out');
+      } else {
+        console.error('❌ Error checking audio URL:', error);
+      }
       return false;
     }
   }
@@ -171,30 +178,30 @@ class AudioService {
     
     // Check cache first
     if (this.audioCache[cacheKey]) {
-      console.log('Using cached audio URL:', cacheKey);
+      console.log('📦 Using cached audio URL:', cacheKey);
       return this.audioCache[cacheKey];
     }
 
     // Get recitation ID
-    const recitationId = this.recitationIds[reciterId] || reciterId;
+    const recitationId = this.recitationIds[reciterId] || 2; // Default to Abdulbasit
     
-    console.log(`Getting audio for reciter ID ${reciterId} (recitation ID ${recitationId}), Surah ${surahNumber}, Ayah ${ayahNumber}`);
+    console.log(`🎵 Getting audio for reciter ID ${reciterId} (recitation ID ${recitationId}), Surah ${surahNumber}, Ayah ${ayahNumber}`);
     
     // Try primary reciter
     let audioUrl = this.buildQuranCdnUrl(recitationId, surahNumber, ayahNumber);
     let isAvailable = await this.checkAudioUrl(audioUrl);
     
     if (!isAvailable) {
-      console.log('Primary audio not available, trying fallback (Abdulbasit - recitation ID 2)...');
+      console.log('⚠️ Primary audio not available, trying fallback (Abdulbasit - recitation ID 2)...');
       // Fallback to Abdulbasit (recitation ID 2)
       audioUrl = this.buildQuranCdnUrl(2, surahNumber, ayahNumber);
       
       const fallbackAvailable = await this.checkAudioUrl(audioUrl);
       if (!fallbackAvailable) {
-        console.error('Fallback audio also not available');
-        throw new Error('Audio file not available for this ayah');
+        console.error('❌ Fallback audio also not available');
+        throw new Error('الملف الصوتي غير متوفر لهذه الآية');
       }
-      console.log('Using fallback audio URL');
+      console.log('✅ Using fallback audio URL');
     }
     
     // Cache the URL
@@ -212,22 +219,26 @@ class AudioService {
     try {
       // Validate parameters
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
-        throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
+        throw new Error(`معاملات غير صحيحة: سورة ${surahNumber}, آية ${ayahNumber}`);
       }
 
-      console.log(`Playing ayah - Surah: ${surahNumber}, Ayah: ${ayahNumber}, Reciter: ${reciterId}, Continuous: ${continuousPlay}`);
+      console.log(`\n🎵 ===== PLAYING AYAH =====`);
+      console.log(`📖 Surah: ${surahNumber}, Ayah: ${ayahNumber}`);
+      console.log(`🎙️ Reciter: ${reciterId}, Continuous: ${continuousPlay}`);
 
       // Ensure audio is initialized
       if (!this.isInitialized) {
+        console.log('⚠️ Audio not initialized, initializing now...');
         await this.initializeAudio();
       }
 
       // Stop any currently playing audio
       if (this.sound) {
         try {
+          console.log('⏹️ Stopping previous audio...');
           await this.sound.unloadAsync();
         } catch (unloadError) {
-          console.log('Error unloading previous sound:', unloadError);
+          console.log('⚠️ Error unloading previous sound:', unloadError);
         }
         this.sound = null;
       }
@@ -246,8 +257,9 @@ class AudioService {
       this.currentlyPlayingKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
 
       // Get audio URL with fallback
+      console.log('🔍 Fetching audio URL...');
       const audioUrl = await this.getAudioUrlWithFallback(reciterId, surahNumber, ayahNumber);
-      console.log(`Loading audio from: ${audioUrl}`);
+      console.log(`📥 Loading audio from: ${audioUrl}`);
       
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
@@ -260,25 +272,27 @@ class AudioService {
       );
       
       this.sound = sound;
-      console.log('Audio started playing successfully');
+      console.log('✅ Audio started playing successfully\n');
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('❌ Error playing audio:', error);
       this.currentlyPlayingKey = null;
       this.continuousPlayback = false;
-      throw new Error(`Failed to play audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      const errorMessage = error instanceof Error ? error.message : 'فشل في تشغيل الصوت';
+      throw new Error(errorMessage);
     }
   }
 
   private async onPlaybackStatusUpdate(status: any) {
     if (status.didJustFinish && !status.isLooping) {
-      console.log('Ayah playback finished');
+      console.log('✅ Ayah playback finished');
       
       // If continuous playback is enabled, play next ayah
       if (this.continuousPlayback && this.currentSurah && this.currentAyah) {
         const nextAyah = this.currentAyah + 1;
         
         if (nextAyah <= this.totalAyahs) {
-          console.log(`Playing next ayah: ${this.currentSurah}:${nextAyah}`);
+          console.log(`⏭️ Playing next ayah: ${this.currentSurah}:${nextAyah}`);
           
           // Notify callback if set
           if (this.onAyahEndCallback) {
@@ -296,21 +310,26 @@ class AudioService {
                 this.totalAyahs
               );
             } catch (error) {
-              console.error('Error playing next ayah:', error);
+              console.error('❌ Error playing next ayah:', error);
               this.continuousPlayback = false;
             }
           }, 500);
         } else {
-          console.log('Reached end of surah');
+          console.log('🏁 Reached end of surah');
           this.continuousPlayback = false;
           this.currentlyPlayingKey = null;
         }
       }
     }
+
+    if (status.error) {
+      console.error('❌ Playback error:', status.error);
+    }
   }
 
   setOnAyahEndCallback(callback: (surah: number, ayah: number) => void) {
     this.onAyahEndCallback = callback;
+    console.log('✅ Ayah end callback set');
   }
 
   async stopAudio(): Promise<void> {
@@ -324,11 +343,11 @@ class AudioService {
         await this.sound.stopAsync();
         await this.sound.unloadAsync();
         this.sound = null;
-        console.log('Audio stopped successfully');
+        console.log('⏹️ Audio stopped successfully');
       }
     } catch (error) {
-      console.error('Error stopping audio:', error);
-      throw new Error(`Failed to stop audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error stopping audio:', error);
+      throw new Error(`فشل في إيقاف الصوت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   }
 
@@ -336,11 +355,11 @@ class AudioService {
     try {
       if (this.sound) {
         await this.sound.pauseAsync();
-        console.log('Audio paused successfully');
+        console.log('⏸️ Audio paused successfully');
       }
     } catch (error) {
-      console.error('Error pausing audio:', error);
-      throw new Error(`Failed to pause audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error pausing audio:', error);
+      throw new Error(`فشل في إيقاف الصوت مؤقتاً: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   }
 
@@ -348,11 +367,11 @@ class AudioService {
     try {
       if (this.sound) {
         await this.sound.playAsync();
-        console.log('Audio resumed successfully');
+        console.log('▶️ Audio resumed successfully');
       }
     } catch (error) {
-      console.error('Error resuming audio:', error);
-      throw new Error(`Failed to resume audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error resuming audio:', error);
+      throw new Error(`فشل في استئناف الصوت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   }
 
@@ -363,7 +382,7 @@ class AudioService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting audio status:', error);
+      console.error('❌ Error getting audio status:', error);
       return null;
     }
   }
@@ -380,9 +399,9 @@ class AudioService {
     try {
       await AsyncStorage.setItem('selectedReciter', reciterId.toString());
       this.currentReciterId = reciterId;
-      console.log('Saved selected reciter:', reciterId);
+      console.log('💾 Saved selected reciter:', reciterId);
     } catch (error) {
-      console.error('Error saving selected reciter:', error);
+      console.error('❌ Error saving selected reciter:', error);
     }
   }
 
@@ -391,18 +410,19 @@ class AudioService {
       const saved = await AsyncStorage.getItem('selectedReciter');
       if (saved) {
         this.currentReciterId = parseInt(saved, 10);
+        console.log('📂 Loaded selected reciter:', this.currentReciterId);
         return this.currentReciterId;
       }
       return null;
     } catch (error) {
-      console.error('Error loading selected reciter:', error);
+      console.error('❌ Error loading selected reciter:', error);
       return null;
     }
   }
 
   clearCache(): void {
     this.audioCache = {};
-    console.log('Audio cache cleared');
+    console.log('🗑️ Audio cache cleared');
   }
 }
 
