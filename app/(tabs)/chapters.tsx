@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Dimensions, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useBookmarks } from '../../hooks/useBookmarks';
@@ -16,6 +16,8 @@ const toArabicNumerals = (num: number): string => {
   return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
 };
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export default function ChaptersTab() {
   const { surahs, loading, error } = useQuran();
   const { bookmarks } = useBookmarks();
@@ -25,6 +27,10 @@ export default function ChaptersTab() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DivisionTab>('juz');
   const [sajdaList, setSajdaList] = useState<any[]>([]);
+  const [scrollIndicatorPosition, setScrollIndicatorPosition] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['45%', '80%'], []);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -121,55 +127,120 @@ export default function ChaptersTab() {
   };
 
   const handleScroll = (event: any) => {
-    // Handle scroll events if needed
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const contentHeight = event.nativeEvent.contentSize.height;
+    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
+    
+    setContentHeight(contentHeight);
+    setScrollViewHeight(scrollViewHeight);
+    
+    if (contentHeight > scrollViewHeight) {
+      const scrollPercentage = offsetY / (contentHeight - scrollViewHeight);
+      const indicatorHeight = 60;
+      const maxPosition = scrollViewHeight - indicatorHeight - 20;
+      setScrollIndicatorPosition(scrollPercentage * maxPosition);
+    }
+  };
+
+  const handleScrollIndicatorPress = (event: any) => {
+    const touchY = event.nativeEvent.locationY;
+    const indicatorHeight = 60;
+    const maxPosition = scrollViewHeight - indicatorHeight - 20;
+    
+    if (contentHeight > scrollViewHeight && scrollViewRef.current) {
+      const scrollPercentage = touchY / maxPosition;
+      const targetOffset = scrollPercentage * (contentHeight - scrollViewHeight);
+      scrollViewRef.current.scrollTo({ y: Math.max(0, targetOffset), animated: true });
+    }
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#F5EFE7',
     },
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    contentWrapper: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    leftGreenBar: {
+      width: 8,
+      backgroundColor: '#4A7C59',
+    },
+    mainContent: {
+      flex: 1,
+    },
     scrollView: {
       flex: 1,
+    },
+    rightScrollIndicator: {
+      position: 'absolute',
+      right: 8,
+      top: 0,
+      bottom: 0,
+      width: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scrollIndicatorTrack: {
+      width: 4,
+      height: '100%',
+      backgroundColor: '#D4C5A9',
+      borderRadius: 2,
+    },
+    scrollIndicatorThumb: {
+      position: 'absolute',
+      width: 24,
+      height: 60,
+      backgroundColor: '#4A7C59',
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 2px 8px rgba(0,0,0,0.15)',
+    },
+    scrollIndicatorText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontFamily: 'Amiri_700Bold',
     },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#E8DCC4',
       paddingHorizontal: 12,
       paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: '#D4C5A9',
     },
     iconBtn: {
       width: 36 * (settings.squareAdjustment / 100),
       height: 36 * (settings.squareAdjustment / 100),
       borderRadius: 18 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.background,
+      backgroundColor: '#F5EFE7',
       alignItems: 'center',
       justifyContent: 'center',
     },
     title: {
       fontFamily: 'Amiri_700Bold',
       fontSize: textSizes.title,
-      color: colors.text,
+      color: '#3D3D3D',
     },
     dedicationBox: {
       margin: 12,
       paddingVertical: 10,
       paddingHorizontal: 12,
       borderRadius: 10,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#E8DCC4',
       borderWidth: 1,
-      borderColor: '#d4db7f',
+      borderColor: '#4A7C59',
     },
     dedicationText: {
-      color: colors.text,
+      color: '#3D3D3D',
       fontFamily: 'Amiri_400Regular',
       fontSize: textSizes.body,
       textAlign: 'center',
@@ -182,14 +253,14 @@ export default function ChaptersTab() {
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 12,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#E8DCC4',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#D4C5A9',
     },
     searchInput: {
       flex: 1,
       fontFamily: 'Amiri_400Regular',
-      color: colors.text,
+      color: '#3D3D3D',
       fontSize: textSizes.body,
       paddingVertical: 4,
       textAlign: 'left',
@@ -204,18 +275,18 @@ export default function ChaptersTab() {
     quickBtn: {
       flex: 1,
       marginHorizontal: 4,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: '#E8DCC4',
       paddingVertical: 10 * (settings.squareAdjustment / 100),
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#D4C5A9',
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
     },
     quickBtnText: {
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
+      color: '#3D3D3D',
       fontSize: textSizes.caption,
     },
     footer: {
@@ -226,7 +297,7 @@ export default function ChaptersTab() {
     },
     footerText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      color: '#9B8B7E',
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
@@ -324,7 +395,7 @@ export default function ChaptersTab() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
       </View>
     );
   }
@@ -332,8 +403,8 @@ export default function ChaptersTab() {
   if (error) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: textSizes.body, color: '#9B8B7E', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
@@ -355,12 +426,12 @@ export default function ChaptersTab() {
       )}
 
       <View style={styles.searchBox}>
-        <Icon name="search" size={18} style={{ color: colors.textSecondary }} />
+        <Icon name="search" size={18} style={{ color: '#9B8B7E' }} />
         <TextInput
           value={search}
           onChangeText={setSearch}
           placeholder="...Search chapters"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor="#9B8B7E"
           style={styles.searchInput}
         />
       </View>
@@ -380,26 +451,50 @@ export default function ChaptersTab() {
         </TouchableOpacity>
       </View>
       
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {filteredSurahs.map((surah) => (
-          <SurahCard
-            key={surah.number}
-            surah={surah}
-            onPress={() => navigateToSurah(surah.number)}
-          />
-        ))}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            تم تطوير هذا التطبيق بحمد الله وتوفيقه
-          </Text>
-        </View>
-      </ScrollView>
+      <View style={styles.contentWrapper}>
+        <View style={styles.leftGreenBar} />
+        
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          onLayout={(event) => {
+            setScrollViewHeight(event.nativeEvent.layout.height);
+          }}
+        >
+          {filteredSurahs.map((surah) => (
+            <SurahCard
+              key={surah.number}
+              surah={surah}
+              onPress={() => navigateToSurah(surah.number)}
+            />
+          ))}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              تم تطوير هذا التطبيق بحمد الله وتوفيقه
+            </Text>
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity 
+          style={styles.rightScrollIndicator}
+          onPress={handleScrollIndicatorPress}
+          activeOpacity={0.8}
+        >
+          <View style={styles.scrollIndicatorTrack} />
+          <Animated.View 
+            style={[
+              styles.scrollIndicatorThumb,
+              { top: scrollIndicatorPosition }
+            ]}
+          >
+            <Icon name="chevron-up" size={12} style={{ color: '#FFFFFF' }} />
+            <Icon name="chevron-down" size={12} style={{ color: '#FFFFFF' }} />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
 
       {sheetOpen && (
         <BottomSheet
