@@ -91,7 +91,7 @@ export default function AyahCard({
           surahName,
           surahEnglishName,
           ayahNumber: ayah.numberInSurah,
-          ayahText: processedAyahText, // Use processed text for bookmarks
+          ayahText: processedAyahText,
         });
       }
     } catch (error) {
@@ -109,145 +109,122 @@ export default function AyahCard({
     }
   };
 
-  // Skip rendering if the processed text is empty (happens when Bismillah is removed and nothing else remains)
+  // Skip rendering if the processed text is empty
   if (!processedAyahText.trim()) {
     console.log(`Skipping empty ayah ${surahNumber}:${ayah.numberInSurah} after processing`);
     return null;
   }
 
-  // Increased text sizes - making them significantly larger
-  const increasedArabicTextSize = Math.max(26, textSizes.arabic * 1.3); // Increased from 20 to 26+ base
-  const increasedLineHeight = Math.max(50, increasedArabicTextSize * 1.9); // Increased line height proportionally
+  const increasedArabicTextSize = Math.max(26, textSizes.arabic * 1.3);
+  const increasedLineHeight = Math.max(50, increasedArabicTextSize * 1.9);
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#f8f6f0', // Cream background
-      marginVertical: 10, // Increased margin for larger cards
+      backgroundColor: '#f8f6f0',
+      marginVertical: 8,
       marginHorizontal: 16,
-      borderRadius: 12,
+      borderRadius: 0,
       overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 4,
-      minHeight: 120, // Minimum height to accommodate larger text
+      borderBottomWidth: 1,
+      borderBottomColor: '#d4c5a0',
     },
     ayahRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      padding: 24, // Increased padding for larger text
+      paddingVertical: 20,
+      paddingHorizontal: 16,
     },
     ayahNumberCircle: {
-      width: 40, // Increased from 35 to 40
-      height: 40, // Increased from 35 to 40
-      borderRadius: 20, // Adjusted for new size
-      backgroundColor: '#d4af37', // Gold color
+      width: 45,
+      height: 45,
+      borderRadius: 22.5,
+      backgroundColor: '#c9a961',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 18, // Increased margin
-      marginTop: 8, // Adjusted for better alignment with larger text
-      shadowColor: '#d4af37',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      elevation: 3,
+      marginLeft: 16,
+      marginTop: 4,
+      borderWidth: 2,
+      borderColor: '#b8941f',
     },
     ayahNumber: {
-      fontSize: 18, // Increased from 16 to 18
-      fontFamily: 'Amiri_700Bold',
+      fontSize: 20,
+      fontFamily: 'ScheherazadeNew_400Regular',
       color: '#fff',
       fontWeight: 'bold',
     },
     ayahTextContainer: {
       flex: 1,
-      position: 'relative',
-      alignItems: 'flex-end', // Align content to the right
-      minHeight: 60, // Minimum height for text container
+      alignItems: 'flex-end',
     },
     ayahText: {
-      fontSize: increasedArabicTextSize, // Significantly increased text size
+      fontSize: increasedArabicTextSize,
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F', // Dark slate gray
+      color: '#2F4F4F',
       textAlign: 'right',
-      lineHeight: increasedLineHeight, // Increased line height
-      marginBottom: 16, // Increased margin
-      paddingLeft: 12, // Increased padding
-      paddingRight: 4, // Added right padding
+      lineHeight: increasedLineHeight,
       width: '100%',
       writingDirection: 'rtl',
     },
-    ayahTranslation: {
-      fontSize: textSizes.body + 2, // Slightly increased translation text
-      fontFamily: 'Amiri_400Regular',
-      color: '#8B4513', // Brown color
-      textAlign: 'left',
-      lineHeight: 24, // Increased line height
-      fontStyle: 'italic',
-      marginBottom: 12, // Increased margin
-    },
     actionsRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      justifyContent: 'space-around',
       alignItems: 'center',
-      paddingHorizontal: 24, // Increased padding
-      paddingBottom: 18, // Increased padding
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      paddingTop: 8,
       borderTopWidth: 1,
       borderTopColor: '#e8e6e0',
-      marginTop: 12, // Increased margin
-      paddingTop: 18, // Increased padding
     },
     actionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 12, // Increased padding
-      paddingVertical: 10, // Increased padding
-      borderRadius: 22, // Increased border radius
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
       backgroundColor: 'transparent',
-      minWidth: 80, // Minimum width for better touch targets
     },
     actionButtonActive: {
-      backgroundColor: '#d4af37',
+      backgroundColor: '#c9a961',
     },
     actionText: {
-      fontSize: textSizes.caption, // Kept same size for action text
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
-      marginLeft: 8, // Increased margin
+      marginLeft: 6,
     },
     actionTextActive: {
       color: '#fff',
     },
     tafsirContainer: {
       backgroundColor: '#f0ede5',
-      padding: 24, // Increased padding
+      padding: 20,
       borderTopWidth: 1,
       borderTopColor: '#e8e6e0',
     },
     tafsirTitle: {
-      fontSize: textSizes.body + 4, // Increased tafsir title size
+      fontSize: textSizes.body + 4,
       fontFamily: 'Amiri_700Bold',
       color: '#8B4513',
-      marginBottom: 16, // Increased margin
+      marginBottom: 12,
       textAlign: 'right',
     },
     tafsirText: {
-      fontSize: textSizes.body + 2, // Increased tafsir text size
+      fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_400Regular',
       color: '#2F4F4F',
-      lineHeight: 30, // Increased line height
+      lineHeight: 28,
       textAlign: 'right',
-      marginBottom: 18, // Increased margin
+      marginBottom: 16,
     },
     fullTafsirButton: {
       alignSelf: 'flex-end',
-      paddingHorizontal: 18, // Increased padding
-      paddingVertical: 10, // Increased padding
-      backgroundColor: '#d4af37',
-      borderRadius: 22, // Increased border radius
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: '#c9a961',
+      borderRadius: 20,
     },
     fullTafsirText: {
-      fontSize: textSizes.caption + 1, // Slightly increased button text
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
       color: '#fff',
     },
@@ -255,102 +232,34 @@ export default function AyahCard({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 24, // Increased padding
+      paddingVertical: 20,
     },
     loadingText: {
-      fontSize: textSizes.body + 1, // Increased loading text size
+      fontSize: textSizes.body,
       fontFamily: 'Amiri_400Regular',
       color: '#8B4513',
-      marginLeft: 12, // Increased margin
+      marginLeft: 10,
     },
     playingIndicator: {
       position: 'absolute',
-      top: -6, // Adjusted for larger circle
-      left: -6, // Adjusted for larger circle
-      width: 14, // Increased size
-      height: 14, // Increased size
-      borderRadius: 7, // Adjusted for new size
-      backgroundColor: '#d4af37',
-    },
-    debugInfo: {
-      backgroundColor: '#fff3cd',
-      padding: 10, // Increased padding
-      marginTop: 10, // Increased margin
-      borderRadius: 6, // Increased border radius
-      borderLeftWidth: 4,
-      borderLeftColor: '#ffc107',
-    },
-    debugText: {
-      fontSize: 13, // Slightly increased debug text
-      fontFamily: 'Amiri_400Regular',
-      color: '#856404',
-      textAlign: 'left',
-      lineHeight: 18, // Added line height
-    },
-    warningInfo: {
-      backgroundColor: '#f8d7da',
-      padding: 10, // Increased padding
-      marginTop: 10, // Increased margin
-      borderRadius: 6, // Increased border radius
-      borderLeftWidth: 4,
-      borderLeftColor: '#dc3545',
-    },
-    warningText: {
-      fontSize: 13, // Slightly increased warning text
-      fontFamily: 'Amiri_400Regular',
-      color: '#721c24',
-      textAlign: 'left',
-      lineHeight: 18, // Added line height
+      top: -4,
+      right: -4,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: '#4caf50',
     },
   });
-
-  // Debug information (only show in development for first verses)
-  const showDebug = __DEV__ && ayah.numberInSurah === 1;
-  const showWarning = textProcessingInfo?.hasIssues && __DEV__;
 
   return (
     <View style={styles.card}>
       <View style={styles.ayahRow}>
-        <View style={styles.ayahTextContainer}>
-          <Text style={styles.ayahText}>{processedAyahText}</Text>
-          
-          {showDebug && (
-            <View style={styles.debugInfo}>
-              <Text style={styles.debugText}>
-                Debug - Surah {surahNumber}:{ayah.numberInSurah}
-              </Text>
-              <Text style={styles.debugText}>
-                Original Length: {(ayah.text || '').length}
-              </Text>
-              <Text style={styles.debugText}>
-                Processed Length: {processedAyahText.length}
-              </Text>
-              <Text style={styles.debugText}>
-                Length Difference: {(ayah.text || '').length - processedAyahText.length}
-              </Text>
-              <Text style={styles.debugText}>
-                Bismillah Removed: {(ayah.text || '') !== processedAyahText ? 'Yes' : 'No'}
-              </Text>
-              <Text style={styles.debugText}>
-                Text Size: {increasedArabicTextSize}px
-              </Text>
-              <Text style={styles.debugText}>
-                Line Height: {increasedLineHeight}px
-              </Text>
-            </View>
-          )}
-          
-          {showWarning && (
-            <View style={styles.warningInfo}>
-              <Text style={styles.warningText}>
-                Warning: {textProcessingInfo.details}
-              </Text>
-            </View>
-          )}
-        </View>
         <View style={styles.ayahNumberCircle}>
           <Text style={styles.ayahNumber}>{ayah.numberInSurah}</Text>
           {isPlaying && <View style={styles.playingIndicator} />}
+        </View>
+        <View style={styles.ayahTextContainer}>
+          <Text style={styles.ayahText}>{processedAyahText}</Text>
         </View>
       </View>
 
@@ -361,7 +270,7 @@ export default function AyahCard({
         >
           <Icon 
             name={isPlaying ? "pause" : "play"} 
-            size={18} // Increased icon size
+            size={16}
             style={{ color: isPlaying ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, isPlaying && styles.actionTextActive]}>
@@ -375,7 +284,7 @@ export default function AyahCard({
         >
           <Icon 
             name="book" 
-            size={18} // Increased icon size
+            size={16}
             style={{ color: showTafsir ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, showTafsir && styles.actionTextActive]}>
@@ -389,7 +298,7 @@ export default function AyahCard({
         >
           <Icon 
             name={bookmarked ? "bookmark" : "bookmark-outline"} 
-            size={18} // Increased icon size
+            size={16}
             style={{ color: bookmarked ? '#fff' : '#8B4513' }} 
           />
           <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
@@ -403,7 +312,7 @@ export default function AyahCard({
           <Text style={styles.tafsirTitle}>تفسير ابن كثير:</Text>
           {loadingTafsir ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#d4af37" />
+              <ActivityIndicator size="small" color="#c9a961" />
               <Text style={styles.loadingText}>جاري تحميل التفسير...</Text>
             </View>
           ) : (

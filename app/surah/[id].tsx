@@ -8,6 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import AyahCard from '../../components/AyahCard';
 import AudioPlayer from '../../components/AudioPlayer';
 import Icon from '../../components/Icon';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 export default function SurahScreen() {
   const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
@@ -59,18 +60,14 @@ export default function SurahScreen() {
     }
   }, [surahNumber, getSurah, quranLoading]);
 
-  // Scroll to target ayah if specified
   useEffect(() => {
     if (targetAyah && surah) {
-      // Add a small delay to ensure the component is rendered
       setTimeout(() => {
         console.log(`Scrolling to ayah ${targetAyah}`);
-        // You could implement scrolling to specific ayah here if needed
       }, 500);
     }
   }, [targetAyah, surah]);
 
-  // Show/hide scroll indicator based on content
   useEffect(() => {
     if (contentHeight > scrollViewHeight && scrollViewHeight > 0) {
       setShowScrollIndicator(true);
@@ -106,7 +103,6 @@ export default function SurahScreen() {
            audioState.currentAyah === ayahNumber;
   };
 
-  // Handle scroll events
   const handleScroll = (event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     setScrollPosition(contentOffset.y);
@@ -114,10 +110,9 @@ export default function SurahScreen() {
     setScrollViewHeight(layoutMeasurement.height);
   };
 
-  // Handle scroll indicator press
   const handleScrollIndicatorPress = (event: any) => {
     const { locationY } = event.nativeEvent;
-    const scrollIndicatorHeight = screenHeight * 0.6; // Height of the scroll indicator area
+    const scrollIndicatorHeight = screenHeight * 0.6;
     const scrollRatio = locationY / scrollIndicatorHeight;
     const targetScrollY = scrollRatio * (contentHeight - scrollViewHeight);
     
@@ -127,7 +122,6 @@ export default function SurahScreen() {
     });
   };
 
-  // Calculate scroll indicator position and size
   const getScrollIndicatorStyle = () => {
     if (contentHeight <= scrollViewHeight) return { height: 0, top: 0 };
     
@@ -142,7 +136,6 @@ export default function SurahScreen() {
     };
   };
 
-  // Split ayahs into pages for flip mode (10 ayahs per page)
   const ayahsPerPage = 10;
   const totalPages = surah && surah.ayahs ? Math.ceil(surah.ayahs.length / ayahsPerPage) : 0;
   
@@ -176,7 +169,6 @@ export default function SurahScreen() {
 
   const handleRetry = () => {
     setError(null);
-    // Force a reload by clearing the error and trying again
     try {
       const surahData = getSurah(surahNumber);
       if (surahData) {
@@ -191,7 +183,7 @@ export default function SurahScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#f8f6f0', // Cream background like in the image
+      backgroundColor: '#f8f6f0',
     },
     centerContent: {
       justifyContent: 'center',
@@ -203,7 +195,7 @@ export default function SurahScreen() {
       flex: 1,
     },
     header: {
-      backgroundColor: colors.primary,
+      backgroundColor: '#c9a961',
       paddingVertical: 16,
       paddingHorizontal: 20,
       flexDirection: 'row',
@@ -211,10 +203,10 @@ export default function SurahScreen() {
       justifyContent: 'space-between',
     },
     backButton: {
-      width: 40 * (settings.squareAdjustment / 100),
-      height: 40 * (settings.squareAdjustment / 100),
-      borderRadius: 20 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.secondary,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -234,7 +226,7 @@ export default function SurahScreen() {
     headerSubtitle: {
       fontSize: textSizes.caption,
       color: '#fff',
-      opacity: 0.8,
+      opacity: 0.9,
       fontFamily: 'Amiri_400Regular',
     },
     headerInfo: {
@@ -243,7 +235,7 @@ export default function SurahScreen() {
     ayahCount: {
       fontSize: textSizes.caption,
       color: '#fff',
-      opacity: 0.8,
+      opacity: 0.9,
       fontFamily: 'Amiri_400Regular',
     },
     errorContainer: {
@@ -261,7 +253,7 @@ export default function SurahScreen() {
       textAlign: 'center',
     },
     retryButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: '#c9a961',
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 8,
@@ -273,62 +265,62 @@ export default function SurahScreen() {
       fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
     },
-    // New elegant Quran page styles
-    pageContainer: {
-      backgroundColor: '#f8f6f0',
-      margin: 16,
-      borderRadius: 12,
-      overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 20,
-      elevation: 8,
-    },
-    decorativeBorder: {
-      height: 60,
-      backgroundColor: '#d4af37', // Gold color
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    decorativePattern: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'transparent',
-    },
-    surahHeader: {
+    decorativeHeader: {
       backgroundColor: '#f8f6f0',
       paddingVertical: 20,
       alignItems: 'center',
-      borderBottomWidth: 2,
-      borderBottomColor: '#d4af37',
+      borderBottomWidth: 1,
+      borderBottomColor: '#d4c5a0',
+    },
+    decorativeBorderTop: {
+      height: 60,
+      width: '100%',
+      backgroundColor: '#c9a961',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    ornamentContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingVertical: 10,
+    },
+    surahNameContainer: {
+      backgroundColor: '#fff',
+      paddingHorizontal: 40,
+      paddingVertical: 15,
+      borderRadius: 50,
+      borderWidth: 3,
+      borderColor: '#c9a961',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
     },
     surahTitle: {
-      fontSize: 28,
+      fontSize: 32,
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#8B4513', // Brown color
+      color: '#2F4F4F',
       fontWeight: 'bold',
       textAlign: 'center',
-      marginBottom: 8,
     },
     bismillahContainer: {
       paddingVertical: 30,
+      paddingHorizontal: 20,
       alignItems: 'center',
       backgroundColor: '#f8f6f0',
     },
     bismillah: {
-      fontSize: 24,
+      fontSize: 28,
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F', // Dark slate gray
+      color: '#2F4F4F',
       textAlign: 'center',
       fontWeight: 'bold',
     },
     ayahContainer: {
-      paddingHorizontal: 20,
-      paddingVertical: 15,
+      paddingHorizontal: 0,
+      paddingVertical: 10,
       backgroundColor: '#f8f6f0',
     },
     footer: {
@@ -337,13 +329,12 @@ export default function SurahScreen() {
       backgroundColor: '#f8f6f0',
     },
     footerText: {
-      fontSize: 18,
+      fontSize: 20,
       color: '#8B4513',
       textAlign: 'center',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
-    // Flip mode styles
     flipContainer: {
       flex: 1,
       backgroundColor: '#f8f6f0',
@@ -363,7 +354,7 @@ export default function SurahScreen() {
       marginBottom: 20,
       paddingBottom: 10,
       borderBottomWidth: 1,
-      borderBottomColor: '#d4af37',
+      borderBottomColor: '#d4c5a0',
       paddingHorizontal: 20,
       paddingTop: 20,
     },
@@ -380,7 +371,7 @@ export default function SurahScreen() {
       paddingVertical: 16,
       backgroundColor: '#f8f6f0',
       borderTopWidth: 1,
-      borderTopColor: '#d4af37',
+      borderTopColor: '#d4c5a0',
     },
     navButton: {
       flexDirection: 'row',
@@ -388,7 +379,7 @@ export default function SurahScreen() {
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 8,
-      backgroundColor: '#d4af37',
+      backgroundColor: '#c9a961',
       opacity: 1,
     },
     navButtonDisabled: {
@@ -408,14 +399,13 @@ export default function SurahScreen() {
       color: '#8B4513',
       fontFamily: 'Amiri_400Regular',
     },
-    // Right-side scroll indicator styles
     scrollIndicatorContainer: {
       position: 'absolute',
       right: 8,
-      top: screenHeight * 0.15, // Start below header
+      top: screenHeight * 0.15,
       width: 6,
-      height: screenHeight * 0.6, // Take up 60% of screen height
-      backgroundColor: 'rgba(212, 175, 55, 0.2)', // Semi-transparent gold
+      height: screenHeight * 0.6,
+      backgroundColor: 'rgba(201, 169, 97, 0.2)',
       borderRadius: 3,
       zIndex: 1000,
     },
@@ -423,7 +413,7 @@ export default function SurahScreen() {
       position: 'absolute',
       right: 0,
       width: 6,
-      backgroundColor: '#d4af37', // Gold color
+      backgroundColor: '#c9a961',
       borderRadius: 3,
       minHeight: 20,
     },
@@ -431,7 +421,7 @@ export default function SurahScreen() {
       position: 'absolute',
       right: -2,
       width: 10,
-      backgroundColor: '#b8941f', // Darker gold
+      backgroundColor: '#b8941f',
       borderRadius: 5,
       minHeight: 20,
     },
@@ -441,7 +431,6 @@ export default function SurahScreen() {
     },
   });
 
-  // Show error state
   if (error || quranError) {
     return (
       <View style={styles.container}>
@@ -477,7 +466,6 @@ export default function SurahScreen() {
     );
   }
 
-  // Show loading state
   if (quranLoading || !surah) {
     return (
       <View style={styles.container}>
@@ -505,7 +493,6 @@ export default function SurahScreen() {
     );
   }
 
-  // Validate surah data
   if (!surah.ayahs || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) {
     return (
       <View style={styles.container}>
@@ -535,7 +522,6 @@ export default function SurahScreen() {
     );
   }
 
-  // Filter out any ayahs with empty text (shouldn't happen after our processing, but safety check)
   const validAyahs = surah.ayahs.filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
 
   if (settings.readingMode === 'flip') {
@@ -562,9 +548,7 @@ export default function SurahScreen() {
         </View>
 
         <View style={styles.flipContainer}>
-          <View style={styles.decorativeBorder}>
-            <View style={styles.decorativePattern} />
-          </View>
+          <View style={styles.decorativeBorderTop} />
           
           <View style={styles.pageHeader}>
             <Text style={styles.pageNumber}>صفحة {currentPage + 1} من {totalPages}</Text>
@@ -634,7 +618,6 @@ export default function SurahScreen() {
     );
   }
 
-  // Default scroll mode with AyahCard components and right-side scroller
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -663,6 +646,14 @@ export default function SurahScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
+          <View style={styles.decorativeBorderTop} />
+          
+          <View style={styles.decorativeHeader}>
+            <View style={styles.surahNameContainer}>
+              <Text style={styles.surahTitle}>{surah.name || 'السورة'}</Text>
+            </View>
+          </View>
+
           {surahNumber !== 1 && surahNumber !== 9 && (
             <View style={styles.bismillahContainer}>
               <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
@@ -686,7 +677,6 @@ export default function SurahScreen() {
           </View>
         </ScrollView>
         
-        {/* Right-side scroll indicator */}
         {showScrollIndicator && (
           <Animated.View 
             style={[styles.scrollIndicatorContainer, { opacity: fadeAnim }]}
