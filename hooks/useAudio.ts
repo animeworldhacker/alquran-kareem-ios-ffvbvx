@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AudioState, Reciter } from '../types';
 import { audioService } from '../services/audioService';
 import { Alert } from 'react-native';
@@ -18,11 +18,25 @@ export const useAudio = () => {
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
 
+  const loadSavedReciter = useCallback(async () => {
+    try {
+      const saved = await audioService.loadSelectedReciter();
+      if (saved) {
+        setSelectedReciterState(saved);
+        console.log('✅ Loaded saved reciter:', saved);
+      } else {
+        console.log('ℹ️ No saved reciter, using default:', selectedReciter);
+      }
+    } catch (error) {
+      console.error('❌ Error loading saved reciter:', error);
+    }
+  }, [selectedReciter]);
+
   useEffect(() => {
     initializeAudio();
     loadReciters();
     loadSavedReciter();
-  }, []);
+  }, [loadSavedReciter]);
 
   const initializeAudio = async () => {
     try {
@@ -47,20 +61,6 @@ export const useAudio = () => {
     } catch (error) {
       console.error('❌ Error loading reciters in hook:', error);
       setError('فشل في تحميل القراء');
-    }
-  };
-
-  const loadSavedReciter = async () => {
-    try {
-      const saved = await audioService.loadSelectedReciter();
-      if (saved) {
-        setSelectedReciterState(saved);
-        console.log('✅ Loaded saved reciter:', saved);
-      } else {
-        console.log('ℹ️ No saved reciter, using default:', selectedReciter);
-      }
-    } catch (error) {
-      console.error('❌ Error loading saved reciter:', error);
     }
   };
 
