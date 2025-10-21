@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { AudioState, Reciter } from '../types';
+import { AudioState } from '../types';
 import Icon from './Icon';
 
 interface AudioPlayerProps {
@@ -11,7 +11,6 @@ interface AudioPlayerProps {
   onPause: () => void;
   onStop: () => void;
   onNext?: () => void;
-  currentReciter?: Reciter;
 }
 
 export default function AudioPlayer({ 
@@ -19,8 +18,7 @@ export default function AudioPlayer({
   onPlay, 
   onPause, 
   onStop,
-  onNext,
-  currentReciter
+  onNext
 }: AudioPlayerProps) {
   const { colors, textSizes } = useTheme();
 
@@ -88,12 +86,6 @@ export default function AudioPlayer({
       fontWeight: '600',
       fontFamily: 'Amiri_700Bold',
     },
-    reciterText: {
-      color: 'rgba(255, 255, 255, 0.8)',
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
-      marginTop: 2,
-    },
     controls: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -124,11 +116,6 @@ export default function AudioPlayer({
         <Text style={styles.currentText}>
           سورة {audioState.currentSurah || '؟'} - آية {audioState.currentAyah || '؟'}
         </Text>
-        {currentReciter && (
-          <Text style={styles.reciterText}>
-            {currentReciter.name}
-          </Text>
-        )}
       </View>
       
       <View style={styles.controls}>

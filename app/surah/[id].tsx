@@ -18,9 +18,6 @@ export default function SurahScreen() {
   const { getSurah, loading: quranLoading, error: quranError } = useQuran();
   const { 
     audioState, 
-    reciters,
-    selectedReciter,
-    setSelectedReciter,
     playAyah, 
     stopAudio, 
     pauseAudio, 
@@ -38,7 +35,6 @@ export default function SurahScreen() {
   const [contentHeight, setContentHeight] = useState(0);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  const [showReciterDropdown, setShowReciterDropdown] = useState(false);
   
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
@@ -204,14 +200,6 @@ export default function SurahScreen() {
     }
   };
 
-  const handleReciterSelect = (reciterId: number) => {
-    setSelectedReciter(reciterId);
-    setShowReciterDropdown(false);
-  };
-
-  // Get current reciter object
-  const currentReciter = reciters.find(r => r.id === selectedReciter);
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -269,54 +257,6 @@ export default function SurahScreen() {
       color: '#fff',
       opacity: 0.9,
       fontFamily: 'Amiri_400Regular',
-    },
-    reciterSelector: {
-      backgroundColor: '#f8f6f0',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: '#d4c5a0',
-    },
-    reciterButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: '#fff',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#c9a961',
-    },
-    reciterButtonText: {
-      fontSize: textSizes.body,
-      fontFamily: 'Amiri_700Bold',
-      color: '#2F4F4F',
-      textAlign: 'right',
-      flex: 1,
-    },
-    reciterDropdown: {
-      backgroundColor: '#fff',
-      marginTop: 8,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#c9a961',
-      maxHeight: 200,
-    },
-    reciterOption: {
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: '#f0f0f0',
-    },
-    reciterOptionActive: {
-      backgroundColor: 'rgba(201, 169, 97, 0.1)',
-    },
-    reciterOptionText: {
-      fontSize: textSizes.body,
-      fontFamily: 'Amiri_400Regular',
-      color: '#2F4F4F',
-      textAlign: 'right',
     },
     errorContainer: {
       backgroundColor: '#ffebee',
@@ -603,7 +543,6 @@ export default function SurahScreen() {
   }
 
   const validAyahs = surah.ayahs.filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
-  const selectedReciterName = reciters.find(r => r.id === selectedReciter)?.name || 'اختر القارئ';
 
   if (settings.readingMode === 'flip') {
     const currentPageAyahs = getCurrentPageAyahs().filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
@@ -626,33 +565,6 @@ export default function SurahScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
           </View>
-        </View>
-
-        <View style={styles.reciterSelector}>
-          <TouchableOpacity
-            style={styles.reciterButton}
-            onPress={() => setShowReciterDropdown(!showReciterDropdown)}
-          >
-            <Icon name={showReciterDropdown ? 'chevron-up' : 'chevron-down'} size={20} style={{ color: '#2F4F4F' }} />
-            <Text style={styles.reciterButtonText}>{selectedReciterName}</Text>
-          </TouchableOpacity>
-
-          {showReciterDropdown && (
-            <ScrollView style={styles.reciterDropdown} nestedScrollEnabled>
-              {reciters.map((reciter) => (
-                <TouchableOpacity
-                  key={reciter.id}
-                  style={[
-                    styles.reciterOption,
-                    selectedReciter === reciter.id && styles.reciterOptionActive,
-                  ]}
-                  onPress={() => handleReciterSelect(reciter.id)}
-                >
-                  <Text style={styles.reciterOptionText}>{reciter.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
         </View>
 
         <View style={styles.flipContainer}>
@@ -723,7 +635,6 @@ export default function SurahScreen() {
           onPlay={resumeAudio}
           onPause={pauseAudio}
           onStop={stopAudio}
-          currentReciter={currentReciter}
         />
       </View>
     );
@@ -747,33 +658,6 @@ export default function SurahScreen() {
         <View style={styles.headerInfo}>
           <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
         </View>
-      </View>
-
-      <View style={styles.reciterSelector}>
-        <TouchableOpacity
-          style={styles.reciterButton}
-          onPress={() => setShowReciterDropdown(!showReciterDropdown)}
-        >
-          <Icon name={showReciterDropdown ? 'chevron-up' : 'chevron-down'} size={20} style={{ color: '#2F4F4F' }} />
-          <Text style={styles.reciterButtonText}>{selectedReciterName}</Text>
-        </TouchableOpacity>
-
-        {showReciterDropdown && (
-          <ScrollView style={styles.reciterDropdown} nestedScrollEnabled>
-            {reciters.map((reciter) => (
-              <TouchableOpacity
-                key={reciter.id}
-                style={[
-                  styles.reciterOption,
-                  selectedReciter === reciter.id && styles.reciterOptionActive,
-                ]}
-                onPress={() => handleReciterSelect(reciter.id)}
-              >
-                <Text style={styles.reciterOptionText}>{reciter.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
       </View>
       
       <View style={styles.contentContainer}>
@@ -838,7 +722,6 @@ export default function SurahScreen() {
         onPlay={resumeAudio}
         onPause={pauseAudio}
         onStop={stopAudio}
-        currentReciter={currentReciter}
       />
     </View>
   );

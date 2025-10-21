@@ -11,7 +11,6 @@ import Icon from '../../components/Icon';
 export default function SettingsTab() {
   const { settings, updateSettings, colors, textSizes } = useTheme();
   const [testingAudio, setTestingAudio] = useState(false);
-  const [refreshingRecitations, setRefreshingRecitations] = useState(false);
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
@@ -109,37 +108,31 @@ export default function SettingsTab() {
       await audioService.initializeAudio();
       console.log('✅ Audio initialization successful');
       
-      console.log('\nTest 2: Loading reciters...');
-      const reciters = await audioService.getReciters();
-      console.log(`✅ Loaded ${reciters.length} reciters`);
+      console.log('\nTest 2: Testing audio URL for Al-Fatiha (1:1)...');
       
-      console.log('\nTest 3: Testing audio URLs for Al-Fatiha (1:1)...');
+      const testUrl = 'https://verses.quran.com/2/001001.mp3';
+      console.log('Testing URL:', testUrl);
       
-      // Test multiple reciters
-      const testResults = [];
-      for (const reciter of reciters) {
-        const recitationId = reciter.recitationId || 2;
-        const testUrl = `https://verses.quran.com/${recitationId}/001001.mp3`;
-        console.log(`Testing ${reciter.name} (ID ${recitationId}):`, testUrl);
+      try {
+        const response = await fetch(testUrl, { method: 'HEAD' });
+        const status = response.ok ? '✅' : '❌';
+        console.log(`${status} Status: ${response.status}`);
         
-        try {
-          const response = await fetch(testUrl, { method: 'HEAD' });
-          const status = response.ok ? '✅' : '❌';
-          testResults.push(`${status} ${reciter.name}: ${response.status}`);
-          console.log(`${status} Status: ${response.status}`);
-        } catch (error) {
-          testResults.push(`❌ ${reciter.name}: خطأ`);
-          console.error(`❌ Error:`, error);
-        }
+        console.log('\n✅ ===== AUDIO TEST COMPLETED =====\n');
+        
+        Alert.alert(
+          'نتائج الاختبار',
+          `نظام الصوت:\n\n${status} عبد الباسط عبد الصمد: ${response.status}\n\nنظام الصوت يعمل بشكل صحيح`,
+          [{ text: 'حسناً' }]
+        );
+      } catch (error) {
+        console.error(`❌ Error:`, error);
+        Alert.alert(
+          'فشل الاختبار ❌',
+          'حدث خطأ أثناء اختبار نظام الصوت. تأكد من اتصالك بالإنترنت.',
+          [{ text: 'حسناً' }]
+        );
       }
-      
-      console.log('\n✅ ===== AUDIO TEST COMPLETED =====\n');
-      
-      Alert.alert(
-        'نتائج الاختبار',
-        `نظام الصوت:\n\n${testResults.join('\n')}\n\nتم تحميل ${reciters.length} قراء`,
-        [{ text: 'حسناً' }]
-      );
     } catch (error) {
       console.error('❌ Audio test failed:', error);
       Alert.alert(
@@ -151,43 +144,17 @@ export default function SettingsTab() {
     }
   };
 
-  const handleRefreshRecitations = async () => {
-    setRefreshingRecitations(true);
-    try {
-      console.log('🔄 Refreshing recitation mappings from Quran.com API...');
-      await audioService.refreshRecitationMapping();
-      
-      // Reload reciters to get updated IDs
-      const reciters = await audioService.getReciters();
-      
-      Alert.alert(
-        'نجح ✅',
-        `تم تحديث معرفات القراء من Quran.com\n\nتم تحميل ${reciters.length} قراء بنجاح.`,
-        [{ text: 'حسناً' }]
-      );
-    } catch (error) {
-      console.error('❌ Error refreshing recitations:', error);
-      Alert.alert(
-        'خطأ',
-        'فشل في تحديث معرفات القراء. تأكد من اتصالك بالإنترنت.',
-        [{ text: 'حسناً' }]
-      );
-    } finally {
-      setRefreshingRecitations(false);
-    }
-  };
-
   const handleClearAudioCache = () => {
     Alert.alert(
       'مسح ذاكرة التخزين المؤقت للصوت',
-      'هل تريد مسح ذاكرة التخزين المؤقت للملفات الصوتية ومعرفات القراء؟',
+      'هل تريد مسح ذاكرة التخزين المؤقت للملفات الصوتية؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
           text: 'مسح',
           onPress: async () => {
             await audioService.clearCache();
-            Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت ومعرفات القراء');
+            Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت');
           },
         },
       ]
@@ -480,16 +447,6 @@ export default function SettingsTab() {
               {testingAudio ? 'جاري الاختبار...' : 'اختبار نظام الصوت'}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary, refreshingRecitations && styles.buttonDisabled]}
-            onPress={handleRefreshRecitations}
-            disabled={refreshingRecitations}
-          >
-            <Text style={styles.buttonText}>
-              {refreshingRecitations ? 'جاري التحديث...' : 'تحديث معرفات القراء'}
-            </Text>
-          </TouchableOpacity>
           
           <TouchableOpacity
             style={[styles.button, styles.buttonSecondary]}
@@ -499,8 +456,8 @@ export default function SettingsTab() {
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
+            القارئ: عبد الباسط عبد الصمد (حفص عن عاصم){'\n'}
             • اختبار نظام الصوت: للتحقق من توفر الملفات الصوتية{'\n'}
-            • تحديث معرفات القراء: لتحديث معرفات القراء من Quran.com{'\n'}
             • مسح الذاكرة: لحذف الملفات المخزنة مؤقتاً
           </Text>
         </View>

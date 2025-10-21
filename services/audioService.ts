@@ -1,19 +1,13 @@
 
 import { Audio } from 'expo-av';
-import { Reciter } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AudioCache {
   [key: string]: string;
 }
 
-interface RecitationMapping {
-  [key: string]: number;
-}
-
 class AudioService {
   private sound: Audio.Sound | null = null;
-  private reciters: Reciter[] = [];
   private isInitialized = false;
   private audioCache: AudioCache = {};
   private currentlyPlayingKey: string | null = null;
@@ -22,18 +16,9 @@ class AudioService {
   private currentAyah: number | null = null;
   private totalAyahs: number = 0;
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
-  private currentReciterId: number = 2;
-  private recitationMapping: RecitationMapping = {};
-  private isLoadingRecitations = false;
-
-  // Target reciter names to match from Quran.com API
-  private targetReciters = [
-    'Ali Jaber',
-    'Ahmed Al Ajmy',
-    'Abdulbasit',
-    'Maher Al-Muaiqly',
-    'Yasser Al-Dosari'
-  ];
+  
+  // Using Abdulbasit (recitation ID 2) as the single working reciter
+  private readonly RECITATION_ID = 2;
 
   async initializeAudio() {
     try {
@@ -51,16 +36,6 @@ class AudioService {
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
       });
-      
-      // Load cached reciter from localStorage
-      const savedReciter = await AsyncStorage.getItem('selectedReciter');
-      if (savedReciter) {
-        this.currentReciterId = parseInt(savedReciter, 10);
-        console.log('📂 Loaded saved reciter:', savedReciter);
-      }
-
-      // Load recitation mapping from cache or fetch
-      await this.loadRecitationMapping();
 
       // Load audio URL cache from localStorage
       await this.loadAudioCache();
@@ -95,202 +70,16 @@ class AudioService {
     }
   }
 
-  private normalizeReciterName(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  private async loadRecitationMapping() {
+  private buildQuranCdnUrl(surahNumber: number, ayahNumber: number): string {
     try {
-      // Try to load from cache first
-      const cached = await AsyncStorage.getItem('recitationMapping');
-      if (cached) {
-        this.recitationMapping = JSON.parse(cached);
-        console.log('📦 Loaded recitation mapping from cache:', this.recitationMapping);
-        return;
-      }
-
-      // If not cached, fetch from API
-      await this.fetchRecitationMapping();
-    } catch (error) {
-      console.error('⚠️ Error loading recitation mapping:', error);
-      // Use fallback mapping if fetch fails
-      this.useFallbackMapping();
-    }
-  }
-
-  private async fetchRecitationMapping() {
-    if (this.isLoadingRecitations) {
-      console.log('⏳ Already loading recitations, skipping...');
-      return;
-    }
-
-    this.isLoadingRecitations = true;
-
-    try {
-      console.log('🌐 Fetching recitation IDs from Quran.com API...');
-      
-      const response = await this.fetchWithTimeout(
-        'https://api.quran.com/api/v4/resources/recitations',
-        { timeout: 10000 }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const recitations = data.recitations || [];
-
-      console.log(`📋 Found ${recitations.length} recitations from API`);
-
-      // Match target reciters
-      const mapping: RecitationMapping = {};
-      
-      for (const targetName of this.targetReciters) {
-        const normalized = this.normalizeReciterName(targetName);
-        
-        const match = recitations.find((r: any) => {
-          const reciterName = this.normalizeReciterName(r.reciter_name || '');
-          return reciterName.includes(normalized) || normalized.includes(reciterName);
-        });
-
-        if (match) {
-          mapping[targetName] = match.id;
-          console.log(`✅ Matched "${targetName}" -> ID ${match.id} (${match.reciter_name})`);
-        } else {
-          console.warn(`⚠️ No match found for "${targetName}"`);
-        }
-      }
-
-      // Save mapping to cache
-      this.recitationMapping = mapping;
-      await AsyncStorage.setItem('recitationMapping', JSON.stringify(mapping));
-      console.log('💾 Saved recitation mapping to cache');
-
-    } catch (error) {
-      console.error('❌ Error fetching recitation mapping:', error);
-      this.useFallbackMapping();
-    } finally {
-      this.isLoadingRecitations = false;
-    }
-  }
-
-  private useFallbackMapping() {
-    console.log('⚠️ Using fallback recitation mapping');
-    // Fallback IDs based on known working values
-    this.recitationMapping = {
-      'Ali Jaber': 9,
-      'Ahmed Al Ajmy': 5,
-      'Abdulbasit': 2,
-      'Maher Al-Muaiqly': 6,
-      'Yasser Al-Dosari': 8
-    };
-  }
-
-  private getRecitationId(reciterId: number): number {
-    // Map internal reciter IDs to Quran.com recitation IDs
-    const reciterNameMap: { [key: number]: string } = {
-      7: 'Ali Jaber',
-      5: 'Ahmed Al Ajmy',
-      2: 'Abdulbasit',
-      6: 'Maher Al-Muaiqly',
-      12: 'Yasser Al-Dosari'
-    };
-
-    const reciterName = reciterNameMap[reciterId];
-    if (reciterName && this.recitationMapping[reciterName]) {
-      return this.recitationMapping[reciterName];
-    }
-
-    // Default to Abdulbasit (recitation ID 2)
-    console.warn(`⚠️ No recitation ID found for reciter ${reciterId}, using default (2)`);
-    return 2;
-  }
-
-  async getReciters(): Promise<Reciter[]> {
-    if (this.reciters.length > 0) {
-      return this.reciters;
-    }
-
-    try {
-      console.log('Setting up reciters...');
-      
-      // Ensure recitation mapping is loaded
-      if (Object.keys(this.recitationMapping).length === 0) {
-        await this.loadRecitationMapping();
-      }
-
-      // Define the 5 required reciters
-      this.reciters = [
-        { 
-          id: 7, 
-          name: 'علي جابر', 
-          letter: 'أ', 
-          rewaya: 'حفص عن عاصم', 
-          count: 114, 
-          server: 'quran_cdn',
-          recitationId: this.getRecitationId(7)
-        },
-        { 
-          id: 5, 
-          name: 'أحمد العجمي', 
-          letter: 'أ', 
-          rewaya: 'حفص عن عاصم', 
-          count: 114, 
-          server: 'quran_cdn',
-          recitationId: this.getRecitationId(5)
-        },
-        { 
-          id: 2, 
-          name: 'عبد الباسط عبد الصمد', 
-          letter: 'ع', 
-          rewaya: 'حفص عن عاصم', 
-          count: 114, 
-          server: 'quran_cdn',
-          recitationId: this.getRecitationId(2)
-        },
-        { 
-          id: 6, 
-          name: 'ماهر المعيقلي', 
-          letter: 'م', 
-          rewaya: 'حفص عن عاصم', 
-          count: 114, 
-          server: 'quran_cdn',
-          recitationId: this.getRecitationId(6)
-        },
-        { 
-          id: 12, 
-          name: 'ياسر الدوسري', 
-          letter: 'ي', 
-          rewaya: 'حفص عن عاصم', 
-          count: 114, 
-          server: 'quran_cdn',
-          recitationId: this.getRecitationId(12)
-        },
-      ];
-      
-      console.log('✅ Reciters configured successfully');
-      return this.reciters;
-    } catch (error) {
-      console.error('❌ Error setting up reciters:', error);
-      throw error;
-    }
-  }
-
-  private buildQuranCdnUrl(recitationId: number, surahNumber: number, ayahNumber: number): string {
-    try {
-      if (!recitationId || !surahNumber || !ayahNumber) {
+      if (!surahNumber || !ayahNumber) {
         throw new Error('Invalid parameters for building audio URL');
       }
       
       // Zero-pad to 3 digits as per Quran.com CDN format
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
-      const url = `https://verses.quran.com/${recitationId}/${paddedSurah}${paddedAyah}.mp3`;
+      const url = `https://verses.quran.com/${this.RECITATION_ID}/${paddedSurah}${paddedAyah}.mp3`;
       
       return url;
     } catch (error) {
@@ -306,7 +95,6 @@ class AudioService {
     }
     
     // If it's a relative path, prepend the Quran.com CDN base URL
-    // Common base URLs for Quran.com audio
     const baseUrl = 'https://verses.quran.com/';
     
     // Remove leading slash if present
@@ -375,11 +163,11 @@ class AudioService {
     return false;
   }
 
-  private async getAudioUrlFromApi(recitationId: number, surahNumber: number, ayahNumber: number): Promise<string | null> {
+  private async getAudioUrlFromApi(surahNumber: number, ayahNumber: number): Promise<string | null> {
     try {
-      console.log(`🌐 Fetching audio URL from API for ${surahNumber}:${ayahNumber} with recitation ${recitationId}...`);
+      console.log(`🌐 Fetching audio URL from API for ${surahNumber}:${ayahNumber}...`);
       
-      const apiUrl = `https://api.quran.com/api/v4/verses/by_key/${surahNumber}:${ayahNumber}?audio=${recitationId}`;
+      const apiUrl = `https://api.quran.com/api/v4/verses/by_key/${surahNumber}:${ayahNumber}?audio=${this.RECITATION_ID}`;
       
       const response = await this.fetchWithTimeout(apiUrl, { timeout: 10000 });
       
@@ -419,11 +207,10 @@ class AudioService {
   }
 
   private async getAudioUrlWithFallback(
-    reciterId: number, 
     surahNumber: number, 
     ayahNumber: number
   ): Promise<string> {
-    const cacheKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
+    const cacheKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
     
     // Check cache first
     if (this.audioCache[cacheKey]) {
@@ -439,15 +226,12 @@ class AudioService {
         await this.saveAudioCache();
       }
     }
-
-    // Get recitation ID for this reciter
-    const recitationId = this.getRecitationId(reciterId);
     
-    console.log(`\n🎵 Resolving audio URL for reciter ${reciterId} (recitation ${recitationId}), Surah ${surahNumber}, Ayah ${ayahNumber}`);
+    console.log(`\n🎵 Resolving audio URL for Surah ${surahNumber}, Ayah ${ayahNumber}`);
     
     // Step 1: Try CDN URL
     console.log('📍 Step 1: Trying CDN URL...');
-    let audioUrl = this.buildQuranCdnUrl(recitationId, surahNumber, ayahNumber);
+    let audioUrl = this.buildQuranCdnUrl(surahNumber, ayahNumber);
     let isAvailable = await this.checkAudioUrlWithRetry(audioUrl, 2);
     
     if (isAvailable) {
@@ -459,7 +243,7 @@ class AudioService {
     
     // Step 2: Try API fallback
     console.log('📍 Step 2: CDN failed, trying API fallback...');
-    const apiUrl = await this.getAudioUrlFromApi(recitationId, surahNumber, ayahNumber);
+    const apiUrl = await this.getAudioUrlFromApi(surahNumber, ayahNumber);
     
     if (apiUrl) {
       const apiUrlValid = await this.checkAudioUrlWithRetry(apiUrl, 2);
@@ -471,30 +255,6 @@ class AudioService {
       }
     }
     
-    // Step 3: Final fallback to Mishary (recitation ID 1)
-    if (recitationId !== 1) {
-      console.log('📍 Step 3: Trying final fallback to Mishary Rashid (recitation ID 1)...');
-      
-      const misharyUrl = this.buildQuranCdnUrl(1, surahNumber, ayahNumber);
-      const misharyAvailable = await this.checkAudioUrlWithRetry(misharyUrl, 2);
-      
-      if (misharyAvailable) {
-        console.log('✅ Mishary fallback works!');
-        // Don't cache Mishary fallback with original reciter key
-        return misharyUrl;
-      }
-      
-      // Try Mishary via API
-      const misharyApiUrl = await this.getAudioUrlFromApi(1, surahNumber, ayahNumber);
-      if (misharyApiUrl) {
-        const misharyApiValid = await this.checkAudioUrlWithRetry(misharyApiUrl, 1);
-        if (misharyApiValid) {
-          console.log('✅ Mishary API fallback works!');
-          return misharyApiUrl;
-        }
-      }
-    }
-    
     // All attempts failed
     console.error('❌ All audio URL resolution attempts failed');
     throw new Error('تعذّر تشغيل الآية. الملف الصوتي غير متوفر حالياً.');
@@ -503,7 +263,6 @@ class AudioService {
   async playAyah(
     surahNumber: number, 
     ayahNumber: number, 
-    reciterId: number = 2,
     continuousPlay: boolean = false,
     totalAyahsInSurah: number = 0
   ): Promise<void> {
@@ -515,7 +274,7 @@ class AudioService {
 
       console.log(`\n🎵 ===== PLAYING AYAH =====`);
       console.log(`📖 Surah: ${surahNumber}, Ayah: ${ayahNumber}`);
-      console.log(`🎙️ Reciter: ${reciterId}, Continuous: ${continuousPlay}`);
+      console.log(`🎙️ Continuous: ${continuousPlay}`);
 
       // Ensure audio is initialized
       if (!this.isInitialized) {
@@ -534,22 +293,16 @@ class AudioService {
         this.sound = null;
       }
 
-      // Get reciters if not loaded
-      if (this.reciters.length === 0) {
-        await this.getReciters();
-      }
-
       // Set continuous playback state
       this.continuousPlayback = continuousPlay;
       this.currentSurah = surahNumber;
       this.currentAyah = ayahNumber;
       this.totalAyahs = totalAyahsInSurah;
-      this.currentReciterId = reciterId;
-      this.currentlyPlayingKey = `${reciterId}:${surahNumber}:${ayahNumber}`;
+      this.currentlyPlayingKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
 
       // Get audio URL with fallback chain
       console.log('🔍 Resolving audio URL...');
-      const audioUrl = await this.getAudioUrlWithFallback(reciterId, surahNumber, ayahNumber);
+      const audioUrl = await this.getAudioUrlWithFallback(surahNumber, ayahNumber);
       console.log(`📥 Loading audio from: ${audioUrl}`);
       
       const { sound } = await Audio.Sound.createAsync(
@@ -596,7 +349,6 @@ class AudioService {
               await this.playAyah(
                 this.currentSurah!, 
                 nextAyah, 
-                this.currentReciterId, 
                 true, 
                 this.totalAyahs
               );
@@ -686,43 +438,10 @@ class AudioService {
     return this.continuousPlayback;
   }
 
-  async saveSelectedReciter(reciterId: number): Promise<void> {
-    try {
-      await AsyncStorage.setItem('selectedReciter', reciterId.toString());
-      this.currentReciterId = reciterId;
-      console.log('💾 Saved selected reciter:', reciterId);
-    } catch (error) {
-      console.error('❌ Error saving selected reciter:', error);
-    }
-  }
-
-  async loadSelectedReciter(): Promise<number | null> {
-    try {
-      const saved = await AsyncStorage.getItem('selectedReciter');
-      if (saved) {
-        this.currentReciterId = parseInt(saved, 10);
-        console.log('📂 Loaded selected reciter:', this.currentReciterId);
-        return this.currentReciterId;
-      }
-      return null;
-    } catch (error) {
-      console.error('❌ Error loading selected reciter:', error);
-      return null;
-    }
-  }
-
   async clearCache(): Promise<void> {
     this.audioCache = {};
     await AsyncStorage.removeItem('audioUrlCache');
-    await AsyncStorage.removeItem('recitationMapping');
-    this.recitationMapping = {};
-    console.log('🗑️ Audio cache and recitation mapping cleared');
-  }
-
-  async refreshRecitationMapping(): Promise<void> {
-    await AsyncStorage.removeItem('recitationMapping');
-    this.recitationMapping = {};
-    await this.fetchRecitationMapping();
+    console.log('🗑️ Audio cache cleared');
   }
 }
 
