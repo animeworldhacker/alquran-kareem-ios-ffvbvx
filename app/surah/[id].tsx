@@ -209,6 +209,9 @@ export default function SurahScreen() {
     setShowReciterDropdown(false);
   };
 
+  // Get current reciter object
+  const currentReciter = reciters.find(r => r.id === selectedReciter);
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -720,6 +723,7 @@ export default function SurahScreen() {
           onPlay={resumeAudio}
           onPause={pauseAudio}
           onStop={stopAudio}
+          currentReciter={currentReciter}
         />
       </View>
     );
@@ -834,6 +838,7 @@ export default function SurahScreen() {
         onPlay={resumeAudio}
         onPause={pauseAudio}
         onStop={stopAudio}
+        currentReciter={currentReciter}
       />
     </View>
   );

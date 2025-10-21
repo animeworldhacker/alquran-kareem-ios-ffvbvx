@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { AudioState } from '../types';
+import { AudioState, Reciter } from '../types';
 import Icon from './Icon';
 
 interface AudioPlayerProps {
@@ -11,6 +11,7 @@ interface AudioPlayerProps {
   onPause: () => void;
   onStop: () => void;
   onNext?: () => void;
+  currentReciter?: Reciter;
 }
 
 export default function AudioPlayer({ 
@@ -18,7 +19,8 @@ export default function AudioPlayer({
   onPlay, 
   onPause, 
   onStop,
-  onNext 
+  onNext,
+  currentReciter
 }: AudioPlayerProps) {
   const { colors, textSizes } = useTheme();
 
@@ -71,6 +73,11 @@ export default function AudioPlayer({
       justifyContent: 'space-between',
       borderTopWidth: 1,
       borderTopColor: colors.secondary,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 5,
     },
     info: {
       flex: 1,
@@ -78,8 +85,14 @@ export default function AudioPlayer({
     currentText: {
       color: '#fff',
       fontSize: textSizes.body,
-      fontWeight: '500',
+      fontWeight: '600',
+      fontFamily: 'Amiri_700Bold',
+    },
+    reciterText: {
+      color: 'rgba(255, 255, 255, 0.8)',
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_400Regular',
+      marginTop: 2,
     },
     controls: {
       flexDirection: 'row',
@@ -90,12 +103,15 @@ export default function AudioPlayer({
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: colors.secondary,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     playButton: {
       backgroundColor: colors.accent,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
     },
     controlIcon: {
       color: '#fff',
@@ -108,11 +124,16 @@ export default function AudioPlayer({
         <Text style={styles.currentText}>
           سورة {audioState.currentSurah || '؟'} - آية {audioState.currentAyah || '؟'}
         </Text>
+        {currentReciter && (
+          <Text style={styles.reciterText}>
+            {currentReciter.name}
+          </Text>
+        )}
       </View>
       
       <View style={styles.controls}>
         <TouchableOpacity style={styles.controlButton} onPress={handleStop}>
-          <Icon name="stop" size={24} style={styles.controlIcon} />
+          <Icon name="stop" size={20} style={styles.controlIcon} />
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -121,14 +142,14 @@ export default function AudioPlayer({
         >
           <Icon 
             name={audioState.isPlaying ? "pause" : "play"} 
-            size={28} 
+            size={24} 
             style={styles.controlIcon} 
           />
         </TouchableOpacity>
 
         {onNext && (
           <TouchableOpacity style={styles.controlButton} onPress={handleNext}>
-            <Icon name="play-skip-forward" size={24} style={styles.controlIcon} />
+            <Icon name="play-skip-forward" size={20} style={styles.controlIcon} />
           </TouchableOpacity>
         )}
       </View>

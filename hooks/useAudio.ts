@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioState, Reciter } from '../types';
 import { audioService } from '../services/audioService';
 import { Alert } from 'react-native';
@@ -13,12 +13,21 @@ export const useAudio = () => {
     position: 0,
   });
   const [reciters, setReciters] = useState<Reciter[]>([]);
-  const [selectedReciter, setSelectedReciterState] = useState<number>(7); // Default to Mishari Alafasy
+  const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
+  
+  // Debounce timer for reciter changes
+  const reciterChangeTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const loadSavedReciter = useCallback(async () => {
+  useEffect(() => {
+    initializeAudio();
+    loadReciters();
+    loadSavedReciter();
+  }, []);
+
+  const loadSavedReciter = async () => {
     try {
       const saved = await audioService.loadSelectedReciter();
       if (saved) {
@@ -30,13 +39,7 @@ export const useAudio = () => {
     } catch (error) {
       console.error('❌ Error loading saved reciter:', error);
     }
-  }, [selectedReciter]);
-
-  useEffect(() => {
-    initializeAudio();
-    loadReciters();
-    loadSavedReciter();
-  }, [loadSavedReciter]);
+  };
 
   const initializeAudio = async () => {
     try {
@@ -47,7 +50,11 @@ export const useAudio = () => {
     } catch (error) {
       console.error('❌ Error initializing audio hook:', error);
       setError('فشل في تهيئة الصوت');
-      Alert.alert('خطأ في الصوت', 'فشل في تهيئة نظام الصوت. يرجى إعادة تشغيل التطبيق.');
+      Alert.alert(
+        'خطأ في الصوت',
+        'فشل في تهيئة نظام الصوت. يرجى التحقق من اتصالك بالإنترنت وإعادة تشغيل التطبيق.',
+        [{ text: 'حسناً' }]
+      );
     }
   };
 
@@ -100,7 +107,7 @@ export const useAudio = () => {
       console.log(`✅ Hook: Playing Surah ${surahNumber}, Ayah ${ayahNumber} successfully`);
     } catch (error) {
       console.error('❌ Hook: Error playing ayah:', error);
-      const errorMessage = error instanceof Error ? error.message : 'فشل في تشغيل الآية';
+      const errorMessage = error instanceof Error ? error.message : 'تعذّر تشغيل الآية';
       setError(errorMessage);
       setAudioState(prev => ({
         ...prev,
@@ -109,10 +116,10 @@ export const useAudio = () => {
         currentAyah: null,
       }));
       
-      // Show user-friendly error
+      // Show user-friendly error with specific guidance
       Alert.alert(
         'خطأ في التشغيل',
-        errorMessage + '\n\nتأكد من:\n• اتصالك بالإنترنت\n• صحة رقم السورة والآية',
+        errorMessage + '\n\nالرجاء التحقق من:\n• اتصالك بالإنترنت\n• صحة رقم السورة والآية\n\nإذا استمرت المشكلة، جرب قارئاً آخر.',
         [{ text: 'حسناً' }]
       );
       
@@ -174,7 +181,12 @@ export const useAudio = () => {
       if (!reciterId || reciterId < 1) {
         throw new Error(`معرف قارئ غير صحيح: ${reciterId}`);
       }
-      
+
+      // Clear any pending reciter change
+      if (reciterChangeTimer.current) {
+        clearTimeout(reciterChangeTimer.current);
+      }
+
       const wasPlaying = audioState.isPlaying;
       const currentSurah = audioState.currentSurah;
       const currentAyah = audioState.currentAyah;
@@ -182,14 +194,18 @@ export const useAudio = () => {
       setSelectedReciterState(reciterId);
       await audioService.saveSelectedReciter(reciterId);
       
-      // If currently playing, switch to the new reciter for the current ayah
+      // If currently playing, debounce the switch to avoid rapid changes
       if (wasPlaying && currentSurah && currentAyah) {
-        console.log('🔄 Switching reciter during playback...');
-        await audioService.stopAudio();
+        console.log('🔄 Debouncing reciter switch during playback...');
         
-        // Small delay before playing with new reciter
-        setTimeout(async () => {
+        reciterChangeTimer.current = setTimeout(async () => {
           try {
+            console.log('🔄 Executing reciter switch...');
+            await audioService.stopAudio();
+            
+            // Small delay before playing with new reciter
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
             await audioService.playAyah(
               currentSurah,
               currentAyah,
@@ -204,12 +220,18 @@ export const useAudio = () => {
               currentSurah: currentSurah,
               currentAyah: currentAyah,
             }));
+            
+            console.log('✅ Reciter switched successfully');
           } catch (error) {
             console.error('❌ Error switching reciter:', error);
             setError('فشل في تبديل القارئ');
-            Alert.alert('خطأ', 'فشل في تبديل القارئ. يرجى المحاولة مرة أخرى.');
+            Alert.alert(
+              'خطأ',
+              'فشل في تبديل القارئ. يرجى المحاولة مرة أخرى.\n\nتأكد من اتصالك بالإنترنت.',
+              [{ text: 'حسناً' }]
+            );
           }
-        }, 300);
+        }, 500); // 500ms debounce
       }
       
       console.log(`✅ Hook: Reciter changed to ID: ${reciterId}`);
@@ -223,6 +245,15 @@ export const useAudio = () => {
   const setOnAyahEnd = (callback: (surah: number, ayah: number) => void) => {
     audioService.setOnAyahEndCallback(callback);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (reciterChangeTimer.current) {
+        clearTimeout(reciterChangeTimer.current);
+      }
+    };
+  }, []);
 
   return {
     audioState,
