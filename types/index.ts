@@ -82,8 +82,9 @@ export interface AppSettings {
   theme: 'light' | 'dark';
   showBanner: boolean;
   readingMode: 'scroll' | 'flip';
-  squareAdjustment: number; // 0-100 for square size adjustment
+  squareAdjustment: number;
   showTajweed: boolean;
+  autoExpandTafsir: boolean;
 }
 
 export interface ReciterWithImage extends Reciter {

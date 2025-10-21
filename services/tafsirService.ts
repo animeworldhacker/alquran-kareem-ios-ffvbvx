@@ -1,308 +1,461 @@
 
-import { TafsirVerse, TafsirResponse } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface TafsirCacheEntry {
+  text: string;
+  timestamp: number;
+}
+
+interface TafsirCache {
+  [key: string]: TafsirCacheEntry;
+}
 
 class TafsirService {
-  // New primary API from https://quranapi.pages.dev/getting-started/get-tafsir
-  private primaryUrl = 'https://quranapi.pages.dev/api';
-  
-  async getTafsir(surahNumber: number, ayahNumber: number): Promise<string> {
+  private quranComBaseUrl = 'https://api.quran.com/api/v4';
+  private tafsirId: number | null = null;
+  private tafsirCache: Map<string, string> = new Map();
+  private loadingTafsirKeys: Set<string> = new Set();
+  private errorTafsirKeys: Map<string, string> = new Map();
+  private maxCacheSize = 100; // LRU cache size
+  private cacheStorageKey = 'tafsir_cache';
+  private tafsirIdStorageKey = 'tafsir_ibn_kathir_id';
+  private requestQueue: Map<string, Promise<string>> = new Map();
+
+  constructor() {
+    this.initializeTafsirId();
+    this.loadPersistentCache();
+  }
+
+  /**
+   * Initialize and fetch the correct Arabic Ibn Kathir tafsir ID from Quran.com
+   */
+  private async initializeTafsirId(): Promise<void> {
     try {
-      console.log(`Fetching Ibn Kathir Tafsir for Surah ${surahNumber}, Ayah ${ayahNumber}...`);
+      // Try to load from storage first
+      const storedId = await AsyncStorage.getItem(this.tafsirIdStorageKey);
+      if (storedId) {
+        this.tafsirId = parseInt(storedId, 10);
+        console.log(`Loaded cached Tafsir Ibn Kathir ID: ${this.tafsirId}`);
+        return;
+      }
+
+      // Fetch from API
+      console.log('Fetching tafsir editions from Quran.com...');
+      const response = await this.fetchWithRetry(
+        `${this.quranComBaseUrl}/resources/tafsirs`,
+        3,
+        5000
+      );
+
+      const data = await response.json();
       
-      if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
-        throw new Error(`Invalid parameters: surah ${surahNumber}, ayah ${ayahNumber}`);
-      }
-      
-      // Try the new API: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/tafsirs/ibn_kathir
-      try {
-        console.log('Trying new QuranAPI.pages.dev API...');
-        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/tafsirs/ibn_kathir`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.tafsir && data.tafsir.trim()) {
-            console.log(`New API successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.tafsir);
-          } else if (data && data.text && data.text.trim()) {
-            console.log(`New API successful (alt format) for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.text);
-          }
-        }
-      } catch (primaryError) {
-        console.log('New API failed:', primaryError);
-      }
+      if (data && data.tafsirs && Array.isArray(data.tafsirs)) {
+        // Find Arabic Ibn Kathir tafsir
+        const ibnKathir = data.tafsirs.find((tafsir: any) => 
+          tafsir.slug === 'ar-tafsir-ibn-kathir' ||
+          (tafsir.name && tafsir.name.includes('Ibn Kathir') && tafsir.language_name === 'arabic')
+        );
 
-      // Try alternative format: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/ibn_kathir
-      try {
-        console.log('Trying alternative new API format...');
-        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.tafsir && data.tafsir.trim()) {
-            console.log(`Alternative new API successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.tafsir);
-          } else if (data && data.text && data.text.trim()) {
-            console.log(`Alternative new API successful (text format) for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.text);
-          }
+        if (ibnKathir) {
+          this.tafsirId = ibnKathir.id;
+          await AsyncStorage.setItem(this.tafsirIdStorageKey, this.tafsirId.toString());
+          console.log(`Found and cached Tafsir Ibn Kathir ID: ${this.tafsirId}`);
+        } else {
+          // Default to ID 14 if not found
+          this.tafsirId = 14;
+          console.warn('Ibn Kathir tafsir not found in API, using default ID: 14');
         }
-      } catch (altError) {
-        console.log('Alternative new API format failed:', altError);
+      } else {
+        this.tafsirId = 14;
+        console.warn('Invalid tafsir list response, using default ID: 14');
       }
-
-      // Try another format: https://quranapi.pages.dev/api/surah/{surah_number}/ayah/{ayah_number}/tafsir/ibn_kathir
-      try {
-        console.log('Trying third new API format...');
-        const response = await fetch(`${this.primaryUrl}/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.tafsir && data.tafsir.trim()) {
-            console.log(`Third new API format successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.tafsir);
-          } else if (data && data.text && data.text.trim()) {
-            console.log(`Third new API format successful (text) for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.text);
-          }
-        }
-      } catch (thirdError) {
-        console.log('Third new API format failed:', thirdError);
-      }
-
-      // Try direct JSON file format: https://quranapi.pages.dev/api/{surah_number}/{ayah_number}/ibn_kathir.json
-      try {
-        console.log('Trying JSON file format...');
-        const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir.json`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data && data.tafsir && data.tafsir.trim()) {
-            console.log(`JSON format successful for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.tafsir);
-          } else if (data && data.text && data.text.trim()) {
-            console.log(`JSON format successful (text) for ${surahNumber}:${ayahNumber}`);
-            return this.cleanTafsirText(data.text);
-          }
-        }
-      } catch (jsonError) {
-        console.log('JSON format failed:', jsonError);
-      }
-
-      // Use comprehensive fallback tafsir
-      console.log(`Using comprehensive fallback tafsir for ${surahNumber}:${ayahNumber}`);
-      return this.getComprehensiveTafsir(surahNumber, ayahNumber);
-      
     } catch (error) {
-      console.error(`Error fetching Tafsir for ${surahNumber}:${ayahNumber}:`, error);
-      return this.getComprehensiveTafsir(surahNumber, ayahNumber);
+      console.error('Error initializing tafsir ID:', error);
+      this.tafsirId = 14; // Fallback to known ID
     }
   }
 
-  // Clean and format tafsir text
+  /**
+   * Load persistent cache from AsyncStorage
+   */
+  private async loadPersistentCache(): Promise<void> {
+    try {
+      const cacheJson = await AsyncStorage.getItem(this.cacheStorageKey);
+      if (cacheJson) {
+        const cache: TafsirCache = JSON.parse(cacheJson);
+        const now = Date.now();
+        const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+        // Load valid cache entries
+        Object.entries(cache).forEach(([key, entry]) => {
+          if (now - entry.timestamp < maxAge) {
+            this.tafsirCache.set(key, entry.text);
+          }
+        });
+
+        console.log(`Loaded ${this.tafsirCache.size} tafsir entries from persistent cache`);
+      }
+    } catch (error) {
+      console.error('Error loading persistent cache:', error);
+    }
+  }
+
+  /**
+   * Save cache to AsyncStorage
+   */
+  private async savePersistentCache(): Promise<void> {
+    try {
+      const cache: TafsirCache = {};
+      const now = Date.now();
+
+      this.tafsirCache.forEach((text, key) => {
+        cache[key] = {
+          text,
+          timestamp: now,
+        };
+      });
+
+      await AsyncStorage.setItem(this.cacheStorageKey, JSON.stringify(cache));
+      console.log(`Saved ${Object.keys(cache).length} tafsir entries to persistent cache`);
+    } catch (error) {
+      console.error('Error saving persistent cache:', error);
+    }
+  }
+
+  /**
+   * Fetch with retry logic and exponential backoff
+   */
+  private async fetchWithRetry(
+    url: string,
+    retries: number = 3,
+    timeout: number = 10000,
+    backoffMultiplier: number = 2
+  ): Promise<Response> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+
+        clearTimeout(timeoutId);
+
+        // Handle rate limiting
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const delay = retryAfter 
+            ? parseInt(retryAfter, 10) * 1000 
+            : Math.pow(backoffMultiplier, attempt) * 1000;
+          
+          console.log(`Rate limited, retrying after ${delay}ms (attempt ${attempt + 1}/${retries})`);
+          await this.delay(delay);
+          continue;
+        }
+
+        // Handle server errors
+        if (response.status >= 500) {
+          const delay = Math.pow(backoffMultiplier, attempt) * 1000;
+          console.log(`Server error ${response.status}, retrying after ${delay}ms (attempt ${attempt + 1}/${retries})`);
+          await this.delay(delay);
+          continue;
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response;
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log(`Request timeout (attempt ${attempt + 1}/${retries})`);
+        } else {
+          console.log(`Request failed (attempt ${attempt + 1}/${retries}):`, error);
+        }
+
+        if (attempt < retries - 1) {
+          const delay = Math.pow(backoffMultiplier, attempt) * 1000;
+          await this.delay(delay);
+        }
+      }
+    }
+
+    throw lastError || new Error('Request failed after all retries');
+  }
+
+  /**
+   * Delay helper for exponential backoff
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Generate cache key
+   */
+  private getCacheKey(surah: number, ayah: number): string {
+    return `${this.tafsirId}:${surah}:${ayah}`;
+  }
+
+  /**
+   * Implement LRU cache eviction
+   */
+  private evictLRUCache(): void {
+    if (this.tafsirCache.size >= this.maxCacheSize) {
+      // Remove oldest entry (first entry in Map)
+      const firstKey = this.tafsirCache.keys().next().value;
+      if (firstKey) {
+        this.tafsirCache.delete(firstKey);
+        console.log(`Evicted cache entry: ${firstKey}`);
+      }
+    }
+  }
+
+  /**
+   * Clean and format tafsir HTML/text
+   */
   private cleanTafsirText(text: string): string {
     if (!text) return '';
-    
-    // Remove HTML tags
-    let cleaned = text.replace(/<[^>]*>/g, '');
-    
-    // Remove extra whitespace
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
-    // Remove unwanted characters - fixed regex without unnecessary escapes
-    cleaned = cleaned.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\d.,:;!?()[\]"'-]/g, '');
-    
+
+    let cleaned = text;
+
+    // Remove HTML tags but preserve paragraph breaks
+    cleaned = cleaned.replace(/<br\s*\/?>/gi, '\n');
+    cleaned = cleaned.replace(/<\/p>/gi, '\n\n');
+    cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+    // Decode HTML entities
+    cleaned = cleaned
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+
+    // Normalize whitespace
+    cleaned = cleaned.replace(/[ \t]+/g, ' ');
+    cleaned = cleaned.replace(/\n\s+/g, '\n');
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    cleaned = cleaned.trim();
+
     return cleaned;
   }
 
-  // Comprehensive fallback method with detailed tafsir explanations
-  private getComprehensiveTafsir(surahNumber: number, ayahNumber: number): string {
-    const comprehensiveTafsirs: { [key: string]: string } = {
-      // Surah Al-Fatiha - Ibn Kathir Tafsir
-      '1:1': 'بسم الله الرحمن الرحيم: يقول ابن كثير: هذه البسملة تشتمل على الاستعانة بالله والتبرك باسمه العظيم، وهي مفتاح كل خير وبركة. والبسملة مشروعة في ابتداء كل عمل ذي بال.',
-      '1:2': 'الحمد لله رب العالمين: قال ابن كثير: الحمد هو الثناء على المحمود بصفاته اللازمة والمتعدية، والله هو المستحق للحمد والثناء، وهو رب جميع المخلوقات وخالقها ومالكها والمتصرف فيها.',
-      '1:3': 'الرحمن الرحيم: يقول ابن كثير: هاتان صفتان من صفات الله تعالى، والرحمن أبلغ من الرحيم، لأن الرحمن دال على الصفة القائمة به سبحانه، والرحيم دال على تعلقها بالمرحوم.',
-      '1:4': 'مالك يوم الدين: قال ابن كثير: أي المالك المتصرف في يوم الدين، وهو يوم الجزاء للخلائق بأعمالهم خيرها وشرها، وإنما أضيف الملك إلى يوم الدين لأنه لا يدعي أحد هنالك شيئاً.',
-      '1:5': 'إياك نعبد وإياك نستعين: يقول ابن كثير: أي لا نعبد إلا إياك ولا نتوكل إلا عليك، وهذا هو كمال الطاعة، والدين يرجع كله إلى هذين المعنيين.',
-      '1:6': 'اهدنا الصراط المستقيم: قال ابن كثير: أي أرشدنا وأرشدنا ووفقنا للصراط المستقيم، وهو الدين القويم والطريق الحق، وهو عبادة الله وحده لا شريك له.',
-      '1:7': 'صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين: يقول ابن كثير: أي طريق الذين أنعمت عليهم من النبيين والصديقين والشهداء والصالحين، وليس طريق المغضوب عليهم وهم اليهود، ولا الضالين وهم النصارى.',
+  /**
+   * Main method to fetch tafsir for a specific ayah
+   */
+  async getTafsir(surah: number, ayah: number): Promise<string> {
+    // Validate input
+    if (!surah || !ayah || surah < 1 || surah > 114 || ayah < 1) {
+      throw new Error(`Invalid parameters: surah ${surah}, ayah ${ayah}`);
+    }
 
-      // Surah Al-Baqarah - First few verses
-      '2:1': 'الم: قال ابن كثير: هذه الحروف المقطعة قد اختلف المفسرون في الحكمة من إيرادها، والأقرب أنها لإعجاز العرب حين تحداهم الله أن يأتوا بمثل هذا القرآن.',
-      '2:2': 'ذلك الكتاب لا ريب فيه هدى للمتقين: يقول ابن كثير: أي هذا الكتاب وهو القرآن لا شك فيه ولا مرية ولا ريب، وهو هدى أي بيان ونور وبرهان للمتقين الذين يؤمنون بالغيب.',
-      '2:3': 'الذين يؤمنون بالغيب ويقيمون الصلاة ومما رزقناهم ينفقون: قال ابن كثير: هذه صفات المتقين، فهم يؤمنون بما غاب عن حواسهم مما أخبر الله به، ويقيمون الصلاة بحدودها وأركانها، وينفقون مما رزقهم الله.',
+    // Wait for tafsir ID to be initialized
+    if (this.tafsirId === null) {
+      await this.initializeTafsirId();
+    }
 
-      // Surah Al-Ikhlas - Ibn Kathir Tafsir
-      '112:1': 'قل هو الله أحد: قال ابن كثير: أي الله واحد أحد صمد، لا نظير له ولا وزير ولا نديد ولا شبيه ولا عديل، وكل أحد محتاج إليه، وهو غير محتاج إلى أحد.',
-      '112:2': 'الله الصمد: يقول ابن كثير: الصمد هو السيد الذي كمل في سؤدده، والشريف الذي كمل في شرفه، والعظيم الذي كمل في عظمته، والحليم الذي كمل في حلمه.',
-      '112:3': 'لم يلد ولم يولد: قال ابن كثير: أي ليس له والد ولا ولد ولا صاحبة، تعالى الله عن ذلك علواً كبيراً، فإنه الأحد الصمد الذي لا نظير له.',
-      '112:4': 'ولم يكن له كفواً أحد: يقول ابن كثير: أي لا أحد يكافئه أو يماثله أو يشابهه، تعالى الله عن الشبيه والنظير والمثال، فلا إله إلا هو ولا رب سواه.',
+    const cacheKey = this.getCacheKey(surah, ayah);
 
-      // Surah Al-Falaq
-      '113:1': 'قل أعوذ برب الفلق: قال ابن كثير: أي قل يا محمد أعتصم وألتجئ وأعتمد على رب الفلق، وهو الصبح إذا انفلق من الليل.',
-      '113:2': 'من شر ما خلق: يقول ابن كثير: أي من شر جميع الأشياء المخلوقة، من إبليس وذريته، ومن الإنس والجن والحيوانات والهوام وغير ذلك.',
-      '113:3': 'ومن شر غاسق إذا وقب: قال ابن كثير: الغاسق هو الليل إذا أظلم، وقيل هو القمر، والوقوب هو الدخول في كل شيء والسريان فيه.',
-      '113:4': 'ومن شر النفاثات في العقد: يقول ابن كثير: هن السواحر اللواتي يعقدن في سحرهن وينفثن على تلك العقد، والنفث نفخ لطيف بلا ريق.',
-      '113:5': 'ومن شر حاسد إذا حسد: قال ابن كثير: أي إذا أظهر حسده وعمل بمقتضى ما في نفسه، فأما إذا لم يظهر حسده فإنه لا يضر.',
+    // Check cache first
+    if (this.tafsirCache.has(cacheKey)) {
+      console.log(`Cache hit for ${surah}:${ayah}`);
+      return this.tafsirCache.get(cacheKey)!;
+    }
 
-      // Surah An-Nas
-      '114:1': 'قل أعوذ برب الناس: يقول ابن كثير: أي التجئ إلى رب الناس وخالقهم ومالكهم والمتصرف في أمورهم.',
-      '114:2': 'ملك الناس: قال ابن كثير: أي مالكهم والمتصرف فيهم بلا منازع ولا مدافع، فما شاء كان وما لم يشأ لم يكن.',
-      '114:3': 'إله الناس: يقول ابن كثير: أي معبودهم الذي لا تنبغي العبادة إلا له، ولا تصلح إلا له عز وجل.',
-      '114:4': 'من شر الوسواس الخناس: قال ابن كثير: وهو الشيطان الذي يوسوس في قلب ابن آدم، فإذا ذكر الله خنس أي كف وانقبض.',
-      '114:5': 'الذي يوسوس في صدور الناس: يقول ابن كثير: أي يلقي في قلوبهم الشر والأفكار الفاسدة والعقائد الباطلة.',
-      '114:6': 'من الجنة والناس: قال ابن كثير: أي أن الموسوسين في صدور الناس منهم الجن ومنهم الإنس، كما قال تعالى: شياطين الإنس والجن.',
-    };
+    // Check if already loading (debounce)
+    if (this.requestQueue.has(cacheKey)) {
+      console.log(`Request already in progress for ${surah}:${ayah}, waiting...`);
+      return this.requestQueue.get(cacheKey)!;
+    }
 
-    const key = `${surahNumber}:${ayahNumber}`;
-    const specificTafsir = comprehensiveTafsirs[key];
+    // Check if previous error
+    if (this.errorTafsirKeys.has(cacheKey)) {
+      const errorMsg = this.errorTafsirKeys.get(cacheKey)!;
+      console.log(`Previous error for ${surah}:${ayah}: ${errorMsg}`);
+    }
+
+    // Create new request
+    const requestPromise = this.fetchTafsirFromAPI(surah, ayah);
+    this.requestQueue.set(cacheKey, requestPromise);
+    this.loadingTafsirKeys.add(cacheKey);
+
+    try {
+      const tafsirText = await requestPromise;
+      
+      // Cache the result
+      this.evictLRUCache();
+      this.tafsirCache.set(cacheKey, tafsirText);
+      this.errorTafsirKeys.delete(cacheKey);
+      
+      // Save to persistent storage (debounced)
+      this.debouncedSaveCache();
+
+      console.log(`Successfully fetched and cached tafsir for ${surah}:${ayah}`);
+      return tafsirText;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      this.errorTafsirKeys.set(cacheKey, errorMsg);
+      console.error(`Error fetching tafsir for ${surah}:${ayah}:`, error);
+      throw error;
+    } finally {
+      this.loadingTafsirKeys.delete(cacheKey);
+      this.requestQueue.delete(cacheKey);
+    }
+  }
+
+  /**
+   * Fetch tafsir from Quran.com API
+   */
+  private async fetchTafsirFromAPI(surah: number, ayah: number): Promise<string> {
+    const url = `${this.quranComBaseUrl}/tafsirs/${this.tafsirId}/by_ayah/${surah}:${ayah}`;
     
-    if (specificTafsir) {
-      return specificTafsir;
-    }
+    console.log(`Fetching tafsir from: ${url}`);
 
-    // General tafsir based on surah themes with Ibn Kathir style
-    return this.getGeneralTafsir(surahNumber, ayahNumber);
+    try {
+      const response = await this.fetchWithRetry(url, 3, 10000);
+      const data = await response.json();
+
+      if (data && data.tafsir && data.tafsir.text) {
+        const cleanedText = this.cleanTafsirText(data.tafsir.text);
+        
+        if (!cleanedText || cleanedText.length < 10) {
+          throw new Error('Tafsir text is too short or empty');
+        }
+
+        return cleanedText;
+      } else {
+        throw new Error('Invalid tafsir response format');
+      }
+    } catch (error) {
+      console.error(`Failed to fetch tafsir from API for ${surah}:${ayah}:`, error);
+      throw new Error('تعذّر تحميل التفسير');
+    }
   }
 
-  private getGeneralTafsir(surahNumber: number, ayahNumber: number): string {
-    const surahThemes: { [key: number]: string } = {
-      1: 'يقول ابن كثير عن سورة الفاتحة: هي أم الكتاب وأعظم سورة في القرآن، تشتمل على الحمد والثناء والدعاء والتوحيد، وهي كافية في الصلاة.',
-      2: 'قال ابن كثير عن سورة البقرة: هي أطول سور القرآن وتسمى فسطاط القرآن لعظمها وكثرة أحكامها، وفيها آية الكرسي سيدة آي القرآن.',
-      3: 'يقول ابن كثير عن سورة آل عمران: تتحدث عن أهل الكتاب وتبين حال النصارى في عيسى عليه السلام، وفيها آيات محكمات هن أم الكتاب.',
-      4: 'قال ابن كثير عن سورة النساء: تتضمن كثيراً من الأحكام المتعلقة بالنساء والأيتام والمواريث والجهاد في سبيل الله.',
-      5: 'يقول ابن كثير عن سورة المائدة: هي آخر ما نزل من القرآن، وفيها إتمام الدين وإكمال النعمة، وتتضمن أحكاماً كثيرة.',
-      6: 'قال ابن كثير عن سورة الأنعام: نزلت جملة واحدة، وهي مكية تركز على التوحيد والرد على المشركين وإثبات البعث والنشور.',
-      7: 'يقول ابن كثير عن سورة الأعراف: تحكي قصص كثير من الأنبياء مع أقوامهم وما حل بالمكذبين من العذاب والنكال.',
-      18: 'قال ابن كثير عن سورة الكهف: تحتوي على قصص عجيبة وعبر بليغة، وهي عصمة من فتنة المسيح الدجال لمن حفظ عشر آيات من أولها.',
-      36: 'يقول ابن كثير عن سورة يس: هي قلب القرآن، وتتحدث عن التوحيد والبعث والآخرة بأسلوب مؤثر ومعجز.',
-      67: 'قال ابن كثير عن سورة الملك: هي المانعة المنجية من عذاب القبر، وتتحدث عن عظمة الله وملكه وقدرته.',
-      112: 'يقول ابن كثير عن سورة الإخلاص: تعدل ثلث القرآن، وهي صفة الرحمن، نزلت لما سأل المشركون النبي أن ينسب لهم ربه.',
-      113: 'قال ابن كثير عن سورة الفلق: هي إحدى المعوذتين، وفيها الاستعاذة من شر المخلوقات والسحر والحسد.',
-      114: 'يقول ابن كثير عن سورة الناس: هي المعوذة الثانية، وفيها الاستعاذة من شر الشيطان ووساوسه من الجن والإنس.',
-    };
-
-    const theme = surahThemes[surahNumber];
-    if (theme) {
-      return `${theme} هذه الآية الكريمة جزء من هذا السياق العظيم، وتحتاج إلى تدبر وتأمل في معانيها وأحكامها.`;
+  /**
+   * Debounced cache save
+   */
+  private saveTimeout: NodeJS.Timeout | null = null;
+  private debouncedSaveCache(): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
     }
 
-    return 'قال ابن كثير رحمه الله: هذه آية كريمة من كتاب الله تحتاج إلى تدبر وتفكر في معانيها العظيمة. نسأل الله أن يفتح علينا من فهم كتابه وأن يجعلنا من أهل القرآن الذين هم أهل الله وخاصته.';
+    this.saveTimeout = setTimeout(() => {
+      this.savePersistentCache();
+    }, 5000); // Save after 5 seconds of inactivity
   }
 
-  // Method to get tafsir for multiple ayahs (for future use)
-  async getTafsirRange(surahNumber: number, startAyah: number, endAyah: number): Promise<{ [key: number]: string }> {
-    const tafsirs: { [key: number]: string } = {};
+  /**
+   * Check if tafsir is loading
+   */
+  isLoading(surah: number, ayah: number): boolean {
+    const cacheKey = this.getCacheKey(surah, ayah);
+    return this.loadingTafsirKeys.has(cacheKey);
+  }
+
+  /**
+   * Check if tafsir has error
+   */
+  hasError(surah: number, ayah: number): string | null {
+    const cacheKey = this.getCacheKey(surah, ayah);
+    return this.errorTafsirKeys.get(cacheKey) || null;
+  }
+
+  /**
+   * Clear error for specific ayah
+   */
+  clearError(surah: number, ayah: number): void {
+    const cacheKey = this.getCacheKey(surah, ayah);
+    this.errorTafsirKeys.delete(cacheKey);
+  }
+
+  /**
+   * Prefetch tafsir for a range of ayahs (for optimization)
+   */
+  async prefetchTafsirRange(surah: number, startAyah: number, endAyah: number): Promise<void> {
+    console.log(`Prefetching tafsir for ${surah}:${startAyah}-${endAyah}`);
+    
+    const promises: Promise<string>[] = [];
     
     for (let ayah = startAyah; ayah <= endAyah; ayah++) {
-      try {
-        tafsirs[ayah] = await this.getTafsir(surahNumber, ayah);
-        // Add small delay to avoid overwhelming the APIs
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.error(`Error fetching tafsir for ${surahNumber}:${ayah}:`, error);
-        tafsirs[ayah] = this.getComprehensiveTafsir(surahNumber, ayah);
+      const cacheKey = this.getCacheKey(surah, ayah);
+      
+      // Only prefetch if not already cached or loading
+      if (!this.tafsirCache.has(cacheKey) && !this.loadingTafsirKeys.has(cacheKey)) {
+        promises.push(
+          this.getTafsir(surah, ayah).catch(error => {
+            console.log(`Prefetch failed for ${surah}:${ayah}:`, error);
+            return ''; // Don't fail the whole prefetch
+          })
+        );
+        
+        // Add delay between requests to avoid rate limiting
+        await this.delay(200);
       }
     }
-    
-    return tafsirs;
+
+    await Promise.all(promises);
+    console.log(`Prefetch completed for ${surah}:${startAyah}-${endAyah}`);
   }
 
-  // Method to test all sources for a specific ayah
-  async testAllSources(surahNumber: number, ayahNumber: number): Promise<{
-    primary: string | null;
-    secondary: string | null;
-    tertiary: string | null;
-    quaternary: string | null;
-  }> {
-    const results = {
-      primary: null as string | null,
-      secondary: null as string | null,
-      tertiary: null as string | null,
-      quaternary: null as string | null,
+  /**
+   * Clear all cache
+   */
+  async clearCache(): Promise<void> {
+    this.tafsirCache.clear();
+    this.errorTafsirKeys.clear();
+    this.loadingTafsirKeys.clear();
+    this.requestQueue.clear();
+    
+    try {
+      await AsyncStorage.removeItem(this.cacheStorageKey);
+      console.log('Tafsir cache cleared');
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): {
+    cacheSize: number;
+    maxCacheSize: number;
+    loadingCount: number;
+    errorCount: number;
+  } {
+    return {
+      cacheSize: this.tafsirCache.size,
+      maxCacheSize: this.maxCacheSize,
+      loadingCount: this.loadingTafsirKeys.size,
+      errorCount: this.errorTafsirKeys.size,
     };
+  }
 
-    // Test primary source
-    try {
-      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/tafsirs/ibn_kathir`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && (data.tafsir || data.text)) {
-          results.primary = this.cleanTafsirText(data.tafsir || data.text);
-        }
-      }
-    } catch (error) {
-      console.log('Primary source test failed:', error);
-    }
-
-    // Test secondary source
-    try {
-      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && (data.tafsir || data.text)) {
-          results.secondary = this.cleanTafsirText(data.tafsir || data.text);
-        }
-      }
-    } catch (error) {
-      console.log('Secondary source test failed:', error);
-    }
-
-    // Test tertiary source
-    try {
-      const response = await fetch(`${this.primaryUrl}/surah/${surahNumber}/ayah/${ayahNumber}/tafsir/ibn_kathir`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && (data.tafsir || data.text)) {
-          results.tertiary = this.cleanTafsirText(data.tafsir || data.text);
-        }
-      }
-    } catch (error) {
-      console.log('Tertiary source test failed:', error);
-    }
-
-    // Test quaternary source
-    try {
-      const response = await fetch(`${this.primaryUrl}/${surahNumber}/${ayahNumber}/ibn_kathir.json`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && (data.tafsir || data.text)) {
-          results.quaternary = this.cleanTafsirText(data.tafsir || data.text);
-        }
-      }
-    } catch (error) {
-      console.log('Quaternary source test failed:', error);
-    }
-
-    return results;
+  /**
+   * Refresh tafsir (force refetch)
+   */
+  async refreshTafsir(surah: number, ayah: number): Promise<string> {
+    const cacheKey = this.getCacheKey(surah, ayah);
+    
+    // Remove from cache
+    this.tafsirCache.delete(cacheKey);
+    this.errorTafsirKeys.delete(cacheKey);
+    
+    // Fetch fresh
+    return this.getTafsir(surah, ayah);
   }
 }
 

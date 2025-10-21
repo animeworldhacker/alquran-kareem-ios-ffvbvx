@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard } from 'react-native';
 import { Ayah } from '../types';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useTheme } from '../contexts/ThemeContext';
 import { tafsirService } from '../services/tafsirService';
 import { router } from 'expo-router';
-import { processAyahText, validateTextProcessing, normalizeArabicText } from '../utils/textProcessor';
+import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 import Icon from './Icon';
 
 interface AyahCardProps {
@@ -38,12 +38,20 @@ export default function AyahCard({
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
   const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [tafsirError, setTafsirError] = useState<string | null>(null);
   const [processedAyahText, setProcessedAyahText] = useState<string>('');
   const [audioLoading, setAudioLoading] = useState(false);
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const { settings, colors, textSizes } = useTheme();
 
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
+
+  // Auto-expand tafsir if setting is enabled
+  useEffect(() => {
+    if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
+      handleTafsirToggle();
+    }
+  }, [settings.autoExpandTafsir]);
 
   useEffect(() => {
     try {
@@ -58,39 +66,75 @@ export default function AyahCard({
       console.error('Error processing ayah text:', error);
       setProcessedAyahText(ayah.text);
     }
-  }, [ayah.text, processedAyahText, surahNumber, ayah.numberInSurah]);
+  }, [ayah.text, surahNumber, ayah.numberInSurah]);
 
   const handleTafsirToggle = async () => {
+    // If already showing, just hide
     if (showTafsir) {
       setShowTafsir(false);
       return;
     }
 
+    // If already loaded, just show
     if (tafsirText) {
       setShowTafsir(true);
       return;
     }
 
+    // Load tafsir
     try {
       setTafsirLoading(true);
+      setTafsirError(null);
+      
       const tafsir = await tafsirService.getTafsir(surahNumber, ayah.numberInSurah);
       
-      if (tafsir && tafsir.text) {
-        setTafsirText(tafsir.text);
+      if (tafsir && tafsir.trim().length > 0) {
+        setTafsirText(tafsir);
         setShowTafsir(true);
       } else {
-        Alert.alert('تنبيه', 'التفسير غير متوفر لهذه الآية');
+        setTafsirError('التفسير غير متوفر');
       }
     } catch (error) {
       console.error('Error loading tafsir:', error);
-      Alert.alert('خطأ', 'فشل في تحميل التفسير');
+      const errorMsg = error instanceof Error ? error.message : 'تعذّر تحميل التفسير';
+      setTafsirError(errorMsg);
     } finally {
       setTafsirLoading(false);
     }
   };
 
+  const handleRetryTafsir = async () => {
+    setTafsirError(null);
+    setTafsirText(null);
+    await handleTafsirToggle();
+  };
+
   const handleFullTafsir = () => {
     router.push(`/tafsir/${surahNumber}/${ayah.numberInSurah}`);
+  };
+
+  const handleCopyTafsir = async () => {
+    if (tafsirText) {
+      try {
+        await Clipboard.setString(tafsirText);
+        Alert.alert('تم النسخ', 'تم نسخ التفسير إلى الحافظة');
+      } catch (error) {
+        console.error('Error copying tafsir:', error);
+        Alert.alert('خطأ', 'فشل في نسخ التفسير');
+      }
+    }
+  };
+
+  const handleShareTafsir = async () => {
+    if (tafsirText) {
+      try {
+        await Share.share({
+          message: `${surahName} - آية ${ayah.numberInSurah}\n\n${processedAyahText}\n\nتفسير ابن كثير:\n${tafsirText}`,
+        });
+      } catch (error) {
+        console.error('Error sharing tafsir:', error);
+      }
+    }
   };
 
   const handleBookmarkToggle = async () => {
@@ -142,13 +186,13 @@ export default function AyahCard({
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#fff',
+      backgroundColor: colors.surface,
       marginHorizontal: 16,
       marginVertical: 8,
       padding: 16,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: isPlaying ? '#c9a961' : '#e0e0e0',
+      borderColor: isPlaying ? colors.primary : colors.border,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
@@ -156,9 +200,9 @@ export default function AyahCard({
       elevation: 3,
     },
     playingCard: {
-      backgroundColor: '#fffbf0',
+      backgroundColor: settings.theme === 'dark' ? '#2d2520' : '#fffbf0',
       borderWidth: 2,
-      borderColor: '#c9a961',
+      borderColor: colors.primary,
     },
     header: {
       flexDirection: 'row',
@@ -168,7 +212,7 @@ export default function AyahCard({
     },
     ayahNumber: {
       fontSize: textSizes.caption,
-      color: '#8B4513',
+      color: colors.secondary,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
@@ -179,59 +223,85 @@ export default function AyahCard({
     actionButton: {
       padding: 8,
       borderRadius: 8,
-      backgroundColor: '#f5f5f5',
+      backgroundColor: colors.backgroundAlt,
     },
     activeButton: {
-      backgroundColor: '#c9a961',
+      backgroundColor: colors.primary,
     },
     playingButton: {
-      backgroundColor: '#4CAF50',
+      backgroundColor: colors.success,
     },
     icon: {
-      color: '#666',
+      color: colors.textSecondary,
     },
     activeIcon: {
       color: '#fff',
     },
     ayahText: {
-      fontSize: textSizes.ayah,
-      lineHeight: textSizes.ayah * 1.8,
+      fontSize: textSizes.arabic,
+      lineHeight: textSizes.arabic * 1.8,
       textAlign: 'right',
-      color: '#2F4F4F',
+      color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       marginBottom: 12,
     },
     tafsirContainer: {
       marginTop: 12,
-      padding: 12,
-      backgroundColor: '#f8f6f0',
+      padding: 16,
+      backgroundColor: settings.theme === 'dark' ? '#2a2520' : '#f8f6f0',
       borderRadius: 8,
-      borderLeftWidth: 3,
-      borderLeftColor: '#c9a961',
+      borderRightWidth: 4,
+      borderRightColor: colors.primary,
+    },
+    tafsirHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: settings.theme === 'dark' ? '#3a3530' : '#e8e6e0',
+    },
+    tafsirTitle: {
+      fontSize: textSizes.body,
+      fontFamily: 'Amiri_700Bold',
+      color: colors.secondary,
     },
     tafsirText: {
       fontSize: textSizes.body,
-      lineHeight: textSizes.body * 1.6,
+      lineHeight: textSizes.body * 1.8,
       textAlign: 'right',
-      color: '#555',
+      color: colors.text,
       fontFamily: 'Amiri_400Regular',
+      marginBottom: 12,
     },
     tafsirActions: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      marginTop: 8,
       gap: 8,
+      marginTop: 8,
     },
     tafsirButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 6,
-      backgroundColor: '#c9a961',
+      backgroundColor: colors.primary,
+      gap: 4,
+    },
+    tafsirButtonSecondary: {
+      backgroundColor: colors.backgroundAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     tafsirButtonText: {
       color: '#fff',
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
+    },
+    tafsirButtonTextSecondary: {
+      color: colors.text,
     },
     loadingContainer: {
       padding: 20,
@@ -240,13 +310,40 @@ export default function AyahCard({
     loadingText: {
       marginTop: 8,
       fontSize: textSizes.caption,
-      color: '#666',
+      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
+    },
+    errorContainer: {
+      marginTop: 12,
+      padding: 12,
+      backgroundColor: settings.theme === 'dark' ? '#3d2020' : '#ffebee',
+      borderRadius: 8,
+      borderRightWidth: 3,
+      borderRightColor: colors.error,
+    },
+    errorText: {
+      fontSize: textSizes.caption,
+      color: colors.error,
+      fontFamily: 'Amiri_400Regular',
+      textAlign: 'right',
+      marginBottom: 8,
+    },
+    retryButton: {
+      alignSelf: 'flex-end',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      backgroundColor: colors.error,
+    },
+    retryButtonText: {
+      color: '#fff',
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_700Bold',
     },
     playingIndicator: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#4CAF50',
+      backgroundColor: colors.success,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 6,
@@ -282,7 +379,7 @@ export default function AyahCard({
             disabled={tafsirLoading}
           >
             {tafsirLoading ? (
-              <ActivityIndicator size="small" color="#666" />
+              <ActivityIndicator size="small" color={colors.textSecondary} />
             ) : (
               <Icon
                 name="book-outline"
@@ -344,14 +441,51 @@ export default function AyahCard({
 
       {showTafsir && tafsirText && (
         <View style={styles.tafsirContainer}>
+          <View style={styles.tafsirHeader}>
+            <View style={styles.tafsirActions}>
+              <TouchableOpacity 
+                style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
+                onPress={handleShareTafsir}
+              >
+                <Icon name="share-outline" size={14} style={{ color: colors.text }} />
+                <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
+                  مشاركة
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
+                onPress={handleCopyTafsir}
+              >
+                <Icon name="copy-outline" size={14} style={{ color: colors.text }} />
+                <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
+                  نسخ
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.tafsirTitle}>تفسير ابن كثير</Text>
+          </View>
+          
           <Text style={styles.tafsirText} numberOfLines={5}>
             {tafsirText}
           </Text>
+          
           <View style={styles.tafsirActions}>
             <TouchableOpacity style={styles.tafsirButton} onPress={handleFullTafsir}>
+              <Icon name="book" size={14} style={styles.activeIcon} />
               <Text style={styles.tafsirButtonText}>التفسير الكامل</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {tafsirError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{tafsirError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetryTafsir}>
+            <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>

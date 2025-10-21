@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share, Clipboard, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useQuran } from '../../../hooks/useQuran';
@@ -22,39 +22,38 @@ export default function TafsirScreen() {
   const [ayahData, setAyahData] = useState<any>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Get surah data
-        const surahInfo = getSurah(surahNumber);
-        setSurahData(surahInfo);
-        
-        // Get specific ayah data
-        if (surahInfo && surahInfo.ayahs) {
-          const ayahInfo = surahInfo.ayahs.find((a: any) => a.numberInSurah === ayahNumber);
-          setAyahData(ayahInfo);
-        }
-        
-        // Get tafsir
-        console.log(`Loading full tafsir for ${surahNumber}:${ayahNumber}`);
-        const tafsirText = await tafsirService.getTafsir(surahNumber, ayahNumber);
-        setTafsir(tafsirText || 'تفسير غير متوفر حاليا');
-        
-      } catch (err) {
-        console.error('Error loading tafsir:', err);
-        setError('حدث خطأ في تحميل التفسير');
-        setTafsir('حدث خطأ في تحميل التفسير. يرجى المحاولة مرة أخرى.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadData();
+  }, [surahNumber, ayahNumber]);
 
-    if (surahNumber && ayahNumber) {
-      loadData();
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get surah data
+      const surahInfo = getSurah(surahNumber);
+      setSurahData(surahInfo);
+      
+      // Get specific ayah data
+      if (surahInfo && surahInfo.ayahs) {
+        const ayahInfo = surahInfo.ayahs.find((a: any) => a.numberInSurah === ayahNumber);
+        setAyahData(ayahInfo);
+      }
+      
+      // Get tafsir
+      console.log(`Loading full tafsir for ${surahNumber}:${ayahNumber}`);
+      const tafsirText = await tafsirService.getTafsir(surahNumber, ayahNumber);
+      setTafsir(tafsirText || 'تفسير غير متوفر حاليا');
+      
+    } catch (err) {
+      console.error('Error loading tafsir:', err);
+      const errorMsg = err instanceof Error ? err.message : 'حدث خطأ في تحميل التفسير';
+      setError(errorMsg);
+      setTafsir('');
+    } finally {
+      setLoading(false);
     }
-  }, [surahNumber, ayahNumber, getSurah]);
+  };
 
   const handleBack = () => {
     try {
@@ -66,27 +65,53 @@ export default function TafsirScreen() {
   };
 
   const handleRetry = () => {
-    setError(null);
-    setLoading(true);
-    
-    // Retry loading tafsir
-    tafsirService.getTafsir(surahNumber, ayahNumber)
-      .then(tafsirText => {
-        setTafsir(tafsirText || 'تفسير غير متوفر حاليا');
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Retry failed:', err);
-        setError('فشل في إعادة المحاولة');
-        setTafsir('حدث خطأ في تحميل التفسير. يرجى المحاولة مرة أخرى.');
-        setLoading(false);
-      });
+    loadData();
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const tafsirText = await tafsirService.refreshTafsir(surahNumber, ayahNumber);
+      setTafsir(tafsirText);
+      Alert.alert('نجح', 'تم تحديث التفسير بنجاح');
+    } catch (err) {
+      console.error('Error refreshing tafsir:', err);
+      setError('فشل في تحديث التفسير');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (tafsir) {
+      try {
+        const fullText = `${surahData?.name || `سورة ${surahNumber}`} - آية ${ayahNumber}\n\n${ayahData?.text || ''}\n\nتفسير ابن كثير:\n${tafsir}`;
+        await Clipboard.setString(fullText);
+        Alert.alert('تم النسخ', 'تم نسخ التفسير إلى الحافظة');
+      } catch (error) {
+        console.error('Error copying tafsir:', error);
+        Alert.alert('خطأ', 'فشل في نسخ التفسير');
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    if (tafsir) {
+      try {
+        await Share.share({
+          message: `${surahData?.name || `سورة ${surahNumber}`} - آية ${ayahNumber}\n\n${ayahData?.text || ''}\n\nتفسير ابن كثير:\n${tafsir}`,
+        });
+      } catch (error) {
+        console.error('Error sharing tafsir:', error);
+      }
+    }
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#f8f6f0',
+      backgroundColor: settings.theme === 'dark' ? '#1a1a1a' : '#f8f6f0',
     },
     header: {
       backgroundColor: colors.primary,
@@ -105,7 +130,7 @@ export default function TafsirScreen() {
       width: 40 * (settings.squareAdjustment / 100),
       height: 40 * (settings.squareAdjustment / 100),
       borderRadius: 20 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.secondary,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -132,15 +157,17 @@ export default function TafsirScreen() {
       textAlign: 'center',
       marginTop: 2,
     },
-    headerInfo: {
-      alignItems: 'center',
-      minWidth: 60,
+    headerActions: {
+      flexDirection: 'row',
+      gap: 8,
     },
-    ayahNumber: {
-      fontSize: textSizes.caption,
-      color: '#fff',
-      opacity: 0.9,
-      fontFamily: 'Amiri_700Bold',
+    headerButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     scrollView: {
       flex: 1,
@@ -149,7 +176,7 @@ export default function TafsirScreen() {
       padding: 20,
     },
     ayahSection: {
-      backgroundColor: '#fff',
+      backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 20,
       marginBottom: 20,
@@ -165,13 +192,13 @@ export default function TafsirScreen() {
       marginBottom: 16,
       paddingBottom: 12,
       borderBottomWidth: 1,
-      borderBottomColor: '#e8e6e0',
+      borderBottomColor: settings.theme === 'dark' ? '#3a3530' : '#e8e6e0',
     },
     ayahNumberCircle: {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: '#d4af37',
+      backgroundColor: colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
@@ -188,26 +215,26 @@ export default function TafsirScreen() {
     ayahTitle: {
       fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_700Bold',
-      color: '#8B4513',
+      color: colors.secondary,
       marginBottom: 4,
     },
     ayahSubtitle: {
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_400Regular',
-      color: '#8B4513',
+      color: colors.secondary,
       opacity: 0.8,
     },
     ayahText: {
-      fontSize: Math.max(24, textSizes.arabic * 1.2), // Increased text size
+      fontSize: Math.max(24, textSizes.arabic * 1.2),
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F',
+      color: colors.text,
       textAlign: 'right',
-      lineHeight: Math.max(46, (textSizes.arabic * 1.2) * 1.9), // Increased line height
+      lineHeight: Math.max(46, (textSizes.arabic * 1.2) * 1.9),
       marginBottom: 8,
       paddingHorizontal: 8,
     },
     tafsirSection: {
-      backgroundColor: '#fff',
+      backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 20,
       shadowColor: '#000',
@@ -222,7 +249,7 @@ export default function TafsirScreen() {
       marginBottom: 16,
       paddingBottom: 12,
       borderBottomWidth: 2,
-      borderBottomColor: '#d4af37',
+      borderBottomColor: colors.primary,
     },
     tafsirIcon: {
       marginRight: 12,
@@ -230,13 +257,13 @@ export default function TafsirScreen() {
     tafsirTitle: {
       fontSize: textSizes.title - 2,
       fontFamily: 'Amiri_700Bold',
-      color: '#8B4513',
+      color: colors.secondary,
     },
     tafsirText: {
-      fontSize: textSizes.body + 2, // Increased tafsir text size
+      fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_400Regular',
-      color: '#2F4F4F',
-      lineHeight: 32, // Increased line height
+      color: colors.text,
+      lineHeight: 32,
       textAlign: 'right',
     },
     loadingContainer: {
@@ -248,21 +275,21 @@ export default function TafsirScreen() {
     loadingText: {
       fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_400Regular',
-      color: '#8B4513',
+      color: colors.secondary,
       marginTop: 16,
       textAlign: 'center',
     },
     errorContainer: {
-      backgroundColor: '#ffebee',
+      backgroundColor: settings.theme === 'dark' ? '#3d2020' : '#ffebee',
       padding: 20,
       margin: 20,
       borderRadius: 12,
-      borderLeftWidth: 4,
-      borderLeftColor: '#f44336',
+      borderRightWidth: 4,
+      borderRightColor: colors.error,
     },
     errorText: {
       fontSize: textSizes.body,
-      color: '#c62828',
+      color: colors.error,
       fontFamily: 'Amiri_400Regular',
       textAlign: 'center',
       marginBottom: 16,
@@ -289,13 +316,12 @@ export default function TafsirScreen() {
     emptyText: {
       fontSize: textSizes.body + 2,
       fontFamily: 'Amiri_400Regular',
-      color: '#8B4513',
+      color: colors.secondary,
       textAlign: 'center',
       lineHeight: 28,
     },
   });
 
-  // Show loading state
   if (loading) {
     return (
       <View style={styles.container}>
@@ -309,18 +335,17 @@ export default function TafsirScreen() {
             <Text style={styles.headerSubtitle}>جاري التحميل...</Text>
           </View>
           
-          <View style={styles.headerInfo} />
+          <View style={{ width: 36 }} />
         </View>
         
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#d4af37" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>جاري تحميل التفسير...</Text>
         </View>
       </View>
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <View style={styles.container}>
@@ -334,7 +359,7 @@ export default function TafsirScreen() {
             <Text style={styles.headerSubtitle}>خطأ</Text>
           </View>
           
-          <View style={styles.headerInfo} />
+          <View style={{ width: 36 }} />
         </View>
         
         <View style={styles.errorContainer}>
@@ -361,14 +386,23 @@ export default function TafsirScreen() {
           </Text>
         </View>
         
-        <View style={styles.headerInfo}>
-          <Text style={styles.ayahNumber}>آية {ayahNumber}</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
+            <Icon name="share-outline" size={20} style={styles.backIcon} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.headerButton} onPress={handleCopy}>
+            <Icon name="copy-outline" size={20} style={styles.backIcon} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.headerButton} onPress={handleRefresh}>
+            <Icon name="refresh-outline" size={20} style={styles.backIcon} />
+          </TouchableOpacity>
         </View>
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.contentContainer}>
-          {/* Ayah Section */}
           <View style={styles.ayahSection}>
             <View style={styles.ayahHeader}>
               <View style={styles.ayahNumberCircle}>
@@ -391,13 +425,12 @@ export default function TafsirScreen() {
             )}
           </View>
           
-          {/* Tafsir Section */}
           <View style={styles.tafsirSection}>
             <View style={styles.tafsirHeader}>
               <Icon 
                 name="book" 
                 size={24} 
-                style={[styles.tafsirIcon, { color: '#d4af37' }]} 
+                style={[styles.tafsirIcon, { color: colors.primary }]} 
               />
               <Text style={styles.tafsirTitle}>تفسير ابن كثير</Text>
             </View>

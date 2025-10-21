@@ -5,30 +5,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
 import { audioService } from '../../services/audioService';
+import { tafsirService } from '../../services/tafsirService';
 import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
-  const { settings, updateSettings, resetSettings, colors, textSizes } = useTheme();
-  const [testingAudio, setTestingAudio] = useState(false);
-
-  const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
-    try {
-      await updateSettings({ [key]: value });
-      console.log(`Setting updated: ${key} = ${value}`);
-    } catch (error) {
-      console.error('Error updating setting:',Looking at the settings.tsx file I already read, I can see the issue. The file is incomplete - it cuts off at line 377 where there's a TouchableOpacity that's not properly closed. Let me fix both files:
-
-<write file="app/(tabs)/settings.tsx">
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { AppSettings } from '../../types';
-import { quranService } from '../../services/quranService';
-import { audioService } from '../../services/audioService';
-import Icon from '../../components/Icon';
-
-export default function SettingsTab() {
-  const { settings, updateSettings, resetSettings, colors, textSizes } = useTheme();
+  const { settings, updateSettings, colors, textSizes } = useTheme();
   const [testingAudio, setTestingAudio] = useState(false);
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
@@ -52,7 +33,16 @@ export default function SettingsTab() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await resetSettings();
+              const defaultSettings = {
+                textSize: 'medium' as const,
+                theme: 'light' as const,
+                showBanner: true,
+                readingMode: 'scroll' as const,
+                squareAdjustment: 50,
+                showTajweed: true,
+                autoExpandTafsir: false,
+              };
+              await updateSettings(defaultSettings);
               Alert.alert('نجح', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
               console.error('Error resetting settings:', error);
@@ -74,9 +64,8 @@ export default function SettingsTab() {
           text: 'تحديث',
           onPress: async () => {
             try {
-              await quranService.clearCache();
-              await quranService.fetchQuranData();
-              Alert.alert('نجح', 'تم تحديث بيانات القرآن بنجاح');
+              quranService.clearCache();
+              Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت. سيتم تحميل البيانات الجديدة عند الحاجة.');
             } catch (error) {
               console.error('Error refreshing Quran data:', error);
               Alert.alert('خطأ', 'فشل في تحديث بيانات القرآن');
@@ -87,11 +76,26 @@ export default function SettingsTab() {
     );
   };
 
-  const handleTestTextProcessing = () => {
+  const handleClearTafsirCache = () => {
     Alert.alert(
-      'اختبار معالجة النص',
-      'تم تنفيذ اختبار معالجة النص. تحقق من السجلات للحصول على التفاصيل.',
-      [{ text: 'حسناً' }]
+      'مسح ذاكرة التفسير',
+      'هل تريد مسح ذاكرة التخزين المؤقت للتفسير؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'مسح',
+          onPress: async () => {
+            try {
+              await tafsirService.clearCache();
+              const stats = tafsirService.getCacheStats();
+              Alert.alert('نجح', `تم مسح ذاكرة التخزين المؤقت للتفسير\n\nالإحصائيات:\n• الحجم: ${stats.cacheSize}\n• الأخطاء: ${stats.errorCount}`);
+            } catch (error) {
+              console.error('Error clearing tafsir cache:', error);
+              Alert.alert('خطأ', 'فشل في مسح ذاكرة التفسير');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -100,17 +104,14 @@ export default function SettingsTab() {
     try {
       console.log('\n🧪 ===== TESTING AUDIO SYSTEM =====');
       
-      // Test 1: Initialize audio
       console.log('Test 1: Initializing audio...');
       await audioService.initializeAudio();
       console.log('✅ Audio initialization successful');
       
-      // Test 2: Get reciters
       console.log('\nTest 2: Loading reciters...');
       const reciters = await audioService.getReciters();
-      console.log(`✅ Loaded ${reciters.length} reciters:`, reciters.map(r => r.name).join(', '));
+      console.log(`✅ Loaded ${reciters.length} reciters`);
       
-      // Test 3: Test audio URL
       console.log('\nTest 3: Testing audio URL for Al-Fatiha (1:1)...');
       const testUrl = 'https://verses.quran.com/7/001001.mp3';
       console.log('Test URL:', testUrl);
@@ -121,27 +122,10 @@ export default function SettingsTab() {
       if (response.ok) {
         console.log('✅ Audio URL is accessible');
         
-        // Test 4: Try playing a short ayah
-        console.log('\nTest 4: Attempting to play Al-Fatiha (1:1)...');
-        await audioService.playAyah(1, 1, 7, false, 7);
-        console.log('✅ Audio playback started successfully');
-        
         Alert.alert(
           'نجح الاختبار! ✅',
-          'نظام الصوت يعمل بشكل صحيح.\n\n' +
-          `• تم تهيئة الصوت\n` +
-          `• تم تحميل ${reciters.length} قراء\n` +
-          `• الملفات الصوتية متاحة\n` +
-          `• بدأ تشغيل الصوت\n\n` +
-          'تحقق من السجلات للحصول على تفاصيل إضافية.',
-          [
-            {
-              text: 'إيقاف الصوت',
-              onPress: async () => {
-                await audioService.stopAudio();
-              }
-            }
-          ]
+          `نظام الصوت يعمل بشكل صحيح.\n\n• تم تهيئة الصوت\n• تم تحميل ${reciters.length} قراء\n• الملفات الصوتية متاحة`,
+          [{ text: 'حسناً' }]
         );
       } else {
         throw new Error(`Audio URL returned status ${response.status}`);
@@ -152,15 +136,7 @@ export default function SettingsTab() {
       console.error('❌ Audio test failed:', error);
       Alert.alert(
         'فشل الاختبار ❌',
-        `حدث خطأ أثناء اختبار نظام الصوت:\n\n${error instanceof Error ? error.message : 'خطأ غير معروف'}\n\n` +
-        'يرجى التحقق من:\n' +
-        '• اتصال الإنترنت\n' +
-        '• أذونات الصوت\n' +
-        '• السجلات للحصول على تفاصيل\n\n' +
-        'إذا استمرت المشكلة، جرب:\n' +
-        '1. إعادة تشغيل التطبيق\n' +
-        '2. التحقق من إعدادات الجهاز\n' +
-        '3. تجربة قارئ مختلف'
+        `حدث خطأ أثناء اختبار نظام الصوت:\n\n${error instanceof Error ? error.message : 'خطأ غير معروف'}`
       );
     } finally {
       setTestingAudio(false);
@@ -205,7 +181,7 @@ export default function SettingsTab() {
       fontFamily: 'Amiri_700Bold',
     },
     section: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       marginVertical: 8,
       marginHorizontal: 16,
       borderRadius: 12,
@@ -217,7 +193,7 @@ export default function SettingsTab() {
       elevation: 3,
     },
     sectionTitle: {
-      fontSize: textSizes.subtitle,
+      fontSize: textSizes.title - 2,
       fontWeight: 'bold',
       color: colors.text,
       marginBottom: 12,
@@ -239,6 +215,12 @@ export default function SettingsTab() {
       color: colors.text,
       fontFamily: 'Amiri_400Regular',
       flex: 1,
+    },
+    settingDescription: {
+      fontSize: textSizes.caption,
+      color: colors.textSecondary,
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 4,
     },
     textSizeButtons: {
       flexDirection: 'row',
@@ -277,10 +259,10 @@ export default function SettingsTab() {
       backgroundColor: colors.secondary,
     },
     buttonDanger: {
-      backgroundColor: '#f44336',
+      backgroundColor: colors.error,
     },
     buttonSuccess: {
-      backgroundColor: '#4caf50',
+      backgroundColor: colors.success,
     },
     buttonDisabled: {
       opacity: 0.5,
@@ -299,7 +281,7 @@ export default function SettingsTab() {
       fontStyle: 'italic',
     },
     dedicationSection: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       marginVertical: 8,
       marginHorizontal: 16,
       borderRadius: 12,
@@ -341,7 +323,9 @@ export default function SettingsTab() {
           </View>
 
           <View style={[styles.settingRow, styles.settingRowLast]}>
-            <Text style={styles.settingLabel}>حجم النص</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>حجم النص</Text>
+            </View>
             <View style={styles.textSizeButtons}>
               {(['small', 'medium', 'large', 'extra-large'] as const).map((size) => (
                 <TouchableOpacity
@@ -379,8 +363,10 @@ export default function SettingsTab() {
             />
           </View>
 
-          <View style={[styles.settingRow, styles.settingRowLast]}>
-            <Text style={styles.settingLabel}>وضع القراءة</Text>
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>وضع القراءة</Text>
+            </View>
             <View style={styles.textSizeButtons}>
               <TouchableOpacity
                 style={[
@@ -401,14 +387,14 @@ export default function SettingsTab() {
               <TouchableOpacity
                 style={[
                   styles.textSizeButton,
-                  settings.readingMode === 'page' && styles.textSizeButtonActive,
+                  settings.readingMode === 'flip' && styles.textSizeButtonActive,
                 ]}
-                onPress={() => handleUpdateSetting('readingMode', 'page')}
+                onPress={() => handleUpdateSetting('readingMode', 'flip')}
               >
                 <Text
                   style={[
                     styles.textSizeButtonText,
-                    settings.readingMode === 'page' && styles.textSizeButtonTextActive,
+                    settings.readingMode === 'flip' && styles.textSizeButtonTextActive,
                   ]}
                 >
                   صفحة
@@ -416,6 +402,36 @@ export default function SettingsTab() {
               </TouchableOpacity>
             </View>
           </View>
+
+          <View style={[styles.settingRow, styles.settingRowLast]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>فتح التفسير تلقائياً</Text>
+              <Text style={styles.settingDescription}>
+                عرض تفسير ابن كثير تلقائياً لكل آية
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoExpandTafsir}
+              onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
+              trackColor={{ false: '#ccc', true: colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>التفسير</Text>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={handleClearTafsirCache}
+          >
+            <Text style={styles.buttonText}>مسح ذاكرة التخزين المؤقت للتفسير</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            يتم تحميل تفسير ابن كثير من Quran.com وحفظه محلياً للوصول السريع
+          </Text>
         </View>
 
         <View style={styles.section}>
@@ -453,15 +469,8 @@ export default function SettingsTab() {
             <Text style={styles.buttonText}>تحديث بيانات القرآن</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleTestTextProcessing}
-          >
-            <Text style={styles.buttonText}>اختبار معالجة النص</Text>
-          </TouchableOpacity>
-          
           <Text style={styles.infoText}>
-            استخدم هذه الخيارات لتحديث البيانات أو اختبار معالجة النص
+            استخدم هذا الخيار لتحديث بيانات القرآن من الخادم
           </Text>
         </View>
 

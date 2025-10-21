@@ -27,6 +27,7 @@ interface ThemeContextType {
     heading: number;
     caption: number;
     arabic: number;
+    ayah: number;
   };
   isLoading: boolean;
 }
@@ -50,6 +51,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     readingMode: 'scroll',
     squareAdjustment: 50,
     showTajweed: true,
+    autoExpandTafsir: false,
   });
 
   useEffect(() => {
@@ -62,13 +64,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const savedSettings = await settingsService.getSettings();
       const defaultSettings = settingsService.getDefaultSettings();
       
-      // Merge saved settings with defaults to ensure all properties exist
       const mergedSettings = { ...defaultSettings, ...savedSettings };
       setSettings(mergedSettings);
       console.log('Settings loaded successfully:', mergedSettings);
     } catch (error) {
       console.error('Error loading settings:', error);
-      // Use default settings on error
       setSettings(settingsService.getDefaultSettings());
     } finally {
       setIsLoading(false);
@@ -80,10 +80,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       console.log('Updating settings:', newSettings);
       const updatedSettings = { ...settings, ...newSettings };
       
-      // Save to storage first
       await settingsService.saveSettings(updatedSettings);
-      
-      // Then update state
       setSettings(updatedSettings);
       console.log('Settings updated successfully:', updatedSettings);
     } catch (error) {
@@ -99,8 +96,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       background: isDark ? '#1a1a1a' : '#ffffff',
       backgroundAlt: isDark ? '#2d2d2d' : '#f5f5f5',
       surface: isDark ? '#2d2d2d' : '#ffffff',
-      primary: '#d4af37', // Gold
-      secondary: '#8B4513', // Brown
+      primary: '#d4af37',
+      secondary: '#8B4513',
       text: isDark ? '#ffffff' : '#2F4F4F',
       textSecondary: isDark ? '#cccccc' : '#666666',
       border: isDark ? '#404040' : '#e0e0e0',
@@ -126,6 +123,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       heading: baseSize + 8,
       caption: baseSize - 4,
       arabic: baseSize + 6,
+      ayah: baseSize + 8,
     };
   };
 

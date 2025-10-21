@@ -11,7 +11,6 @@ class SettingsService {
       if (settingsJson) {
         const parsed = JSON.parse(settingsJson);
         
-        // Validate the parsed settings
         if (typeof parsed === 'object' && parsed !== null) {
           return parsed;
         } else {
@@ -28,13 +27,20 @@ class SettingsService {
 
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
-      // Validate settings before saving
       if (!settings || typeof settings !== 'object') {
         throw new Error('Invalid settings object');
       }
       
-      // Ensure required properties exist
-      const requiredProps: (keyof AppSettings)[] = ['textSize', 'theme', 'showBanner', 'readingMode', 'squareAdjustment', 'showTajweed'];
+      const requiredProps: (keyof AppSettings)[] = [
+        'textSize', 
+        'theme', 
+        'showBanner', 
+        'readingMode', 
+        'squareAdjustment', 
+        'showTajweed',
+        'autoExpandTafsir'
+      ];
+      
       for (const prop of requiredProps) {
         if (settings[prop] === undefined || settings[prop] === null) {
           throw new Error(`Missing required setting: ${prop}`);
@@ -61,7 +67,6 @@ class SettingsService {
       const currentSettings = await this.getSettings();
       const defaultSettings = this.getDefaultSettings();
       
-      // Merge with defaults to ensure all properties exist
       const mergedSettings = { ...defaultSettings, ...currentSettings };
       const updatedSettings = { ...mergedSettings, [key]: value };
       
@@ -82,7 +87,6 @@ class SettingsService {
     }
   }
 
-  // Default settings
   getDefaultSettings(): AppSettings {
     return {
       textSize: 'medium',
@@ -91,6 +95,7 @@ class SettingsService {
       readingMode: 'scroll',
       squareAdjustment: 50,
       showTajweed: true,
+      autoExpandTafsir: false,
     };
   }
 }
