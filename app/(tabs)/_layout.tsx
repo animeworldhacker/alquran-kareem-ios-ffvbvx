@@ -53,6 +53,12 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="reciters"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

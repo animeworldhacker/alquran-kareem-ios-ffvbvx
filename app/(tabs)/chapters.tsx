@@ -136,16 +136,16 @@ export default function ChaptersTab() {
     
     if (contentHeight > scrollViewHeight) {
       const scrollPercentage = offsetY / (contentHeight - scrollViewHeight);
-      const indicatorHeight = 60;
-      const maxPosition = scrollViewHeight - indicatorHeight - 20;
+      const indicatorHeight = 80;
+      const maxPosition = scrollViewHeight - indicatorHeight - 40;
       setScrollIndicatorPosition(scrollPercentage * maxPosition);
     }
   };
 
   const handleScrollIndicatorPress = (event: any) => {
     const touchY = event.nativeEvent.locationY;
-    const indicatorHeight = 60;
-    const maxPosition = scrollViewHeight - indicatorHeight - 20;
+    const indicatorHeight = 80;
+    const maxPosition = scrollViewHeight - indicatorHeight - 40;
     
     if (contentHeight > scrollViewHeight && scrollViewRef.current) {
       const scrollPercentage = touchY / maxPosition;
@@ -175,33 +175,34 @@ export default function ChaptersTab() {
     },
     rightScrollIndicator: {
       position: 'absolute',
-      right: 8,
-      top: 0,
-      bottom: 0,
-      width: 40,
+      right: 4,
+      top: 20,
+      bottom: 20,
+      width: 50,
       justifyContent: 'center',
       alignItems: 'center',
+      pointerEvents: 'box-none',
     },
     scrollIndicatorTrack: {
-      width: 4,
+      width: 3,
       height: '100%',
-      backgroundColor: '#D4C5A9',
-      borderRadius: 2,
+      backgroundColor: 'rgba(212, 197, 169, 0.3)',
+      borderRadius: 1.5,
     },
     scrollIndicatorThumb: {
       position: 'absolute',
-      width: 24,
-      height: 60,
+      width: 32,
+      height: 80,
       backgroundColor: '#4A7C59',
-      borderRadius: 12,
+      borderRadius: 16,
       justifyContent: 'center',
       alignItems: 'center',
-      boxShadow: '0px 2px 8px rgba(0,0,0,0.15)',
+      boxShadow: '0px 4px 12px rgba(74, 124, 89, 0.3)',
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     },
-    scrollIndicatorText: {
-      color: '#FFFFFF',
-      fontSize: 10,
-      fontFamily: 'Amiri_700Bold',
+    scrollIndicatorIcon: {
+      marginVertical: 2,
     },
     topBar: {
       flexDirection: 'row',
@@ -484,8 +485,8 @@ export default function ChaptersTab() {
               { top: scrollIndicatorPosition }
             ]}
           >
-            <Icon name="chevron-up" size={12} style={{ color: '#FFFFFF' }} />
-            <Icon name="chevron-down" size={12} style={{ color: '#FFFFFF' }} />
+            <Icon name="chevron-up" size={14} style={[{ color: '#FFFFFF' }, styles.scrollIndicatorIcon]} />
+            <Icon name="chevron-down" size={14} style={[{ color: '#FFFFFF' }, styles.scrollIndicatorIcon]} />
           </Animated.View>
         </TouchableOpacity>
       </View>
