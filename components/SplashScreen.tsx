@@ -80,28 +80,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       marginBottom: 40,
       alignItems: 'center',
     },
-    dedicationTitle: {
-      fontSize: textSizes.subtitle,
-      color: colors.backgroundAlt,
-      textAlign: 'center',
-      marginBottom: 15,
-      fontFamily: 'Amiri_400Regular',
-    },
-    dedicationNames: {
-      fontSize: textSizes.title,
+    dedicationText: {
+      fontSize: textSizes.body,
       color: '#d4db7f',
       textAlign: 'center',
-      marginBottom: 8,
-      fontWeight: 'bold',
+      lineHeight: 32,
       fontFamily: 'Amiri_700Bold',
-    },
-    prayer: {
-      fontSize: textSizes.body,
-      color: colors.backgroundAlt,
-      textAlign: 'center',
-      marginTop: 10,
-      fontStyle: 'italic',
-      fontFamily: 'Amiri_400Regular',
     },
     appTitle: {
       fontSize: textSizes.title,
@@ -155,12 +139,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <Text style={styles.bismillah} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
         
         <View style={styles.dedicationContainer}>
-          <Text style={styles.dedicationTitle}>هذا المصحف صدقة جارية إلى</Text>
-          <Text style={styles.dedicationNames}>مريم سليمان</Text>
-          <Text style={styles.dedicationNames}>أحمد جاسم</Text>
-          <Text style={styles.dedicationNames}>شيخة أحمد</Text>
-          <Text style={styles.dedicationNames}>راشد بدر</Text>
-          <Text style={styles.prayer}>رحمهم الله وأسكنهم فسيح جناته</Text>
+          <Text style={styles.dedicationText}>
+            هذا المصحف صدقة جارية الى مريم سليمان، احمد جاسم، شيخة احمد، راشد بدر، والمسلمين والمسلمات رحمهم الله واسكنهم فسيح جناته
+          </Text>
         </View>
 
         <Text style={styles.appTitle}>المصحف الشريف</Text>
