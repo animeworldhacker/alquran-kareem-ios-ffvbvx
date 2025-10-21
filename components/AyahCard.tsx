@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard } from 'react-native';
 import { Ayah } from '../types';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { tafsirService } from '../services/tafsirService';
+import { router } from 'expo-router';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 import Icon from './Icon';
-import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 
 interface AyahCardProps {
   ayah: Ayah;
@@ -26,27 +25,6 @@ const toArabicNumerals = (num: number): string => {
   return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
 };
 
-// Gold circle for ayah number
-function AyahNumberCircle({ number, size = 32 }: { number: number; size?: number }) {
-  const { colors } = useTheme();
-  return (
-    <Svg width={size} height={size} viewBox="0 0 32 32">
-      <Circle cx="16" cy="16" r="14" fill="transparent" stroke={colors.gold} strokeWidth="1.5" />
-      <SvgText
-        x="16"
-        y="20"
-        fontSize="14"
-        fontWeight="700"
-        fill={colors.gold}
-        textAnchor="middle"
-        fontFamily="Amiri"
-      >
-        {toArabicNumerals(number)}
-      </SvgText>
-    </Svg>
-  );
-}
-
 export default function AyahCard({
   ayah,
   surahNumber,
@@ -55,349 +33,461 @@ export default function AyahCard({
   onPlayAudio,
   onPlayFromHere,
   isPlaying,
-  isContinuousPlaying
+  isContinuousPlaying,
 }: AyahCardProps) {
-  const { colors, textSizes, settings, isDark } = useTheme();
-  const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
-  
   const [showTafsir, setShowTafsir] = useState(false);
-  const [tafsirText, setTafsirText] = useState<string>('');
-  const [loadingTafsir, setLoadingTafsir] = useState(false);
-  const [tafsirError, setTafsirError] = useState<string>('');
-  const [processedText, setProcessedText] = useState<string>('');
-  const [showActions, setShowActions] = useState(false);
+  const [tafsirText, setTafsirText] = useState<string | null>(null);
+  const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [tafsirError, setTafsirError] = useState<string | null>(null);
+  const [processedAyahText, setProcessedAyahText] = useState<string>('');
+  const [audioLoading, setAudioLoading] = useState(false);
+  const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
+  const { settings, colors, textSizes } = useTheme();
 
+  const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
+
+  // Auto-expand tafsir if setting is enabled
   useEffect(() => {
-    if (settings.autoExpandTafsir) {
+    if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
       handleTafsirToggle();
     }
   }, [settings.autoExpandTafsir]);
 
   useEffect(() => {
-    const processed = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
-    setProcessedText(processed);
-    validateTextProcessing(ayah.text, processed, surahNumber, ayah.numberInSurah);
+    try {
+      const processed = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
+      setProcessedAyahText(processed);
+      
+      const isValid = validateTextProcessing(ayah.text, processed, surahNumber, ayah.numberInSurah);
+      if (!isValid) {
+        console.warn(`Text processing validation failed for ${surahNumber}:${ayah.numberInSurah}`);
+      }
+    } catch (error) {
+      console.error('Error processing ayah text:', error);
+      setProcessedAyahText(ayah.text);
+    }
   }, [ayah.text, surahNumber, ayah.numberInSurah]);
 
-  const isBookmarked = bookmarks.some(
-    b => b.surahNumber === surahNumber && b.ayahNumber === ayah.numberInSurah
-  );
-
   const handleTafsirToggle = async () => {
+    // If already showing, just hide
     if (showTafsir) {
       setShowTafsir(false);
       return;
     }
 
+    // If already loaded, just show
     if (tafsirText) {
       setShowTafsir(true);
       return;
     }
 
-    setLoadingTafsir(true);
-    setTafsirError('');
-    
+    // Load tafsir
     try {
-      const text = await tafsirService.getTafsir(surahNumber, ayah.numberInSurah);
-      setTafsirText(text);
-      setShowTafsir(true);
-    } catch (error: any) {
+      setTafsirLoading(true);
+      setTafsirError(null);
+      
+      const tafsir = await tafsirService.getTafsir(surahNumber, ayah.numberInSurah);
+      
+      if (tafsir && tafsir.trim().length > 0) {
+        setTafsirText(tafsir);
+        setShowTafsir(true);
+      } else {
+        setTafsirError('التفسير غير متوفر');
+      }
+    } catch (error) {
       console.error('Error loading tafsir:', error);
-      setTafsirError(error.message || 'فشل تحميل التفسير');
+      const errorMsg = error instanceof Error ? error.message : 'تعذّر تحميل التفسير';
+      setTafsirError(errorMsg);
     } finally {
-      setLoadingTafsir(false);
+      setTafsirLoading(false);
     }
   };
 
-  const handleRetryTafsir = () => {
-    setTafsirError('');
-    handleTafsirToggle();
+  const handleRetryTafsir = async () => {
+    setTafsirError(null);
+    setTafsirText(null);
+    await handleTafsirToggle();
   };
 
   const handleFullTafsir = () => {
     router.push(`/tafsir/${surahNumber}/${ayah.numberInSurah}`);
   };
 
+  const handleCopyTafsir = async () => {
+    if (tafsirText) {
+      try {
+        await Clipboard.setString(tafsirText);
+        Alert.alert('تم النسخ', 'تم نسخ التفسير إلى الحافظة');
+      } catch (error) {
+        console.error('Error copying tafsir:', error);
+        Alert.alert('خطأ', 'فشل في نسخ التفسير');
+      }
+    }
+  };
+
+  const handleShareTafsir = async () => {
+    if (tafsirText) {
+      try {
+        await Share.share({
+          message: `${surahName} - آية ${ayah.numberInSurah}\n\n${processedAyahText}\n\nتفسير ابن كثير:\n${tafsirText}`,
+        });
+      } catch (error) {
+        console.error('Error sharing tafsir:', error);
+      }
+    }
+  };
+
   const handleBookmarkToggle = async () => {
     try {
-      if (isBookmarked) {
-        const bookmark = bookmarks.find(
-          b => b.surahNumber === surahNumber && b.ayahNumber === ayah.numberInSurah
-        );
-        if (bookmark) {
-          await removeBookmark(bookmark.id);
-        }
+      if (bookmarked) {
+        await removeBookmark(surahNumber, ayah.numberInSurah);
       } else {
         await addBookmark({
           surahNumber,
           surahName,
           surahEnglishName,
           ayahNumber: ayah.numberInSurah,
-          ayahText: processedText,
+          ayahText: ayah.text,
         });
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      Alert.alert('خطأ', 'فشل حفظ الإشارة المرجعية');
+      Alert.alert('خطأ', 'فشل في حفظ العلامة المرجعية');
     }
   };
 
-  const handlePlayAudio = () => {
-    onPlayAudio(ayah.numberInSurah);
-  };
-
-  const handlePlayFromHere = () => {
-    if (onPlayFromHere) {
-      onPlayFromHere(ayah.numberInSurah);
-    }
-  };
-
-  const handleShare = async () => {
+  const handlePlayAudio = async () => {
     try {
-      await Share.share({
-        message: `${surahName} - آية ${toArabicNumerals(ayah.numberInSurah)}\n\n${processedText}`,
-      });
+      setAudioLoading(true);
+      console.log(`🎵 AyahCard: Playing audio for ${surahNumber}:${ayah.numberInSurah}`);
+      await onPlayAudio(ayah.numberInSurah);
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error('❌ AyahCard: Error playing audio:', error);
+      Alert.alert('خطأ', 'فشل في تشغيل الآية. يرجى التحقق من اتصالك بالإنترنت.');
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
+  const handlePlayFromHere = async () => {
+    if (onPlayFromHere) {
+      try {
+        setAudioLoading(true);
+        console.log(`🎵 AyahCard: Playing from ${surahNumber}:${ayah.numberInSurah}`);
+        await onPlayFromHere(ayah.numberInSurah);
+      } catch (error) {
+        console.error('❌ AyahCard: Error playing from here:', error);
+        Alert.alert('خطأ', 'فشل في تشغيل الآيات. يرجى التحقق من اتصالك بالإنترنت.');
+      } finally {
+        setAudioLoading(false);
+      }
     }
   };
 
   const styles = StyleSheet.create({
-    container: {
+    card: {
       backgroundColor: colors.surface,
-      borderRadius: 0,
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      marginBottom: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.divider,
+      marginHorizontal: 16,
+      marginVertical: 8,
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isPlaying ? colors.primary : colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
-    selectedContainer: {
-      backgroundColor: colors.selectedAyah,
+    playingCard: {
+      backgroundColor: settings.theme === 'dark' ? '#2d2520' : '#fffbf0',
+      borderWidth: 2,
+      borderColor: colors.primary,
     },
     header: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 16,
-    },
-    ayahNumberContainer: {
-      flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      marginBottom: 12,
+    },
+    ayahNumber: {
+      fontSize: textSizes.caption,
+      color: colors.secondary,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
     },
     actions: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    iconButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    ayahText: {
-      fontSize: textSizes.ayah,
-      fontFamily: 'ScheherazadeNew_700Bold',
-      color: colors.text,
-      textAlign: 'right',
-      lineHeight: textSizes.ayah * 1.8,
-      marginBottom: 12,
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
       gap: 8,
-      marginTop: 12,
     },
     actionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+      padding: 8,
       borderRadius: 8,
-      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)',
-      borderWidth: 1,
-      borderColor: colors.gold,
+      backgroundColor: colors.backgroundAlt,
     },
-    actionButtonText: {
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
+    activeButton: {
+      backgroundColor: colors.primary,
+    },
+    playingButton: {
+      backgroundColor: colors.success,
+    },
+    icon: {
+      color: colors.textSecondary,
+    },
+    activeIcon: {
+      color: '#fff',
+    },
+    ayahText: {
+      fontSize: textSizes.arabic,
+      lineHeight: textSizes.arabic * 1.8,
+      textAlign: 'right',
+      color: colors.text,
+      fontFamily: 'ScheherazadeNew_400Regular',
+      marginBottom: 12,
     },
     tafsirContainer: {
-      marginTop: 16,
+      marginTop: 12,
       padding: 16,
-      backgroundColor: isDark ? colors.surfaceElevated : colors.backgroundAlt,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: settings.theme === 'dark' ? '#2a2520' : '#f8f6f0',
+      borderRadius: 8,
+      borderRightWidth: 4,
+      borderRightColor: colors.primary,
     },
     tafsirHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 12,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: settings.theme === 'dark' ? '#3a3530' : '#e8e6e0',
     },
     tafsirTitle: {
       fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
+      color: colors.secondary,
     },
     tafsirText: {
-      fontSize: textSizes.body - 1,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.text,
+      fontSize: textSizes.body,
+      lineHeight: textSizes.body * 1.8,
       textAlign: 'right',
-      lineHeight: textSizes.body * 1.6,
+      color: colors.text,
+      fontFamily: 'Amiri_400Regular',
+      marginBottom: 12,
     },
     tafsirActions: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'flex-end',
-      gap: 12,
-      marginTop: 12,
+      gap: 8,
+      marginTop: 8,
     },
     tafsirButton: {
-      paddingVertical: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 12,
+      paddingVertical: 6,
       borderRadius: 6,
+      backgroundColor: colors.primary,
+      gap: 4,
+    },
+    tafsirButtonSecondary: {
+      backgroundColor: colors.backgroundAlt,
       borderWidth: 1,
-      borderColor: colors.gold,
+      borderColor: colors.border,
     },
     tafsirButtonText: {
+      color: '#fff',
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
     },
-    errorContainer: {
-      padding: 12,
-      backgroundColor: isDark ? 'rgba(239, 83, 80, 0.15)' : 'rgba(239, 83, 80, 0.1)',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.error,
-    },
-    errorText: {
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.error,
-      textAlign: 'center',
+    tafsirButtonTextSecondary: {
+      color: colors.text,
     },
     loadingContainer: {
       padding: 20,
       alignItems: 'center',
     },
+    loadingText: {
+      marginTop: 8,
+      fontSize: textSizes.caption,
+      color: colors.textSecondary,
+      fontFamily: 'Amiri_400Regular',
+    },
+    errorContainer: {
+      marginTop: 12,
+      padding: 12,
+      backgroundColor: settings.theme === 'dark' ? '#3d2020' : '#ffebee',
+      borderRadius: 8,
+      borderRightWidth: 3,
+      borderRightColor: colors.error,
+    },
+    errorText: {
+      fontSize: textSizes.caption,
+      color: colors.error,
+      fontFamily: 'Amiri_400Regular',
+      textAlign: 'right',
+      marginBottom: 8,
+    },
+    retryButton: {
+      alignSelf: 'flex-end',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      backgroundColor: colors.error,
+    },
+    retryButtonText: {
+      color: '#fff',
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_700Bold',
+    },
+    playingIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.success,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      marginTop: 8,
+    },
+    playingText: {
+      color: '#fff',
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_700Bold',
+      marginLeft: 6,
+    },
   });
 
   return (
-    <TouchableOpacity 
-      style={[styles.container, (isPlaying || showActions) && styles.selectedContainer]}
-      onPress={() => setShowActions(!showActions)}
-      activeOpacity={0.9}
-    >
+    <View style={[styles.card, isPlaying && styles.playingCard]}>
       <View style={styles.header}>
+        <Text style={styles.ayahNumber}>آية {toArabicNumerals(ayah.numberInSurah)}</Text>
         <View style={styles.actions}>
-          {isPlaying && (
-            <View style={styles.iconButton}>
-              <Icon name="volume-high" size={18} style={{ color: colors.gold }} />
-            </View>
+          <TouchableOpacity
+            style={[styles.actionButton, bookmarked && styles.activeButton]}
+            onPress={handleBookmarkToggle}
+          >
+            <Icon
+              name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              style={bookmarked ? styles.activeIcon : styles.icon}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, showTafsir && styles.activeButton]}
+            onPress={handleTafsirToggle}
+            disabled={tafsirLoading}
+          >
+            {tafsirLoading ? (
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+            ) : (
+              <Icon
+                name="book-outline"
+                size={20}
+                style={showTafsir ? styles.activeIcon : styles.icon}
+              />
+            )}
+          </TouchableOpacity>
+
+          {onPlayFromHere && (
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isContinuousPlaying && styles.playingButton,
+              ]}
+              onPress={handlePlayFromHere}
+              disabled={audioLoading}
+            >
+              {audioLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon
+                  name="play-skip-forward"
+                  size={20}
+                  style={isContinuousPlaying ? styles.activeIcon : styles.icon}
+                />
+              )}
+            </TouchableOpacity>
           )}
-          {isBookmarked && (
-            <View style={styles.iconButton}>
-              <Icon name="bookmark" size={18} style={{ color: colors.gold }} />
-            </View>
-          )}
-        </View>
-        
-        <View style={styles.ayahNumberContainer}>
-          <AyahNumberCircle number={ayah.numberInSurah} />
+
+          <TouchableOpacity
+            style={[styles.actionButton, isPlaying && styles.playingButton]}
+            onPress={handlePlayAudio}
+            disabled={audioLoading}
+          >
+            {audioLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Icon
+                name={isPlaying ? 'pause' : 'play'}
+                size={20}
+                style={isPlaying ? styles.activeIcon : styles.icon}
+              />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      <Text style={styles.ayahText}>{processedText}</Text>
+      <Text style={styles.ayahText}>{processedAyahText || ayah.text}</Text>
 
-      {showActions && (
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Icon name="share-outline" size={16} style={{ color: colors.gold }} />
-            <Text style={styles.actionButtonText}>مشاركة</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handleBookmarkToggle}>
-            <Icon 
-              name={isBookmarked ? "bookmark" : "bookmark-outline"} 
-              size={16} 
-              style={{ color: colors.gold }} 
-            />
-            <Text style={styles.actionButtonText}>
-              {isBookmarked ? 'إزالة' : 'حفظ'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handleTafsirToggle}>
-            <Icon name="book-outline" size={16} style={{ color: colors.gold }} />
-            <Text style={styles.actionButtonText}>تفسير</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handlePlayAudio}>
-            <Icon 
-              name={isPlaying ? "pause" : "play"} 
-              size={16} 
-              style={{ color: colors.gold }} 
-            />
-            <Text style={styles.actionButtonText}>
-              {isPlaying ? 'إيقاف' : 'تشغيل'}
-            </Text>
-          </TouchableOpacity>
+      {isPlaying && (
+        <View style={styles.playingIndicator}>
+          <Icon name="volume-high" size={16} style={styles.activeIcon} />
+          <Text style={styles.playingText}>
+            {isContinuousPlaying ? 'تشغيل مستمر...' : 'جاري التشغيل...'}
+          </Text>
         </View>
       )}
 
-      {showTafsir && (
+      {showTafsir && tafsirText && (
         <View style={styles.tafsirContainer}>
           <View style={styles.tafsirHeader}>
-            <TouchableOpacity onPress={() => setShowTafsir(false)}>
-              <Icon name="close" size={20} style={{ color: colors.textSecondary }} />
-            </TouchableOpacity>
-            <Text style={styles.tafsirTitle}>تفسير ابن كثير</Text>
-          </View>
-
-          {loadingTafsir && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.gold} />
-            </View>
-          )}
-
-          {tafsirError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{tafsirError}</Text>
+            <View style={styles.tafsirActions}>
               <TouchableOpacity 
-                style={[styles.tafsirButton, { marginTop: 8, alignSelf: 'center' }]} 
-                onPress={handleRetryTafsir}
+                style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
+                onPress={handleShareTafsir}
               >
-                <Text style={styles.tafsirButtonText}>إعادة المحاولة</Text>
+                <Icon name="share-outline" size={14} style={{ color: colors.text }} />
+                <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
+                  مشاركة
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
+                onPress={handleCopyTafsir}
+              >
+                <Icon name="copy-outline" size={14} style={{ color: colors.text }} />
+                <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
+                  نسخ
+                </Text>
               </TouchableOpacity>
             </View>
-          )}
-
-          {tafsirText && !loadingTafsir && !tafsirError && (
-            <>
-              <Text style={styles.tafsirText} numberOfLines={5}>
-                {tafsirText.substring(0, 300)}...
-              </Text>
-              <View style={styles.tafsirActions}>
-                <TouchableOpacity style={styles.tafsirButton} onPress={handleFullTafsir}>
-                  <Text style={styles.tafsirButtonText}>عرض كامل</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+            
+            <Text style={styles.tafsirTitle}>تفسير ابن كثير</Text>
+          </View>
+          
+          <Text style={styles.tafsirText} numberOfLines={5}>
+            {tafsirText}
+          </Text>
+          
+          <View style={styles.tafsirActions}>
+            <TouchableOpacity style={styles.tafsirButton} onPress={handleFullTafsir}>
+              <Icon name="book" size={14} style={styles.activeIcon} />
+              <Text style={styles.tafsirButtonText}>التفسير الكامل</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
-    </TouchableOpacity>
+
+      {tafsirError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{tafsirError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetryTafsir}>
+            <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
 }

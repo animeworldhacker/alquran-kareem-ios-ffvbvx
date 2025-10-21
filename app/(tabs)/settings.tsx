@@ -1,23 +1,24 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
-import { tafsirService } from '../../services/tafsirService';
 import { audioService } from '../../services/audioService';
+import { tafsirService } from '../../services/tafsirService';
 import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
-  const { settings, updateSettings, colors, textSizes, isDark } = useTheme();
-  const [refreshing, setRefreshing] = useState(false);
+  const { settings, updateSettings, colors, textSizes } = useTheme();
+  const [testingAudio, setTestingAudio] = useState(false);
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
       await updateSettings({ [key]: value });
+      console.log(`Setting updated: ${key} = ${value}`);
     } catch (error) {
       console.error('Error updating setting:', error);
-      Alert.alert('خطأ', 'فشل تحديث الإعداد');
+      Alert.alert('خطأ', 'فشل في تحديث الإعداد');
     }
   };
 
@@ -32,19 +33,20 @@ export default function SettingsTab() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await updateSettings({
-                textSize: 'medium',
-                theme: 'dark',
+              const defaultSettings = {
+                textSize: 'medium' as const,
+                theme: 'light' as const,
                 showBanner: true,
-                readingMode: 'scroll',
-                squareAdjustment: 100,
+                readingMode: 'scroll' as const,
+                squareAdjustment: 50,
                 showTajweed: true,
                 autoExpandTafsir: false,
-              });
-              Alert.alert('نجح', 'تم إعادة تعيين الإعدادات');
+              };
+              await updateSettings(defaultSettings);
+              Alert.alert('نجح', 'تم إعادة تعيين الإعدادات بنجاح');
             } catch (error) {
               console.error('Error resetting settings:', error);
-              Alert.alert('خطأ', 'فشل إعادة تعيين الإعدادات');
+              Alert.alert('خطأ', 'فشل في إعادة تعيين الإعدادات');
             }
           },
         },
@@ -55,21 +57,18 @@ export default function SettingsTab() {
   const handleRefreshQuranData = async () => {
     Alert.alert(
       'تحديث بيانات القرآن',
-      'هل تريد إعادة تحميل بيانات القرآن الكريم؟',
+      'هل تريد إعادة تحميل بيانات القرآن من الخادم؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
           text: 'تحديث',
           onPress: async () => {
             try {
-              setRefreshing(true);
-              await quranService.clearCache();
-              Alert.alert('نجح', 'تم تحديث بيانات القرآن الكريم');
+              quranService.clearCache();
+              Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت. سيتم تحميل البيانات الجديدة عند الحاجة.');
             } catch (error) {
               console.error('Error refreshing Quran data:', error);
-              Alert.alert('خطأ', 'فشل تحديث البيانات');
-            } finally {
-              setRefreshing(false);
+              Alert.alert('خطأ', 'فشل في تحديث بيانات القرآن');
             }
           },
         },
@@ -77,24 +76,89 @@ export default function SettingsTab() {
     );
   };
 
-  const handleClearTafsirCache = async () => {
+  const handleClearTafsirCache = () => {
+    Alert.alert(
+      'مسح ذاكرة التفسير',
+      'هل تريد مسح ذاكرة التخزين المؤقت للتفسير؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'مسح',
+          onPress: async () => {
+            try {
+              await tafsirService.clearCache();
+              const stats = tafsirService.getCacheStats();
+              Alert.alert('نجح', `تم مسح ذاكرة التخزين المؤقت للتفسير\n\nالإحصائيات:\n• الحجم: ${stats.cacheSize}\n• الأخطاء: ${stats.errorCount}`);
+            } catch (error) {
+              console.error('Error clearing tafsir cache:', error);
+              Alert.alert('خطأ', 'فشل في مسح ذاكرة التفسير');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleTestAudio = async () => {
+    setTestingAudio(true);
     try {
-      await tafsirService.clearCache();
-      Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للتفسير');
+      console.log('\n🧪 ===== TESTING AUDIO SYSTEM =====');
+      
+      console.log('Test 1: Initializing audio...');
+      await audioService.initializeAudio();
+      console.log('✅ Audio initialization successful');
+      
+      console.log('\nTest 2: Testing audio URL for Al-Fatiha (1:1)...');
+      
+      const testUrl = 'https://verses.quran.com/2/001001.mp3';
+      console.log('Testing URL:', testUrl);
+      
+      try {
+        const response = await fetch(testUrl, { method: 'HEAD' });
+        const status = response.ok ? '✅' : '❌';
+        console.log(`${status} Status: ${response.status}`);
+        
+        console.log('\n✅ ===== AUDIO TEST COMPLETED =====\n');
+        
+        Alert.alert(
+          'نتائج الاختبار',
+          `نظام الصوت:\n\n${status} عبد الباسط عبد الصمد: ${response.status}\n\nنظام الصوت يعمل بشكل صحيح`,
+          [{ text: 'حسناً' }]
+        );
+      } catch (error) {
+        console.error(`❌ Error:`, error);
+        Alert.alert(
+          'فشل الاختبار ❌',
+          'حدث خطأ أثناء اختبار نظام الصوت. تأكد من اتصالك بالإنترنت.',
+          [{ text: 'حسناً' }]
+        );
+      }
     } catch (error) {
-      console.error('Error clearing tafsir cache:', error);
-      Alert.alert('خطأ', 'فشل مسح ذاكرة التخزين المؤقت');
+      console.error('❌ Audio test failed:', error);
+      Alert.alert(
+        'فشل الاختبار ❌',
+        `حدث خطأ أثناء اختبار نظام الصوت:\n\n${error instanceof Error ? error.message : 'خطأ غير معروف'}\n\nتأكد من اتصالك بالإنترنت.`
+      );
+    } finally {
+      setTestingAudio(false);
     }
   };
 
-  const handleClearAudioCache = async () => {
-    try {
-      await audioService.clearCache();
-      Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت');
-    } catch (error) {
-      console.error('Error clearing audio cache:', error);
-      Alert.alert('خطأ', 'فشل مسح ذاكرة التخزين المؤقت');
-    }
+  const handleClearAudioCache = () => {
+    Alert.alert(
+      'مسح ذاكرة التخزين المؤقت للصوت',
+      'هل تريد مسح ذاكرة التخزين المؤقت للملفات الصوتية؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'مسح',
+          onPress: async () => {
+            await audioService.clearCache();
+            Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت');
+          },
+        },
+      ]
+    );
   };
 
   const styles = StyleSheet.create({
@@ -102,132 +166,140 @@ export default function SettingsTab() {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
-      backgroundColor: colors.primary,
-      paddingTop: Platform.OS === 'ios' ? 50 : 20,
-      paddingBottom: 16,
-      paddingHorizontal: 20,
-      borderBottomWidth: 2,
-      borderBottomColor: colors.gold,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
-      elevation: 4,
-    },
-    headerTitle: {
-      fontFamily: 'Amiri_700Bold',
-      fontSize: 24,
-      color: colors.gold,
-      textAlign: 'center',
-    },
     scrollView: {
       flex: 1,
     },
-    section: {
-      marginTop: 20,
-      marginHorizontal: 16,
+    header: {
+      backgroundColor: colors.primary,
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      alignItems: 'center',
     },
-    sectionTitle: {
+    headerTitle: {
       fontSize: textSizes.title,
+      fontWeight: 'bold',
+      color: '#fff',
       fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
-      marginBottom: 12,
-      textAlign: 'right',
     },
-    settingCard: {
+    section: {
       backgroundColor: colors.surface,
+      marginVertical: 8,
+      marginHorizontal: 16,
       borderRadius: 12,
       padding: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    sectionTitle: {
+      fontSize: textSizes.title - 2,
+      fontWeight: 'bold',
+      color: colors.text,
       marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
+      fontFamily: 'Amiri_700Bold',
     },
     settingRow: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
-    settingInfo: {
-      flex: 1,
-      marginRight: 12,
+    settingRowLast: {
+      borderBottomWidth: 0,
     },
     settingLabel: {
       fontSize: textSizes.body,
-      fontFamily: 'Amiri_700Bold',
       color: colors.text,
-      textAlign: 'right',
-      marginBottom: 4,
+      fontFamily: 'Amiri_400Regular',
+      flex: 1,
     },
     settingDescription: {
       fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
       color: colors.textSecondary,
-      textAlign: 'right',
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 4,
     },
-    optionsRow: {
+    textSizeButtons: {
       flexDirection: 'row',
       gap: 8,
-      marginTop: 12,
       flexWrap: 'wrap',
-      justifyContent: 'flex-end',
     },
-    optionButton: {
+    textSizeButton: {
+      paddingHorizontal: 12,
       paddingVertical: 8,
-      paddingHorizontal: 16,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: colors.background,
     },
-    optionButtonActive: {
-      backgroundColor: colors.gold,
-      borderColor: colors.gold,
+    textSizeButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
-    optionButtonText: {
+    textSizeButtonText: {
       fontSize: textSizes.caption,
-      fontFamily: 'Amiri_700Bold',
       color: colors.text,
+      fontFamily: 'Amiri_400Regular',
     },
-    optionButtonTextActive: {
-      color: colors.primary,
+    textSizeButtonTextActive: {
+      color: '#fff',
     },
-    actionButton: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.gold,
-      flexDirection: 'row',
+    button: {
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      marginTop: 8,
       alignItems: 'center',
-      justifyContent: 'space-between',
-      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 2,
     },
-    actionButtonDanger: {
-      borderColor: colors.error,
+    buttonSecondary: {
+      backgroundColor: colors.secondary,
     },
-    actionButtonText: {
+    buttonDanger: {
+      backgroundColor: colors.error,
+    },
+    buttonSuccess: {
+      backgroundColor: colors.success,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      color: '#fff',
       fontSize: textSizes.body,
+      fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
-      textAlign: 'right',
     },
-    actionButtonTextDanger: {
-      color: colors.error,
-    },
-    footer: {
-      padding: 20,
-      alignItems: 'center',
-      marginTop: 20,
-      marginBottom: 20,
-    },
-    footerText: {
+    infoText: {
       fontSize: textSizes.caption,
       color: colors.textSecondary,
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 8,
+      fontStyle: 'italic',
+    },
+    dedicationSection: {
+      backgroundColor: colors.surface,
+      marginVertical: 8,
+      marginHorizontal: 16,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    dedicationText: {
+      fontSize: textSizes.body,
+      color: colors.text,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
-      lineHeight: 20,
+      lineHeight: 28,
     },
   });
 
@@ -241,57 +313,34 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>المظهر</Text>
           
-          <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>السمة</Text>
-                <Text style={styles.settingDescription}>اختر سمة التطبيق</Text>
-              </View>
-            </View>
-            <View style={styles.optionsRow}>
-              {(['light', 'dark'] as const).map(theme => (
-                <TouchableOpacity
-                  key={theme}
-                  style={[
-                    styles.optionButton,
-                    settings.theme === theme && styles.optionButtonActive,
-                  ]}
-                  onPress={() => handleUpdateSetting('theme', theme)}
-                >
-                  <Text
-                    style={[
-                      styles.optionButtonText,
-                      settings.theme === theme && styles.optionButtonTextActive,
-                    ]}
-                  >
-                    {theme === 'light' ? 'فاتح' : 'داكن'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>الوضع الداكن</Text>
+            <Switch
+              value={settings.theme === 'dark'}
+              onValueChange={(value) => handleUpdateSetting('theme', value ? 'dark' : 'light')}
+              trackColor={{ false: '#ccc', true: colors.primary }}
+              thumbColor="#fff"
+            />
           </View>
 
-          <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>حجم الخط</Text>
-                <Text style={styles.settingDescription}>اضبط حجم النص</Text>
-              </View>
+          <View style={[styles.settingRow, styles.settingRowLast]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>حجم النص</Text>
             </View>
-            <View style={styles.optionsRow}>
-              {(['small', 'medium', 'large', 'extra-large'] as const).map(size => (
+            <View style={styles.textSizeButtons}>
+              {(['small', 'medium', 'large', 'extra-large'] as const).map((size) => (
                 <TouchableOpacity
                   key={size}
                   style={[
-                    styles.optionButton,
-                    settings.textSize === size && styles.optionButtonActive,
+                    styles.textSizeButton,
+                    settings.textSize === size && styles.textSizeButtonActive,
                   ]}
                   onPress={() => handleUpdateSetting('textSize', size)}
                 >
                   <Text
                     style={[
-                      styles.optionButtonText,
-                      settings.textSize === size && styles.optionButtonTextActive,
+                      styles.textSizeButtonText,
+                      settings.textSize === size && styles.textSizeButtonTextActive,
                     ]}
                   >
                     {size === 'small' ? 'صغير' : size === 'medium' ? 'متوسط' : size === 'large' ? 'كبير' : 'كبير جداً'}
@@ -305,77 +354,149 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>القراءة</Text>
           
-          <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <Switch
-                value={settings.showBanner}
-                onValueChange={(value) => handleUpdateSetting('showBanner', value)}
-                trackColor={{ false: colors.border, true: colors.gold }}
-                thumbColor={settings.showBanner ? colors.primary : colors.textSecondary}
-              />
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>عرض الإهداء</Text>
-                <Text style={styles.settingDescription}>إظهار رسالة الإهداء</Text>
-              </View>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>إظهار التجويد</Text>
+            <Switch
+              value={settings.showTajweed}
+              onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
+              trackColor={{ false: '#ccc', true: colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>وضع القراءة</Text>
+            </View>
+            <View style={styles.textSizeButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.textSizeButton,
+                  settings.readingMode === 'scroll' && styles.textSizeButtonActive,
+                ]}
+                onPress={() => handleUpdateSetting('readingMode', 'scroll')}
+              >
+                <Text
+                  style={[
+                    styles.textSizeButtonText,
+                    settings.readingMode === 'scroll' && styles.textSizeButtonTextActive,
+                  ]}
+                >
+                  تمرير
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.textSizeButton,
+                  settings.readingMode === 'flip' && styles.textSizeButtonActive,
+                ]}
+                onPress={() => handleUpdateSetting('readingMode', 'flip')}
+              >
+                <Text
+                  style={[
+                    styles.textSizeButtonText,
+                    settings.readingMode === 'flip' && styles.textSizeButtonTextActive,
+                  ]}
+                >
+                  صفحة
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <Switch
-                value={settings.autoExpandTafsir}
-                onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
-                trackColor={{ false: colors.border, true: colors.gold }}
-                thumbColor={settings.autoExpandTafsir ? colors.primary : colors.textSecondary}
-              />
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>توسيع التفسير تلقائياً</Text>
-                <Text style={styles.settingDescription}>عرض التفسير مباشرة</Text>
-              </View>
+          <View style={[styles.settingRow, styles.settingRowLast]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>فتح التفسير تلقائياً</Text>
+              <Text style={styles.settingDescription}>
+                عرض تفسير ابن كثير تلقائياً لكل آية
+              </Text>
             </View>
+            <Switch
+              value={settings.autoExpandTafsir}
+              onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
+              trackColor={{ false: '#ccc', true: colors.primary }}
+              thumbColor="#fff"
+            />
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>التفسير</Text>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={handleClearTafsirCache}
+          >
+            <Text style={styles.buttonText}>مسح ذاكرة التخزين المؤقت للتفسير</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            يتم تحميل تفسير ابن كثير من Quran.com وحفظه محلياً للوصول السريع
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>الصوت</Text>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSuccess, testingAudio && styles.buttonDisabled]}
+            onPress={handleTestAudio}
+            disabled={testingAudio}
+          >
+            <Text style={styles.buttonText}>
+              {testingAudio ? 'جاري الاختبار...' : 'اختبار نظام الصوت'}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={handleClearAudioCache}
+          >
+            <Text style={styles.buttonText}>مسح ذاكرة التخزين المؤقت للصوت</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            القارئ: عبد الباسط عبد الصمد (حفص عن عاصم){'\n'}
+            • اختبار نظام الصوت: للتحقق من توفر الملفات الصوتية{'\n'}
+            • مسح الذاكرة: لحذف الملفات المخزنة مؤقتاً
+          </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>البيانات</Text>
           
-          <TouchableOpacity 
-            style={styles.actionButton} 
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
             onPress={handleRefreshQuranData}
-            disabled={refreshing}
           >
-            <Icon name="refresh" size={20} style={{ color: colors.gold }} />
-            <Text style={styles.actionButtonText}>
-              {refreshing ? 'جاري التحديث...' : 'تحديث بيانات القرآن'}
-            </Text>
+            <Text style={styles.buttonText}>تحديث بيانات القرآن</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleClearTafsirCache}>
-            <Icon name="trash-outline" size={20} style={{ color: colors.gold }} />
-            <Text style={styles.actionButtonText}>مسح ذاكرة التفسير</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleClearAudioCache}>
-            <Icon name="trash-outline" size={20} style={{ color: colors.gold }} />
-            <Text style={styles.actionButtonText}>مسح ذاكرة الصوت</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.actionButtonDanger]} 
-            onPress={handleResetSettings}
-          >
-            <Icon name="warning-outline" size={20} style={{ color: colors.error }} />
-            <Text style={[styles.actionButtonText, styles.actionButtonTextDanger]}>
-              إعادة تعيين الإعدادات
-            </Text>
-          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            استخدم هذا الخيار لتحديث بيانات القرآن من الخادم
+          </Text>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            تطبيق القرآن الكريم{'\n'}
-            نسخة 1.0.0{'\n'}
-            تم تطويره بحمد الله وتوفيقه
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>إعادة تعيين</Text>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.buttonDanger]}
+            onPress={handleResetSettings}
+          >
+            <Text style={styles.buttonText}>إعادة تعيين جميع الإعدادات</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            سيؤدي هذا إلى إعادة تعيين جميع الإعدادات إلى القيم الافتراضية
+          </Text>
+        </View>
+
+        <View style={styles.dedicationSection}>
+          <Text style={styles.dedicationText}>
+            هذا المصحف صدقة جارية إلى{'\n'}
+            مريم سليمان، أحمد جاسم،{'\n'}
+            شيخة أحمد، راشد بدر
           </Text>
         </View>
       </ScrollView>

@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppSettings } from '../types';
 import { settingsService } from '../services/settingsService';
-import { useColorScheme } from 'react-native';
 
 interface ThemeContextType {
   settings: AppSettings;
@@ -11,26 +10,15 @@ interface ThemeContextType {
     background: string;
     backgroundAlt: string;
     surface: string;
-    surfaceElevated: string;
     primary: string;
-    primaryDark: string;
-    primaryLight: string;
-    gold: string;
-    goldDark: string;
-    goldLight: string;
+    secondary: string;
     text: string;
     textSecondary: string;
-    textMuted: string;
     border: string;
-    divider: string;
     accent: string;
     error: string;
     success: string;
     warning: string;
-    ayahNumber: string;
-    selectedAyah: string;
-    overlay: string;
-    shadow: string;
   };
   textSizes: {
     small: number;
@@ -42,7 +30,6 @@ interface ThemeContextType {
     ayah: number;
   };
   isLoading: boolean;
-  isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -56,14 +43,13 @@ export const useTheme = (): ThemeContextType => {
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<AppSettings>({
     textSize: 'medium',
-    theme: 'dark',
+    theme: 'light',
     showBanner: true,
     readingMode: 'scroll',
-    squareAdjustment: 100,
+    squareAdjustment: 50,
     showTajweed: true,
     autoExpandTafsir: false,
   });
@@ -104,65 +90,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getColors = () => {
-    // Determine if we should use dark mode
-    const shouldUseDark = settings.theme === 'dark' || 
-                         (settings.theme === 'auto' && systemColorScheme === 'dark');
+    const isDark = settings.theme === 'dark';
     
-    if (shouldUseDark) {
-      // Dark mode - iQuran inspired
-      return {
-        background: '#0F1419',
-        backgroundAlt: '#1A2027',
-        surface: '#1E2732',
-        surfaceElevated: '#2A3441',
-        primary: '#1B5E20',
-        primaryDark: '#0D3D13',
-        primaryLight: '#2E7D32',
-        gold: '#D4AF37',
-        goldDark: '#B8941F',
-        goldLight: '#E5C158',
-        text: '#E8E6E3',
-        textSecondary: '#B0ADA8',
-        textMuted: '#6B6B6B',
-        border: '#2A3441',
-        divider: '#3A4451',
-        accent: '#D4AF37',
-        error: '#EF5350',
-        success: '#66BB6A',
-        warning: '#FFA726',
-        ayahNumber: '#D4AF37',
-        selectedAyah: 'rgba(212, 175, 55, 0.15)',
-        overlay: 'rgba(0, 0, 0, 0.6)',
-        shadow: '#000000',
-      };
-    } else {
-      // Light mode - iQuran inspired
-      return {
-        background: '#F5F5F0',
-        backgroundAlt: '#FAFAF5',
-        surface: '#FFFFFF',
-        surfaceElevated: '#F8F8F3',
-        primary: '#1B5E20',
-        primaryDark: '#0D3D13',
-        primaryLight: '#2E7D32',
-        gold: '#D4AF37',
-        goldDark: '#B8941F',
-        goldLight: '#E5C158',
-        text: '#2C2C2C',
-        textSecondary: '#757575',
-        textMuted: '#9E9E9E',
-        border: '#E0E0D8',
-        divider: '#D5D5CC',
-        accent: '#D4AF37',
-        error: '#EF5350',
-        success: '#66BB6A',
-        warning: '#FFA726',
-        ayahNumber: '#D4AF37',
-        selectedAyah: 'rgba(212, 175, 55, 0.15)',
-        overlay: 'rgba(0, 0, 0, 0.3)',
-        shadow: '#000000',
-      };
-    }
+    return {
+      background: isDark ? '#1a1a1a' : '#ffffff',
+      backgroundAlt: isDark ? '#2d2d2d' : '#f5f5f5',
+      surface: isDark ? '#2d2d2d' : '#ffffff',
+      primary: '#d4af37',
+      secondary: '#8B4513',
+      text: isDark ? '#ffffff' : '#2F4F4F',
+      textSecondary: isDark ? '#cccccc' : '#666666',
+      border: isDark ? '#404040' : '#e0e0e0',
+      accent: '#FF6B6B',
+      error: '#f44336',
+      success: '#4caf50',
+      warning: '#ff9800',
+    };
   };
 
   const getTextSizes = () => {
@@ -180,12 +123,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       heading: baseSize + 8,
       caption: baseSize - 4,
       arabic: baseSize + 6,
-      ayah: baseSize + 10,
+      ayah: baseSize + 8,
     };
   };
-
-  const isDark = settings.theme === 'dark' || 
-                (settings.theme === 'auto' && systemColorScheme === 'dark');
 
   const value: ThemeContextType = {
     settings,
@@ -193,7 +133,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     colors: getColors(),
     textSizes: getTextSizes(),
     isLoading,
-    isDark,
   };
 
   return (
