@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import Icon from './Icon';
 import { Bookmark } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
-import Icon from './Icon';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -11,153 +11,155 @@ interface BookmarkCardProps {
   onDelete: (bookmarkId: string) => void;
 }
 
+const toArabicNumerals = (num: number): string => {
+  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+};
+
 export default function BookmarkCard({ bookmark, onPress, onDelete }: BookmarkCardProps) {
-  const { colors, textSizes } = useTheme();
+  const { colors, textSizes, isDark } = useTheme();
 
   const handleDelete = () => {
     Alert.alert(
-      'حذف المفضلة',
-      'هل تريد حذف هذه الآية من المفضلة؟',
+      'حذف الإشارة المرجعية',
+      'هل أنت متأكد من حذف هذه الإشارة المرجعية؟',
       [
         { text: 'إلغاء', style: 'cancel' },
-        { 
-          text: 'حذف', 
+        {
+          text: 'حذف',
           style: 'destructive',
-          onPress: () => onDelete(bookmark.id)
-        }
+          onPress: () => onDelete(bookmark.id),
+        },
       ]
     );
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const formatDate = (date: Date): string => {
+    const d = new Date(date);
+    const day = d.getDate();
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+    return `${toArabicNumerals(day)}/${toArabicNumerals(month)}/${toArabicNumerals(year)}`;
   };
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderWidth: 1,
-      borderRadius: 10,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
       padding: 16,
-      marginVertical: 8,
-      marginHorizontal: 16,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     header: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
+      justifyContent: 'space-between',
       marginBottom: 12,
     },
-    surahInfo: {
-      flex: 1,
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
-    surahName: {
-      fontSize: textSizes.subtitle,
-      fontWeight: 'bold',
-      color: colors.primary,
-      fontFamily: 'Amiri_700Bold',
+    badge: {
+      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.2)' : 'rgba(212, 175, 55, 0.15)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.gold,
     },
-    ayahNumber: {
+    badgeText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
-      fontFamily: 'Amiri_400Regular',
+      fontFamily: 'Amiri_700Bold',
+      color: colors.gold,
     },
     deleteButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.error || '#ff4444',
-      justifyContent: 'center',
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? 'rgba(239, 83, 80, 0.2)' : 'rgba(239, 83, 80, 0.15)',
       alignItems: 'center',
+      justifyContent: 'center',
     },
-    deleteIcon: {
-      color: colors.backgroundAlt,
-    },
-    ayahText: {
-      fontSize: textSizes.arabic,
-      lineHeight: textSizes.arabic * 1.6,
+    surahName: {
+      fontSize: textSizes.title,
+      fontFamily: 'ScheherazadeNew_700Bold',
       color: colors.text,
       textAlign: 'right',
-      fontFamily: 'ScheherazadeNew_400Regular',
-      marginBottom: 12,
+      marginBottom: 8,
     },
-    noteContainer: {
-      backgroundColor: colors.background,
-      padding: 8,
-      borderRadius: 6,
-      marginBottom: 12,
-      borderLeftWidth: 3,
-      borderLeftColor: colors.accent,
-    },
-    noteLabel: {
-      fontSize: textSizes.caption,
-      fontWeight: 'bold',
-      color: colors.textSecondary,
-      marginBottom: 4,
-      fontFamily: 'Amiri_700Bold',
-    },
-    noteText: {
+    ayahText: {
       fontSize: textSizes.body,
+      fontFamily: 'ScheherazadeNew_700Bold',
       color: colors.text,
-      fontFamily: 'Amiri_400Regular',
+      textAlign: 'right',
+      lineHeight: textSizes.body * 1.8,
+      marginBottom: 12,
     },
     footer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      paddingTop: 8,
+      justifyContent: 'space-between',
+      paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: colors.border,
+      borderTopColor: colors.divider,
     },
     dateText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
+      color: colors.textSecondary,
     },
-    englishName: {
+    viewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)',
+      borderWidth: 1,
+      borderColor: colors.gold,
+    },
+    viewButtonText: {
       fontSize: textSizes.caption,
-      color: colors.textSecondary,
-      fontFamily: 'Amiri_400Regular',
+      fontFamily: 'Amiri_700Bold',
+      color: colors.gold,
     },
   });
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.surahInfo}>
-          <Text style={styles.surahName}>{bookmark.surahName}</Text>
-          <Text style={styles.ayahNumber}>الآية {bookmark.ayahNumber}</Text>
-        </View>
-        
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Icon name="trash-outline" size={20} style={styles.deleteIcon} />
+          <Icon name="trash-outline" size={16} style={{ color: colors.error }} />
         </TouchableOpacity>
-      </View>
-      
-      <Text style={styles.ayahText} numberOfLines={3}>
-        {bookmark.ayahText}
-      </Text>
-      
-      {bookmark.note && (
-        <View style={styles.noteContainer}>
-          <Text style={styles.noteLabel}>ملاحظة:</Text>
-          <Text style={styles.noteText}>{bookmark.note}</Text>
+        
+        <View style={styles.headerRight}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>آية {toArabicNumerals(bookmark.ayahNumber)}</Text>
+          </View>
         </View>
-      )}
-      
-      <View style={styles.footer}>
-        <Text style={styles.dateText}>{formatDate(bookmark.createdAt)}</Text>
-        <Text style={styles.englishName}>{bookmark.surahEnglishName}</Text>
       </View>
-    </TouchableOpacity>
+
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={styles.surahName}>{bookmark.surahName}</Text>
+        <Text style={styles.ayahText} numberOfLines={3}>
+          {bookmark.ayahText}
+        </Text>
+      </TouchableOpacity>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.viewButton} onPress={onPress}>
+          <Text style={styles.viewButtonText}>عرض</Text>
+          <Icon name="chevron-back" size={14} style={{ color: colors.gold }} />
+        </TouchableOpacity>
+        
+        <Text style={styles.dateText}>{formatDate(bookmark.createdAt)}</Text>
+      </View>
+    </View>
   );
 }
-
-

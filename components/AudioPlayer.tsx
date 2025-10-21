@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { AudioState } from '../types';
 import Icon from './Icon';
@@ -13,6 +13,11 @@ interface AudioPlayerProps {
   onNext?: () => void;
 }
 
+const toArabicNumerals = (num: number): string => {
+  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+};
+
 export default function AudioPlayer({ 
   audioState, 
   onPlay, 
@@ -20,9 +25,8 @@ export default function AudioPlayer({
   onStop,
   onNext
 }: AudioPlayerProps) {
-  const { colors, textSizes } = useTheme();
+  const { colors, textSizes, isDark } = useTheme();
 
-  // Safety checks
   if (!audioState || (!audioState.currentSurah && !audioState.currentAyah)) {
     return null;
   }
@@ -63,50 +67,59 @@ export default function AudioPlayer({
 
   const styles = StyleSheet.create({
     container: {
+      position: 'absolute',
+      bottom: Platform.OS === 'ios' ? 85 : 65,
+      left: 0,
+      right: 0,
       backgroundColor: colors.primary,
       paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingHorizontal: 20,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: colors.secondary,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 5,
+      borderTopWidth: 2,
+      borderTopColor: colors.gold,
+      boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.3)',
+      elevation: 8,
+      zIndex: 1000,
     },
     info: {
       flex: 1,
     },
     currentText: {
-      color: '#fff',
+      color: colors.gold,
       fontSize: textSizes.body,
-      fontWeight: '600',
+      fontWeight: '700',
       fontFamily: 'Amiri_700Bold',
+      textAlign: 'right',
     },
     controls: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
     },
     controlButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(212, 175, 55, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.gold,
     },
     playButton: {
-      backgroundColor: colors.accent,
+      backgroundColor: colors.gold,
       width: 48,
       height: 48,
       borderRadius: 24,
+      borderWidth: 0,
     },
     controlIcon: {
-      color: '#fff',
+      color: colors.gold,
+    },
+    playIcon: {
+      color: colors.primary,
     },
   });
 
@@ -114,13 +127,13 @@ export default function AudioPlayer({
     <View style={styles.container}>
       <View style={styles.info}>
         <Text style={styles.currentText}>
-          سورة {audioState.currentSurah || '؟'} - آية {audioState.currentAyah || '؟'}
+          سورة {toArabicNumerals(audioState.currentSurah || 0)} - آية {toArabicNumerals(audioState.currentAyah || 0)}
         </Text>
       </View>
       
       <View style={styles.controls}>
         <TouchableOpacity style={styles.controlButton} onPress={handleStop}>
-          <Icon name="stop" size={20} style={styles.controlIcon} />
+          <Icon name="stop" size={18} style={styles.controlIcon} />
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -129,14 +142,14 @@ export default function AudioPlayer({
         >
           <Icon 
             name={audioState.isPlaying ? "pause" : "play"} 
-            size={24} 
-            style={styles.controlIcon} 
+            size={22} 
+            style={styles.playIcon} 
           />
         </TouchableOpacity>
 
         {onNext && (
           <TouchableOpacity style={styles.controlButton} onPress={handleNext}>
-            <Icon name="play-skip-forward" size={20} style={styles.controlIcon} />
+            <Icon name="play-skip-forward" size={18} style={styles.controlIcon} />
           </TouchableOpacity>
         )}
       </View>

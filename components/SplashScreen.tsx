@@ -2,22 +2,35 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import Svg, { Path, Circle } from 'react-native-svg';
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
+// Islamic star pattern
+function IslamicStar({ size = 100, color = '#D4AF37' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Path
+        d="M50 5 L58 35 L88 35 L64 52 L72 82 L50 65 L28 82 L36 52 L12 35 L42 35 Z"
+        fill={color}
+        opacity={0.9}
+      />
+      <Circle cx="50" cy="50" r="35" fill="transparent" stroke={color} strokeWidth="2" opacity={0.5} />
+      <Circle cx="50" cy="50" r="25" fill="transparent" stroke={color} strokeWidth="1.5" opacity={0.3} />
+    </Svg>
+  );
+}
+
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colors, textSizes } = useTheme();
   
-  // Use useMemo to memoize the animated values
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const scaleAnim = useMemo(() => new Animated.Value(0.8), []);
   const tapHintAnim = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
-    console.log('Splash screen loaded, waiting for user tap');
-    
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -30,110 +43,103 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         friction: 7,
         useNativeDriver: true,
       }),
-    ]).start(() => {
+    ]).start();
+
+    setTimeout(() => {
       Animated.loop(
         Animated.sequence([
           Animated.timing(tapHintAnim, {
             toValue: 1,
-            duration: 1500,
+            duration: 1000,
             useNativeDriver: true,
           }),
           Animated.timing(tapHintAnim, {
-            toValue: 0.3,
-            duration: 1500,
+            toValue: 0,
+            duration: 1000,
             useNativeDriver: true,
           }),
         ])
       ).start();
-    });
+    }, 1500);
   }, [fadeAnim, scaleAnim, tapHintAnim]);
 
   const handleTap = () => {
-    console.log('Splash screen tapped, proceeding to main app');
-    onFinish();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onFinish();
+    });
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#316612',
-      justifyContent: 'center',
+      backgroundColor: colors.primary,
       alignItems: 'center',
-      paddingHorizontal: 20,
+      justifyContent: 'center',
+      padding: 20,
     },
     content: {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    bismillah: {
-      fontSize: 30,
-      fontWeight: 'bold',
-      color: '#d4db7f',
-      textAlign: 'center',
+    iconContainer: {
       marginBottom: 40,
-      fontFamily: 'ScheherazadeNew_400Regular',
     },
-    dedicationContainer: {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      padding: 20,
-      borderRadius: 15,
-      marginBottom: 40,
-      alignItems: 'center',
-    },
-    dedicationTitle: {
-      fontSize: textSizes.subtitle,
-      color: colors.backgroundAlt,
+    title: {
+      fontSize: 32,
+      fontFamily: 'ScheherazadeNew_700Bold',
+      color: colors.gold,
       textAlign: 'center',
-      marginBottom: 15,
-      fontFamily: 'Amiri_400Regular',
-    },
-    dedicationNames: {
-      fontSize: textSizes.title,
-      color: '#d4db7f',
-      textAlign: 'center',
-      marginBottom: 8,
-      fontWeight: 'bold',
-      fontFamily: 'Amiri_700Bold',
-    },
-    prayer: {
-      fontSize: textSizes.body,
-      color: colors.backgroundAlt,
-      textAlign: 'center',
-      marginTop: 10,
-      fontStyle: 'italic',
-      fontFamily: 'Amiri_400Regular',
-    },
-    appTitle: {
-      fontSize: textSizes.title,
-      fontWeight: 'bold',
-      color: colors.backgroundAlt,
-      textAlign: 'center',
-      marginBottom: 10,
-      fontFamily: 'Amiri_700Bold',
+      marginBottom: 16,
     },
     subtitle: {
-      fontSize: textSizes.body,
-      color: colors.backgroundAlt,
+      fontSize: 20,
+      fontFamily: 'Amiri_700Bold',
+      color: colors.gold,
       textAlign: 'center',
+      marginBottom: 40,
       opacity: 0.9,
-      fontFamily: 'Amiri_400Regular',
     },
-    tapHintContainer: {
-      marginTop: 50,
-      alignItems: 'center',
+    dedicationBox: {
+      backgroundColor: 'rgba(212, 175, 55, 0.1)',
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 40,
+      borderWidth: 2,
+      borderColor: colors.gold,
+      maxWidth: 400,
+    },
+    dedicationTitle: {
+      fontSize: 18,
+      fontFamily: 'Amiri_700Bold',
+      color: colors.gold,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    dedicationText: {
+      fontSize: 16,
+      fontFamily: 'Amiri_400Regular',
+      color: colors.gold,
+      textAlign: 'center',
+      lineHeight: 28,
+      opacity: 0.9,
     },
     tapHint: {
-      fontSize: textSizes.body,
-      color: '#d4db7f',
-      textAlign: 'center',
+      fontSize: 16,
       fontFamily: 'Amiri_400Regular',
-      marginBottom: 5,
-    },
-    tapHintEnglish: {
-      fontSize: textSizes.caption,
-      color: colors.backgroundAlt,
+      color: colors.gold,
       textAlign: 'center',
-      opacity: 0.8,
+      opacity: 0.7,
     },
   });
 
@@ -141,7 +147,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     <TouchableOpacity 
       style={styles.container} 
       onPress={handleTap}
-      activeOpacity={1}
+      activeOpacity={0.9}
     >
       <Animated.View 
         style={[
@@ -152,24 +158,34 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <Text style={styles.bismillah} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
-        
-        <View style={styles.dedicationContainer}>
-          <Text style={styles.dedicationTitle}>هذا المصحف صدقة جارية إلى</Text>
-          <Text style={styles.dedicationNames}>مريم سليمان</Text>
-          <Text style={styles.dedicationNames}>أحمد جاسم</Text>
-          <Text style={styles.dedicationNames}>شيخة أحمد</Text>
-          <Text style={styles.dedicationNames}>راشد بدر</Text>
-          <Text style={styles.prayer}>رحمهم الله وأسكنهم فسيح جناته</Text>
+        <View style={styles.iconContainer}>
+          <IslamicStar size={120} color={colors.gold} />
         </View>
 
-        <Text style={styles.appTitle}>المصحف الشريف</Text>
-        <Text style={styles.subtitle}>مع تفسير ابن كثير والتلاوات الصوتية</Text>
-        
-        <Animated.View style={[styles.tapHintContainer, { opacity: tapHintAnim }]}>
-          <Text style={styles.tapHint}>اضغط في أي مكان للمتابعة</Text>
-          <Text style={styles.tapHintEnglish}>Tap anywhere to continue</Text>
-        </Animated.View>
+        <Text style={styles.title}>القرآن الكريم</Text>
+        <Text style={styles.subtitle}>Al-Quran Al-Kareem</Text>
+
+        <View style={styles.dedicationBox}>
+          <Text style={styles.dedicationTitle}>صدقة جارية</Text>
+          <Text style={styles.dedicationText}>
+            هذا المصحف صدقة جارية الى{'\n'}
+            مريم سليمان{'\n'}
+            احمد جاسم{'\n'}
+            شيخة احمد{'\n'}
+            راشد بدر
+          </Text>
+        </View>
+
+        <Animated.Text 
+          style={[
+            styles.tapHint,
+            {
+              opacity: tapHintAnim,
+            },
+          ]}
+        >
+          اضغط للمتابعة
+        </Animated.Text>
       </Animated.View>
     </TouchableOpacity>
   );

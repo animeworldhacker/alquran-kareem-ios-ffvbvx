@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Dimensions, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Platform, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useBookmarks } from '../../hooks/useBookmarks';
@@ -16,24 +16,18 @@ const toArabicNumerals = (num: number): string => {
   return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
 };
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 export default function ChaptersTab() {
   const { surahs, loading, error } = useQuran();
   const { bookmarks } = useBookmarks();
-  const { settings, colors, textSizes } = useTheme();
+  const { settings, colors, textSizes, isDark } = useTheme();
 
   const [search, setSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DivisionTab>('juz');
   const [sajdaList, setSajdaList] = useState<any[]>([]);
-  const [scrollIndicatorPosition, setScrollIndicatorPosition] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-  const [scrollViewHeight, setScrollViewHeight] = useState(0);
   
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['45%', '80%'], []);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const snapPoints = useMemo(() => ['50%', '85%'], []);
 
   const filteredSurahs = useMemo(() => {
     if (!search.trim()) return surahs;
@@ -41,7 +35,8 @@ export default function ChaptersTab() {
     return surahs.filter(s => 
       s.name.toLowerCase().includes(q) ||
       s.englishName.toLowerCase().includes(q) ||
-      s.englishNameTranslation.toLowerCase().includes(q)
+      s.englishNameTranslation.toLowerCase().includes(q) ||
+      s.number.toString().includes(q)
     );
   }, [surahs, search]);
 
@@ -126,185 +121,148 @@ export default function ChaptersTab() {
     await handleSelectQuarter(firstQuarter);
   };
 
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const contentHeight = event.nativeEvent.contentSize.height;
-    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
-    
-    setContentHeight(contentHeight);
-    setScrollViewHeight(scrollViewHeight);
-    
-    if (contentHeight > scrollViewHeight) {
-      const scrollPercentage = offsetY / (contentHeight - scrollViewHeight);
-      const indicatorHeight = 60;
-      const maxPosition = scrollViewHeight - indicatorHeight - 20;
-      setScrollIndicatorPosition(scrollPercentage * maxPosition);
-    }
-  };
-
-  const handleScrollIndicatorPress = (event: any) => {
-    const touchY = event.nativeEvent.locationY;
-    const indicatorHeight = 60;
-    const maxPosition = scrollViewHeight - indicatorHeight - 20;
-    
-    if (contentHeight > scrollViewHeight && scrollViewRef.current) {
-      const scrollPercentage = touchY / maxPosition;
-      const targetOffset = scrollPercentage * (contentHeight - scrollViewHeight);
-      scrollViewRef.current.scrollTo({ y: Math.max(0, targetOffset), animated: true });
-    }
-  };
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5EFE7',
+      backgroundColor: colors.background,
     },
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    contentWrapper: {
-      flex: 1,
-      flexDirection: 'row',
+    
+    // Header
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: Platform.OS === 'ios' ? 50 : 20,
+      paddingBottom: 16,
+      paddingHorizontal: 20,
+      borderBottomWidth: 2,
+      borderBottomColor: colors.gold,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
+      elevation: 4,
     },
-    mainContent: {
-      flex: 1,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    rightScrollIndicator: {
-      position: 'absolute',
-      right: 8,
-      top: 0,
-      bottom: 0,
-      width: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    scrollIndicatorTrack: {
-      width: 4,
-      height: '100%',
-      backgroundColor: '#D4C5A9',
-      borderRadius: 2,
-    },
-    scrollIndicatorThumb: {
-      position: 'absolute',
-      width: 24,
-      height: 60,
-      backgroundColor: '#4A7C59',
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 2px 8px rgba(0,0,0,0.15)',
-    },
-    scrollIndicatorText: {
-      color: '#FFFFFF',
-      fontSize: 10,
-      fontFamily: 'Amiri_700Bold',
-    },
-    topBar: {
+    headerContent: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: '#E8DCC4',
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: '#D4C5A9',
-    },
-    iconBtn: {
-      width: 36 * (settings.squareAdjustment / 100),
-      height: 36 * (settings.squareAdjustment / 100),
-      borderRadius: 18 * (settings.squareAdjustment / 100),
-      backgroundColor: '#F5EFE7',
-      alignItems: 'center',
       justifyContent: 'center',
     },
-    title: {
+    headerTitle: {
       fontFamily: 'Amiri_700Bold',
-      fontSize: textSizes.title,
-      color: '#3D3D3D',
+      fontSize: 24,
+      color: colors.gold,
+      textAlign: 'center',
     },
+    
+    // Dedication banner
     dedicationBox: {
-      margin: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      backgroundColor: '#E8DCC4',
+      margin: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceElevated,
       borderWidth: 1,
-      borderColor: '#4A7C59',
+      borderColor: colors.gold,
+      boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
+      elevation: 2,
     },
     dedicationText: {
-      color: '#3D3D3D',
+      color: colors.text,
       fontFamily: 'Amiri_400Regular',
       fontSize: textSizes.body,
       textAlign: 'center',
+      lineHeight: 24,
     },
+    
+    // Search
     searchBox: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      marginHorizontal: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      gap: 12,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
       borderRadius: 12,
-      backgroundColor: '#E8DCC4',
+      backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: '#D4C5A9',
+      borderColor: colors.border,
+      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     searchInput: {
       flex: 1,
       fontFamily: 'Amiri_400Regular',
-      color: '#3D3D3D',
+      color: colors.text,
       fontSize: textSizes.body,
-      paddingVertical: 4,
-      textAlign: 'left',
+      paddingVertical: 0,
+      textAlign: 'right',
     },
+    
+    // Quick navigation buttons
     quickRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginHorizontal: 12,
-      marginTop: 12,
-      marginBottom: 8,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      gap: 8,
     },
     quickBtn: {
       flex: 1,
-      marginHorizontal: 4,
-      backgroundColor: '#E8DCC4',
-      paddingVertical: 10 * (settings.squareAdjustment / 100),
+      backgroundColor: colors.surface,
+      paddingVertical: 12,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#D4C5A9',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
+      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     quickBtnText: {
       fontFamily: 'Amiri_700Bold',
-      color: '#3D3D3D',
+      color: colors.gold,
       fontSize: textSizes.caption,
+    },
+    
+    // Surah list
+    scrollView: {
+      flex: 1,
     },
     footer: {
       padding: 20,
       alignItems: 'center',
       marginTop: 20,
-      marginBottom: 80,
+      marginBottom: 20,
     },
     footerText: {
       fontSize: textSizes.caption,
-      color: '#9B8B7E',
+      color: colors.textSecondary,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
+    
+    // Bottom sheet
     sheetContainer: {
       flex: 1,
+      backgroundColor: colors.surface,
+    },
+    sheetHandle: {
+      backgroundColor: colors.divider,
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginTop: 8,
+      marginBottom: 16,
     },
     sheetTabs: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      padding: 8,
-      paddingHorizontal: 10,
+      padding: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
     },
     tabBtn: {
       flex: 1,
@@ -313,11 +271,11 @@ export default function ChaptersTab() {
       borderRadius: 10,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: colors.surfaceElevated,
     },
     tabBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.gold,
+      borderColor: colors.gold,
     },
     tabBtnText: {
       textAlign: 'center',
@@ -326,59 +284,74 @@ export default function ChaptersTab() {
       fontSize: textSizes.caption,
     },
     tabBtnTextActive: {
-      color: colors.backgroundAlt,
+      color: colors.primary,
+    },
+    sheetContent: {
+      flex: 1,
+      padding: 12,
     },
     grid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      paddingHorizontal: 8,
-      paddingVertical: 6,
+      gap: 8,
     },
     gridItem: {
-      width: '20%',
-      padding: 8,
+      width: '18%',
+      aspectRatio: 1,
+      margin: '1%',
+    },
+    gridItemBtn: {
+      flex: 1,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     gridItemText: {
       textAlign: 'center',
-      backgroundColor: colors.backgroundAlt,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 10 * (settings.squareAdjustment / 100),
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
+      color: colors.gold,
       fontSize: textSizes.body,
-      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
     },
     sajdaItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 12,
+      padding: 14,
       borderRadius: 10,
-      backgroundColor: colors.backgroundAlt,
-      marginBottom: 8,
+      backgroundColor: colors.surfaceElevated,
+      marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.border,
       gap: 12,
+      boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)',
+      elevation: 2,
     },
     badge: {
-      width: 34 * (settings.squareAdjustment / 100),
-      height: 34 * (settings.squareAdjustment / 100),
-      borderRadius: 17 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.primary,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
     },
     badgeText: {
-      color: colors.backgroundAlt,
+      color: colors.primary,
       fontFamily: 'Amiri_700Bold',
-      fontSize: textSizes.caption,
+      fontSize: textSizes.body,
+    },
+    sajdaContent: {
+      flex: 1,
     },
     sajdaTitle: {
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
       fontSize: textSizes.body,
       textAlign: 'right',
+      marginBottom: 4,
     },
     sajdaSub: {
       fontFamily: 'Amiri_400Regular',
@@ -391,7 +364,9 @@ export default function ChaptersTab() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>
+          جاري تحميل القرآن الكريم...
+        </Text>
       </View>
     );
   }
@@ -399,18 +374,22 @@ export default function ChaptersTab() {
   if (error) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: textSizes.body, color: '#9B8B7E', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>
+          خطأ في تحميل البيانات
+        </Text>
+        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular', marginTop: 8 }}>
+          {error}
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <View style={styles.iconBtn} />
-        <Text style={styles.title}>القرآن الكريم</Text>
-        <View style={styles.iconBtn} />
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>السور</Text>
+        </View>
       </View>
 
       {settings.showBanner && (
@@ -422,12 +401,12 @@ export default function ChaptersTab() {
       )}
 
       <View style={styles.searchBox}>
-        <Icon name="search" size={18} style={{ color: '#9B8B7E' }} />
+        <Icon name="search" size={20} style={{ color: colors.textSecondary }} />
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="...Search chapters"
-          placeholderTextColor="#9B8B7E"
+          placeholder="ابحث عن سورة..."
+          placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
       </View>
@@ -440,55 +419,30 @@ export default function ChaptersTab() {
           <Text style={styles.quickBtnText}>حزب</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('quarter')}>
-          <Text style={styles.quickBtnText}>ربع الحزب</Text>
+          <Text style={styles.quickBtnText}>ربع</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('sajda')}>
           <Text style={styles.quickBtnText}>سجدة</Text>
         </TouchableOpacity>
       </View>
       
-      <View style={styles.contentWrapper}>
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView} 
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          onLayout={(event) => {
-            setScrollViewHeight(event.nativeEvent.layout.height);
-          }}
-        >
-          {filteredSurahs.map((surah) => (
-            <SurahCard
-              key={surah.number}
-              surah={surah}
-              onPress={() => navigateToSurah(surah.number)}
-            />
-          ))}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              تم تطوير هذا التطبيق بحمد الله وتوفيقه
-            </Text>
-          </View>
-        </ScrollView>
-
-        <TouchableOpacity 
-          style={styles.rightScrollIndicator}
-          onPress={handleScrollIndicatorPress}
-          activeOpacity={0.8}
-        >
-          <View style={styles.scrollIndicatorTrack} />
-          <Animated.View 
-            style={[
-              styles.scrollIndicatorThumb,
-              { top: scrollIndicatorPosition }
-            ]}
-          >
-            <Icon name="chevron-up" size={12} style={{ color: '#FFFFFF' }} />
-            <Icon name="chevron-down" size={12} style={{ color: '#FFFFFF' }} />
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredSurahs.map((surah) => (
+          <SurahCard
+            key={surah.number}
+            surah={surah}
+            onPress={() => navigateToSurah(surah.number)}
+          />
+        ))}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            تم تطوير هذا التطبيق بحمد الله وتوفيقه
+          </Text>
+        </View>
+      </ScrollView>
 
       {sheetOpen && (
         <BottomSheet
@@ -498,8 +452,10 @@ export default function ChaptersTab() {
           enablePanDownToClose
           onClose={() => setSheetOpen(false)}
           backdropComponent={(props) => (
-            <BottomSheetBackdrop {...props} pressBehavior="close" opacity={0.25} />
+            <BottomSheetBackdrop {...props} pressBehavior="close" opacity={0.5} />
           )}
+          backgroundStyle={{ backgroundColor: colors.surface }}
+          handleIndicatorStyle={{ backgroundColor: colors.gold }}
         >
           <View style={styles.sheetContainer}>
             <View style={styles.sheetTabs}>
@@ -510,56 +466,66 @@ export default function ChaptersTab() {
                   style={[styles.tabBtn, activeTab === t && styles.tabBtnActive]}
                 >
                   <Text style={[styles.tabBtnText, activeTab === t && styles.tabBtnTextActive]}>
-                    {t === 'juz' ? 'جزء' : t === 'hizb' ? 'حزب' : t === 'quarter' ? 'ربع الحزب' : 'سجدة'}
+                    {t === 'juz' ? 'جزء' : t === 'hizb' ? 'حزب' : t === 'quarter' ? 'ربع' : 'سجدة'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={styles.sheetContent} showsVerticalScrollIndicator={false}>
               {activeTab === 'juz' && (
                 <View style={styles.grid}>
                   {Array.from({ length: 30 }, (_, i) => i + 1).map(n => (
-                    <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectJuz(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
-                    </TouchableOpacity>
+                    <View key={n} style={styles.gridItem}>
+                      <TouchableOpacity style={styles.gridItemBtn} onPress={() => handleSelectJuz(n)}>
+                        <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
+                      </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               )}
               {activeTab === 'hizb' && (
                 <View style={styles.grid}>
                   {Array.from({ length: 60 }, (_, i) => i + 1).map(n => (
-                    <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectHizb(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
-                    </TouchableOpacity>
+                    <View key={n} style={styles.gridItem}>
+                      <TouchableOpacity style={styles.gridItemBtn} onPress={() => handleSelectHizb(n)}>
+                        <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
+                      </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               )}
               {activeTab === 'quarter' && (
                 <View style={styles.grid}>
                   {Array.from({ length: 240 }, (_, i) => i + 1).map(n => (
-                    <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectQuarter(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
-                    </TouchableOpacity>
+                    <View key={n} style={styles.gridItem}>
+                      <TouchableOpacity style={styles.gridItemBtn} onPress={() => handleSelectQuarter(n)}>
+                        <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
+                      </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               )}
               {activeTab === 'sajda' && (
-                <View style={{ paddingHorizontal: 12 }}>
+                <View>
                   {sajdaList.map((a: any, idx) => {
                     const surahNumber = a.surah?.number || a.surahNumber || 1;
                     const ayahNumber = a.numberInSurah || a.ayah || 1;
                     const surahName = a.surah?.name || '';
                     return (
-                      <TouchableOpacity key={`${surahNumber}-${ayahNumber}-${idx}`} style={styles.sajdaItem} onPress={() => handleNavigate(surahNumber, ayahNumber)}>
+                      <TouchableOpacity 
+                        key={`${surahNumber}-${ayahNumber}-${idx}`} 
+                        style={styles.sajdaItem} 
+                        onPress={() => handleNavigate(surahNumber, ayahNumber)}
+                      >
                         <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{ayahNumber}</Text>
+                          <Text style={styles.badgeText}>{toArabicNumerals(ayahNumber)}</Text>
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={styles.sajdaContent}>
                           <Text style={styles.sajdaTitle}>سجدة</Text>
-                          <Text style={styles.sajdaSub}>{surahName} - آية {ayahNumber}</Text>
+                          <Text style={styles.sajdaSub}>{surahName} - آية {toArabicNumerals(ayahNumber)}</Text>
                         </View>
-                        <Icon name="chevron-forward" size={20} style={{ color: colors.textSecondary }} />
+                        <Icon name="chevron-back" size={20} style={{ color: colors.textSecondary }} />
                       </TouchableOpacity>
                     );
                   })}
