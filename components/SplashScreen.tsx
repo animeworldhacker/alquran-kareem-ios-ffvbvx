@@ -82,10 +82,15 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     },
     dedicationText: {
       fontSize: textSizes.body,
-      color: '#d4db7f',
       textAlign: 'center',
       lineHeight: 32,
       fontFamily: 'Amiri_700Bold',
+    },
+    whiteText: {
+      color: '#FFFFFF',
+    },
+    yellowText: {
+      color: '#FFD700',
     },
     appTitle: {
       fontSize: textSizes.title,
@@ -140,7 +145,15 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         
         <View style={styles.dedicationContainer}>
           <Text style={styles.dedicationText}>
-            هذا المصحف صدقة جارية الى مريم سليمان، احمد جاسم، شيخة احمد، راشد بدر، والمسلمين والمسلمات رحمهم الله واسكنهم فسيح جناته
+            <Text style={styles.whiteText}>هذا المصحف صدقة جارية الى </Text>
+            <Text style={styles.yellowText}>مريم سليمان</Text>
+            <Text style={styles.whiteText}>، </Text>
+            <Text style={styles.yellowText}>احمد جاسم</Text>
+            <Text style={styles.whiteText}>، </Text>
+            <Text style={styles.yellowText}>شيخة احمد</Text>
+            <Text style={styles.whiteText}>، </Text>
+            <Text style={styles.yellowText}>راشد بدر</Text>
+            <Text style={styles.whiteText}>، والمسلمين والمسلمات رحمهم الله واسكنهم فسيح جناته</Text>
           </Text>
         </View>
 
