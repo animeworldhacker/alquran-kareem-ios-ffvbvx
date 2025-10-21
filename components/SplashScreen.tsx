@@ -160,7 +160,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           <Text style={styles.dedicationNames}>أحمد جاسم</Text>
           <Text style={styles.dedicationNames}>شيخة أحمد</Text>
           <Text style={styles.dedicationNames}>راشد بدر</Text>
-          <Text style={styles.prayer}>رحمهم الله وأسكنهم فسيح جناته</Text>
+          <Text style={styles.prayer}>والمسلمين والمسلمات رحمهم الله واسكنهم فسيح جناته</Text>
         </View>
 
         <Text style={styles.appTitle}>المصحف الشريف</Text>
