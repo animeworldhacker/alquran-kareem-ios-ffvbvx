@@ -21,13 +21,7 @@ export const useAudio = () => {
   // Debounce timer for reciter changes
   const reciterChangeTimer = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    initializeAudio();
-    loadReciters();
-    loadSavedReciter();
-  }, []);
-
-  const loadSavedReciter = async () => {
+  const loadSavedReciter = useCallback(async () => {
     try {
       const saved = await audioService.loadSelectedReciter();
       if (saved) {
@@ -39,7 +33,13 @@ export const useAudio = () => {
     } catch (error) {
       console.error('❌ Error loading saved reciter:', error);
     }
-  };
+  }, [selectedReciter]);
+
+  useEffect(() => {
+    initializeAudio();
+    loadReciters();
+    loadSavedReciter();
+  }, [loadSavedReciter]);
 
   const initializeAudio = async () => {
     try {

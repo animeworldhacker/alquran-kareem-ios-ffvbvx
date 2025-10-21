@@ -299,6 +299,22 @@ class AudioService {
     }
   }
 
+  private normalizeAudioUrl(url: string): string {
+    // If URL is already absolute (starts with http:// or https://), return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // If it's a relative path, prepend the Quran.com CDN base URL
+    // Common base URLs for Quran.com audio
+    const baseUrl = 'https://verses.quran.com/';
+    
+    // Remove leading slash if present
+    const cleanPath = url.startsWith('/') ? url.substring(1) : url;
+    
+    return baseUrl + cleanPath;
+  }
+
   private async fetchWithTimeout(url: string, options: { timeout?: number; method?: string } = {}): Promise<Response> {
     const { timeout = 10000, method = 'GET' } = options;
     
@@ -372,13 +388,28 @@ class AudioService {
       }
       
       const data = await response.json();
-      const audioUrl = data?.verse?.audio?.url || data?.audio?.url || data?.audio_files?.[0]?.url;
+      
+      // Try multiple possible paths in the response
+      let audioUrl = null;
+      
+      if (data?.verse?.audio?.url) {
+        audioUrl = data.verse.audio.url;
+      } else if (data?.audio?.url) {
+        audioUrl = data.audio.url;
+      } else if (data?.audio_files && data.audio_files.length > 0) {
+        audioUrl = data.audio_files[0].url;
+      } else if (data?.verse?.audio_files && data.verse.audio_files.length > 0) {
+        audioUrl = data.verse.audio_files[0].url;
+      }
       
       if (audioUrl) {
-        console.log('✅ Got audio URL from API:', audioUrl);
-        return audioUrl;
+        // Normalize the URL (convert relative to absolute if needed)
+        const normalizedUrl = this.normalizeAudioUrl(audioUrl);
+        console.log('✅ Got audio URL from API:', normalizedUrl);
+        return normalizedUrl;
       } else {
         console.warn('⚠️ No audio URL in API response');
+        console.log('API response structure:', JSON.stringify(data, null, 2));
         return null;
       }
     } catch (error) {
@@ -417,7 +448,7 @@ class AudioService {
     // Step 1: Try CDN URL
     console.log('📍 Step 1: Trying CDN URL...');
     let audioUrl = this.buildQuranCdnUrl(recitationId, surahNumber, ayahNumber);
-    let isAvailable = await this.checkAudioUrlWithRetry(audioUrl, 3);
+    let isAvailable = await this.checkAudioUrlWithRetry(audioUrl, 2);
     
     if (isAvailable) {
       console.log('✅ CDN URL works!');
