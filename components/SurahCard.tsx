@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Surah } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 interface SurahCardProps {
   surah: Surah;
@@ -16,100 +17,116 @@ const toArabicNumerals = (num: number): string => {
 };
 
 export default function SurahCard({ surah, onPress }: SurahCardProps) {
-  const { textSizes } = useTheme();
+  const { textSizes, colors } = useTheme();
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#E8DCC4',
-      borderBottomWidth: 1,
-      borderBottomColor: '#D4C5A9',
+      backgroundColor: '#F5EEE3',
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      marginHorizontal: 16,
+      marginVertical: 6,
+      overflow: 'hidden',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+      elevation: 3,
+    },
+    cardContent: {
       flexDirection: 'row',
+      alignItems: 'stretch',
       minHeight: 90,
     },
-    greenSection: {
-      width: 90,
-      backgroundColor: '#4A7C59',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 10,
-    },
-    decorativeFrame: {
-      width: 55,
-      height: 55,
+    ribbonContainer: {
+      width: 70,
+      backgroundColor: '#1E5B4C',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
     },
-    frameImage: {
-      width: 55,
-      height: 55,
-      position: 'absolute',
-      top: 0,
-      left: 0,
-    },
-    chapterNumber: {
-      fontSize: 20,
-      color: '#3D3D3D',
-      fontFamily: 'ScheherazadeNew_700Bold',
+    ribbonNumber: {
+      fontSize: 24,
       fontWeight: 'bold',
+      color: '#D4AF37',
+      fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
-      zIndex: 1,
     },
     contentSection: {
       flex: 1,
-      paddingHorizontal: 20,
-      justifyContent: 'center',
+      paddingHorizontal: 16,
       paddingVertical: 16,
+      justifyContent: 'center',
     },
-    cardContent: {
+    topRow: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
-    },
-    leftSection: {
-      flexDirection: 'row',
       alignItems: 'center',
-      flex: 1,
+      marginBottom: 8,
     },
-    ayahCount: {
-      fontSize: 14,
-      color: '#9B8B7E',
-      fontFamily: 'Amiri_400Regular',
-      marginRight: 20,
-      minWidth: 70,
-    },
-    arabicName: {
-      fontSize: 26,
+    surahName: {
+      fontSize: 20,
       fontWeight: 'bold',
-      color: '#3D3D3D',
+      color: '#2C2416',
+      fontFamily: 'Amiri_700Bold',
       textAlign: 'right',
-      fontFamily: 'ScheherazadeNew_700Bold',
-      flex: 1,
+    },
+    chevronButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#F5EEE3',
+    },
+    chevronText: {
+      fontSize: 18,
+      color: '#1E5B4C',
+      fontWeight: 'bold',
+    },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      gap: 12,
+    },
+    metaText: {
+      fontSize: 14,
+      color: '#6D6558',
+      fontFamily: 'Amiri_400Regular',
+      textAlign: 'right',
+    },
+    separator: {
+      fontSize: 14,
+      color: '#6D6558',
     },
   });
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.greenSection}>
-        <View style={styles.decorativeFrame}>
-          <Image 
-            source={require('../assets/images/67b4eb70-7154-4fc3-a941-2149bf8c519c.png')}
-            style={styles.frameImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.chapterNumber}>
-            {surah.number}
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+      <View style={styles.cardContent}>
+        <View style={styles.ribbonContainer}>
+          <Text style={styles.ribbonNumber}>
+            {toArabicNumerals(surah.number)}
           </Text>
         </View>
-      </View>
-      
-      <View style={styles.contentSection}>
-        <View style={styles.cardContent}>
-          <View style={styles.leftSection}>
-            <Text style={styles.ayahCount}>
-              {toArabicNumerals(surah.numberOfAyahs)} آيات
+        
+        <View style={styles.contentSection}>
+          <View style={styles.topRow}>
+            <View style={styles.chevronButton}>
+              <Text style={styles.chevronText}>‹</Text>
+            </View>
+            <Text style={styles.surahName}>{surah.name}</Text>
+          </View>
+          
+          <View style={styles.metaRow}>
+            <Text style={styles.metaText}>
+              {surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
             </Text>
-            <Text style={styles.arabicName}>{surah.name}</Text>
+            <Text style={styles.separator}>•</Text>
+            <Text style={styles.metaText}>
+              {toArabicNumerals(surah.numberOfAyahs)} آية
+            </Text>
           </View>
         </View>
       </View>

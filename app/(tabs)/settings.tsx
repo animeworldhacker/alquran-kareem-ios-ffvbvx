@@ -164,41 +164,50 @@ export default function SettingsTab() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#F5EEE3',
     },
     scrollView: {
       flex: 1,
     },
-    header: {
-      backgroundColor: colors.primary,
-      paddingVertical: 20,
+    ornateHeader: {
+      backgroundColor: '#1E5B4C',
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 12,
+      paddingVertical: 16,
       paddingHorizontal: 20,
+      borderRadius: 20,
+      borderWidth: 3,
+      borderColor: '#D4AF37',
       alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      elevation: 5,
     },
     headerTitle: {
-      fontSize: textSizes.title,
+      fontSize: 22,
       fontWeight: 'bold',
-      color: '#fff',
+      color: '#D4AF37',
       fontFamily: 'Amiri_700Bold',
     },
-    section: {
-      backgroundColor: colors.surface,
+    settingCard: {
+      backgroundColor: '#F5EEE3',
       marginVertical: 8,
       marginHorizontal: 16,
       borderRadius: 12,
       padding: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      borderWidth: 1.5,
+      borderColor: '#D4AF37',
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+      elevation: 2,
     },
     sectionTitle: {
-      fontSize: textSizes.title - 2,
+      fontSize: 18,
       fontWeight: 'bold',
-      color: colors.text,
+      color: '#1E5B4C',
       marginBottom: 12,
       fontFamily: 'Amiri_700Bold',
+      textAlign: 'right',
     },
     settingRow: {
       flexDirection: 'row',
@@ -206,22 +215,24 @@ export default function SettingsTab() {
       alignItems: 'center',
       paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: 'rgba(212, 175, 55, 0.3)',
     },
     settingRowLast: {
       borderBottomWidth: 0,
     },
     settingLabel: {
-      fontSize: textSizes.body,
-      color: colors.text,
+      fontSize: 16,
+      color: '#2C2416',
       fontFamily: 'Amiri_400Regular',
       flex: 1,
+      textAlign: 'right',
     },
     settingDescription: {
-      fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      fontSize: 13,
+      color: '#6D6558',
       fontFamily: 'Amiri_400Regular',
       marginTop: 4,
+      textAlign: 'right',
     },
     textSizeButtons: {
       flexDirection: 'row',
@@ -231,102 +242,90 @@ export default function SettingsTab() {
     textSizeButton: {
       paddingHorizontal: 12,
       paddingVertical: 8,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.background,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      backgroundColor: '#F5EEE3',
     },
     textSizeButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: '#1E5B4C',
     },
     textSizeButtonText: {
-      fontSize: textSizes.caption,
-      color: colors.text,
+      fontSize: 13,
+      color: '#2C2416',
       fontFamily: 'Amiri_400Regular',
     },
     textSizeButtonTextActive: {
-      color: '#fff',
+      color: '#D4AF37',
     },
     button: {
-      backgroundColor: colors.primary,
+      backgroundColor: '#1E5B4C',
       paddingVertical: 12,
       paddingHorizontal: 20,
-      borderRadius: 8,
+      borderRadius: 20,
       marginTop: 8,
       alignItems: 'center',
+      borderWidth: 2,
+      borderColor: '#D4AF37',
     },
     buttonSecondary: {
-      backgroundColor: colors.secondary,
+      backgroundColor: '#F5EEE3',
     },
     buttonDanger: {
-      backgroundColor: colors.error,
+      backgroundColor: '#C62828',
+      borderColor: '#C62828',
     },
     buttonSuccess: {
-      backgroundColor: colors.success,
+      backgroundColor: '#2E7D32',
+      borderColor: '#2E7D32',
     },
     buttonDisabled: {
       opacity: 0.5,
     },
     buttonText: {
-      color: '#fff',
-      fontSize: textSizes.body,
+      color: '#D4AF37',
+      fontSize: 15,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
+    buttonTextSecondary: {
+      color: '#1E5B4C',
+    },
+    buttonTextWhite: {
+      color: '#fff',
+    },
     infoText: {
-      fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      fontSize: 13,
+      color: '#6D6558',
       fontFamily: 'Amiri_400Regular',
       marginTop: 8,
       fontStyle: 'italic',
-    },
-    dedicationSection: {
-      backgroundColor: colors.surface,
-      marginVertical: 8,
-      marginHorizontal: 16,
-      borderRadius: 12,
-      padding: 20,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    dedicationText: {
-      fontSize: textSizes.body,
-      color: colors.text,
-      textAlign: 'center',
-      fontFamily: 'Amiri_400Regular',
-      lineHeight: 28,
+      textAlign: 'right',
+      lineHeight: 20,
     },
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.ornateHeader}>
         <Text style={styles.headerTitle}>الإعدادات</Text>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>المظهر</Text>
           
           <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>الوضع الداكن</Text>
             <Switch
               value={settings.theme === 'dark'}
               onValueChange={(value) => handleUpdateSetting('theme', value ? 'dark' : 'light')}
-              trackColor={{ false: '#ccc', true: colors.primary }}
+              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
               thumbColor="#fff"
             />
+            <Text style={styles.settingLabel}>الوضع الداكن</Text>
           </View>
 
           <View style={[styles.settingRow, styles.settingRowLast]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>حجم النص</Text>
-            </View>
             <View style={styles.textSizeButtons}>
               {(['small', 'medium', 'large', 'extra-large'] as const).map((size) => (
                 <TouchableOpacity
@@ -348,86 +347,49 @@ export default function SettingsTab() {
                 </TouchableOpacity>
               ))}
             </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>حجم النص</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>القراءة</Text>
           
           <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>إظهار التجويد</Text>
             <Switch
               value={settings.showTajweed}
               onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
-              trackColor={{ false: '#ccc', true: colors.primary }}
+              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
               thumbColor="#fff"
             />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>وضع القراءة</Text>
-            </View>
-            <View style={styles.textSizeButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.textSizeButton,
-                  settings.readingMode === 'scroll' && styles.textSizeButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('readingMode', 'scroll')}
-              >
-                <Text
-                  style={[
-                    styles.textSizeButtonText,
-                    settings.readingMode === 'scroll' && styles.textSizeButtonTextActive,
-                  ]}
-                >
-                  تمرير
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.textSizeButton,
-                  settings.readingMode === 'flip' && styles.textSizeButtonActive,
-                ]}
-                onPress={() => handleUpdateSetting('readingMode', 'flip')}
-              >
-                <Text
-                  style={[
-                    styles.textSizeButtonText,
-                    settings.readingMode === 'flip' && styles.textSizeButtonTextActive,
-                  ]}
-                >
-                  صفحة
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.settingLabel}>إظهار التجويد</Text>
           </View>
 
           <View style={[styles.settingRow, styles.settingRowLast]}>
+            <Switch
+              value={settings.autoExpandTafsir}
+              onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
+              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
+              thumbColor="#fff"
+            />
             <View style={{ flex: 1 }}>
               <Text style={styles.settingLabel}>فتح التفسير تلقائياً</Text>
               <Text style={styles.settingDescription}>
                 عرض تفسير ابن كثير تلقائياً لكل آية
               </Text>
             </View>
-            <Switch
-              value={settings.autoExpandTafsir}
-              onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
-              trackColor={{ false: '#ccc', true: colors.primary }}
-              thumbColor="#fff"
-            />
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>التفسير</Text>
           
           <TouchableOpacity
             style={[styles.button, styles.buttonSecondary]}
             onPress={handleClearTafsirCache}
           >
-            <Text style={styles.buttonText}>مسح ذاكرة التخزين المؤقت للتفسير</Text>
+            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>مسح ذاكرة التخزين المؤقت للتفسير</Text>
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
@@ -435,7 +397,7 @@ export default function SettingsTab() {
           </Text>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>الصوت</Text>
           
           <TouchableOpacity
@@ -443,7 +405,7 @@ export default function SettingsTab() {
             onPress={handleTestAudio}
             disabled={testingAudio}
           >
-            <Text style={styles.buttonText}>
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>
               {testingAudio ? 'جاري الاختبار...' : 'اختبار نظام الصوت'}
             </Text>
           </TouchableOpacity>
@@ -452,7 +414,7 @@ export default function SettingsTab() {
             style={[styles.button, styles.buttonSecondary]}
             onPress={handleClearAudioCache}
           >
-            <Text style={styles.buttonText}>مسح ذاكرة التخزين المؤقت للصوت</Text>
+            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>مسح ذاكرة التخزين المؤقت للصوت</Text>
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
@@ -462,14 +424,14 @@ export default function SettingsTab() {
           </Text>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>البيانات</Text>
           
           <TouchableOpacity
             style={[styles.button, styles.buttonSecondary]}
             onPress={handleRefreshQuranData}
           >
-            <Text style={styles.buttonText}>تحديث بيانات القرآن</Text>
+            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث بيانات القرآن</Text>
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
@@ -477,14 +439,14 @@ export default function SettingsTab() {
           </Text>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>إعادة تعيين</Text>
           
           <TouchableOpacity
             style={[styles.button, styles.buttonDanger]}
             onPress={handleResetSettings}
           >
-            <Text style={styles.buttonText}>إعادة تعيين جميع الإعدادات</Text>
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>إعادة تعيين جميع الإعدادات</Text>
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
@@ -492,13 +454,7 @@ export default function SettingsTab() {
           </Text>
         </View>
 
-        <View style={styles.dedicationSection}>
-          <Text style={styles.dedicationText}>
-            هذا المصحف صدقة جارية إلى{'\n'}
-            مريم سليمان، أحمد جاسم،{'\n'}
-            شيخة أحمد، راشد بدر
-          </Text>
-        </View>
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );

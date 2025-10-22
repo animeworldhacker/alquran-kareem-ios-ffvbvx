@@ -8,6 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import SurahCard from '../../components/SurahCard';
 import Icon from '../../components/Icon';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 type DivisionTab = 'juz' | 'hizb' | 'quarter' | 'sajda';
 
@@ -157,134 +158,94 @@ export default function ChaptersTab() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5EFE7',
+      backgroundColor: '#F5EEE3',
     },
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    contentWrapper: {
-      flex: 1,
-      flexDirection: 'row',
-    },
-    mainContent: {
-      flex: 1,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    rightScrollIndicator: {
-      position: 'absolute',
-      right: 4,
-      top: 20,
-      bottom: 20,
-      width: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
-      pointerEvents: 'box-none',
-    },
-    scrollIndicatorTrack: {
-      width: 3,
-      height: '100%',
-      backgroundColor: 'rgba(212, 197, 169, 0.3)',
-      borderRadius: 1.5,
-    },
-    scrollIndicatorThumb: {
-      position: 'absolute',
-      width: 32,
-      height: 80,
-      backgroundColor: '#4A7C59',
-      borderRadius: 16,
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxShadow: '0px 4px 12px rgba(74, 124, 89, 0.3)',
-      borderWidth: 2,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
-    scrollIndicatorIcon: {
-      marginVertical: 2,
-    },
-    topBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: '#E8DCC4',
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: '#D4C5A9',
-    },
-    iconBtn: {
-      width: 36 * (settings.squareAdjustment / 100),
-      height: 36 * (settings.squareAdjustment / 100),
-      borderRadius: 18 * (settings.squareAdjustment / 100),
-      backgroundColor: '#F5EFE7',
+    ornateHeader: {
+      backgroundColor: '#1E5B4C',
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 12,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      borderWidth: 3,
+      borderColor: '#D4AF37',
       alignItems: 'center',
       justifyContent: 'center',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      elevation: 5,
+      position: 'relative',
     },
-    title: {
+    headerTitle: {
       fontFamily: 'Amiri_700Bold',
-      fontSize: textSizes.title,
-      color: '#3D3D3D',
-    },
-    dedicationBox: {
-      margin: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      backgroundColor: '#E8DCC4',
-      borderWidth: 1,
-      borderColor: '#4A7C59',
-    },
-    dedicationText: {
-      color: '#3D3D3D',
-      fontFamily: 'Amiri_400Regular',
-      fontSize: textSizes.body,
+      fontSize: 22,
+      color: '#D4AF37',
       textAlign: 'center',
     },
-    searchBox: {
+    headerSubtitle: {
+      fontFamily: 'Amiri_400Regular',
+      fontSize: 14,
+      color: '#D4AF37',
+      opacity: 0.8,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    searchField: {
+      marginHorizontal: 16,
+      marginBottom: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      backgroundColor: '#F5EEE3',
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      marginHorizontal: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 12,
-      backgroundColor: '#E8DCC4',
-      borderWidth: 1,
-      borderColor: '#D4C5A9',
+      gap: 12,
+      boxShadow: 'inset 0px 2px 4px rgba(0, 0, 0, 0.1)',
     },
     searchInput: {
       flex: 1,
       fontFamily: 'Amiri_400Regular',
-      color: '#3D3D3D',
-      fontSize: textSizes.body,
-      paddingVertical: 4,
-      textAlign: 'left',
+      color: '#2C2416',
+      fontSize: 16,
+      textAlign: 'right',
     },
-    quickRow: {
+    filterChips: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginHorizontal: 12,
-      marginTop: 12,
-      marginBottom: 8,
+      paddingHorizontal: 16,
+      marginBottom: 12,
+      gap: 8,
     },
-    quickBtn: {
-      flex: 1,
-      marginHorizontal: 4,
-      backgroundColor: '#E8DCC4',
-      paddingVertical: 10 * (settings.squareAdjustment / 100),
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: '#D4C5A9',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
+    chip: {
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      backgroundColor: '#F5EEE3',
     },
-    quickBtnText: {
+    chipActive: {
+      backgroundColor: '#1E5B4C',
+    },
+    chipText: {
       fontFamily: 'Amiri_700Bold',
-      color: '#3D3D3D',
-      fontSize: textSizes.caption,
+      fontSize: 14,
+      color: '#2C2416',
+    },
+    chipTextActive: {
+      color: '#D4AF37',
+    },
+    contentWrapper: {
+      flex: 1,
+      position: 'relative',
+    },
+    scrollView: {
+      flex: 1,
     },
     footer: {
       padding: 20,
@@ -293,106 +254,114 @@ export default function ChaptersTab() {
       marginBottom: 80,
     },
     footerText: {
-      fontSize: textSizes.caption,
-      color: '#9B8B7E',
+      fontSize: 16,
+      color: '#6D6558',
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
     sheetContainer: {
       flex: 1,
+      backgroundColor: '#F5EEE3',
     },
     sheetTabs: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      padding: 8,
-      paddingHorizontal: 10,
+      padding: 12,
+      paddingHorizontal: 16,
+      gap: 8,
     },
     tabBtn: {
       flex: 1,
-      marginHorizontal: 4,
-      paddingVertical: 10,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.backgroundAlt,
+      paddingVertical: 12,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      backgroundColor: '#F5EEE3',
     },
     tabBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: '#1E5B4C',
     },
     tabBtnText: {
       textAlign: 'center',
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      fontSize: textSizes.caption,
+      color: '#2C2416',
+      fontSize: 14,
     },
     tabBtnTextActive: {
-      color: colors.backgroundAlt,
+      color: '#D4AF37',
     },
     grid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      paddingHorizontal: 8,
+      paddingHorizontal: 12,
       paddingVertical: 6,
     },
     gridItem: {
       width: '20%',
-      padding: 8,
+      padding: 6,
     },
     gridItemText: {
       textAlign: 'center',
-      backgroundColor: colors.backgroundAlt,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 10 * (settings.squareAdjustment / 100),
+      backgroundColor: '#F5EEE3',
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: '#D4AF37',
+      paddingVertical: 12,
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      fontSize: textSizes.body,
-      boxShadow: '0px 1px 4px rgba(0,0,0,0.06)',
+      color: '#2C2416',
+      fontSize: 16,
+      boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.08)',
     },
     sajdaItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 12,
-      borderRadius: 10,
-      backgroundColor: colors.backgroundAlt,
+      padding: 16,
+      borderRadius: 12,
+      backgroundColor: '#F5EEE3',
+      marginHorizontal: 16,
       marginBottom: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
       gap: 12,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     },
     badge: {
-      width: 34 * (settings.squareAdjustment / 100),
-      height: 34 * (settings.squareAdjustment / 100),
-      borderRadius: 17 * (settings.squareAdjustment / 100),
-      backgroundColor: colors.primary,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#1E5B4C',
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#D4AF37',
     },
     badgeText: {
-      color: colors.backgroundAlt,
+      color: '#D4AF37',
       fontFamily: 'Amiri_700Bold',
-      fontSize: textSizes.caption,
+      fontSize: 16,
+    },
+    sajdaContent: {
+      flex: 1,
     },
     sajdaTitle: {
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      fontSize: textSizes.body,
+      color: '#2C2416',
+      fontSize: 18,
       textAlign: 'right',
     },
     sajdaSub: {
       fontFamily: 'Amiri_400Regular',
-      color: colors.textSecondary,
-      fontSize: textSizes.caption,
+      color: '#6D6558',
+      fontSize: 14,
       textAlign: 'right',
+      marginTop: 4,
     },
   });
 
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
       </View>
     );
   }
@@ -400,53 +369,60 @@ export default function ChaptersTab() {
   if (error) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: textSizes.title, color: '#3D3D3D', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: textSizes.body, color: '#9B8B7E', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: 16, color: '#6D6558', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <View style={styles.iconBtn} />
-        <Text style={styles.title}>القرآن الكريم</Text>
-        <View style={styles.iconBtn} />
+      <View style={styles.ornateHeader}>
+        <Text style={styles.headerTitle}>القرآن الكريم</Text>
+        <Text style={styles.headerSubtitle}>المصحف الشريف</Text>
       </View>
 
-      {settings.showBanner && (
-        <View style={styles.dedicationBox}>
-          <Text style={styles.dedicationText}>
-            هذا المصحف صدقة جارية الى مريم سليمان, احمد جاسم, شيخة احمد, راشد بدر
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.searchBox}>
-        <Icon name="search" size={18} style={{ color: '#9B8B7E' }} />
+      <View style={styles.searchField}>
+        <Icon name="search" size={20} style={{ color: '#D4AF37' }} />
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="...Search chapters"
-          placeholderTextColor="#9B8B7E"
+          placeholder="البحث في السور..."
+          placeholderTextColor="#6D6558"
           style={styles.searchInput}
         />
       </View>
 
-      <View style={styles.quickRow}>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('juz')}>
-          <Text style={styles.quickBtnText}>جزء</Text>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterChips}
+      >
+        <TouchableOpacity 
+          style={styles.chip} 
+          onPress={() => openSheet('juz')}
+        >
+          <Text style={styles.chipText}>جزء</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('hizb')}>
-          <Text style={styles.quickBtnText}>حزب</Text>
+        <TouchableOpacity 
+          style={styles.chip} 
+          onPress={() => openSheet('hizb')}
+        >
+          <Text style={styles.chipText}>حزب</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('quarter')}>
-          <Text style={styles.quickBtnText}>ربع الحزب</Text>
+        <TouchableOpacity 
+          style={styles.chip} 
+          onPress={() => openSheet('quarter')}
+        >
+          <Text style={styles.chipText}>ربع الحزب</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickBtn} onPress={() => openSheet('sajda')}>
-          <Text style={styles.quickBtnText}>سجدة</Text>
+        <TouchableOpacity 
+          style={styles.chip} 
+          onPress={() => openSheet('sajda')}
+        >
+          <Text style={styles.chipText}>سجدة</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
       
       <View style={styles.contentWrapper}>
         <ScrollView 
@@ -455,9 +431,6 @@ export default function ChaptersTab() {
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          onLayout={(event) => {
-            setScrollViewHeight(event.nativeEvent.layout.height);
-          }}
         >
           {filteredSurahs.map((surah) => (
             <SurahCard
@@ -472,23 +445,6 @@ export default function ChaptersTab() {
             </Text>
           </View>
         </ScrollView>
-
-        <TouchableOpacity 
-          style={styles.rightScrollIndicator}
-          onPress={handleScrollIndicatorPress}
-          activeOpacity={0.8}
-        >
-          <View style={styles.scrollIndicatorTrack} />
-          <Animated.View 
-            style={[
-              styles.scrollIndicatorThumb,
-              { top: scrollIndicatorPosition }
-            ]}
-          >
-            <Icon name="chevron-up" size={14} style={[{ color: '#FFFFFF' }, styles.scrollIndicatorIcon]} />
-            <Icon name="chevron-down" size={14} style={[{ color: '#FFFFFF' }, styles.scrollIndicatorIcon]} />
-          </Animated.View>
-        </TouchableOpacity>
       </View>
 
       {sheetOpen && (
@@ -501,6 +457,7 @@ export default function ChaptersTab() {
           backdropComponent={(props) => (
             <BottomSheetBackdrop {...props} pressBehavior="close" opacity={0.25} />
           )}
+          backgroundStyle={{ backgroundColor: '#F5EEE3' }}
         >
           <View style={styles.sheetContainer}>
             <View style={styles.sheetTabs}>
@@ -522,7 +479,7 @@ export default function ChaptersTab() {
                 <View style={styles.grid}>
                   {Array.from({ length: 30 }, (_, i) => i + 1).map(n => (
                     <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectJuz(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
+                      <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -531,7 +488,7 @@ export default function ChaptersTab() {
                 <View style={styles.grid}>
                   {Array.from({ length: 60 }, (_, i) => i + 1).map(n => (
                     <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectHizb(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
+                      <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -540,27 +497,31 @@ export default function ChaptersTab() {
                 <View style={styles.grid}>
                   {Array.from({ length: 240 }, (_, i) => i + 1).map(n => (
                     <TouchableOpacity key={n} style={styles.gridItem} onPress={() => handleSelectQuarter(n)}>
-                      <Text style={styles.gridItemText}>{n}</Text>
+                      <Text style={styles.gridItemText}>{toArabicNumerals(n)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
               {activeTab === 'sajda' && (
-                <View style={{ paddingHorizontal: 12 }}>
+                <View style={{ paddingVertical: 12 }}>
                   {sajdaList.map((a: any, idx) => {
                     const surahNumber = a.surah?.number || a.surahNumber || 1;
                     const ayahNumber = a.numberInSurah || a.ayah || 1;
                     const surahName = a.surah?.name || '';
                     return (
-                      <TouchableOpacity key={`${surahNumber}-${ayahNumber}-${idx}`} style={styles.sajdaItem} onPress={() => handleNavigate(surahNumber, ayahNumber)}>
+                      <TouchableOpacity 
+                        key={`${surahNumber}-${ayahNumber}-${idx}`} 
+                        style={styles.sajdaItem} 
+                        onPress={() => handleNavigate(surahNumber, ayahNumber)}
+                      >
                         <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{ayahNumber}</Text>
+                          <Text style={styles.badgeText}>{toArabicNumerals(ayahNumber)}</Text>
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={styles.sajdaContent}>
                           <Text style={styles.sajdaTitle}>سجدة</Text>
-                          <Text style={styles.sajdaSub}>{surahName} - آية {ayahNumber}</Text>
+                          <Text style={styles.sajdaSub}>{surahName} - آية {toArabicNumerals(ayahNumber)}</Text>
                         </View>
-                        <Icon name="chevron-forward" size={20} style={{ color: colors.textSecondary }} />
+                        <Icon name="chevron-forward" size={20} style={{ color: '#1E5B4C' }} />
                       </TouchableOpacity>
                     );
                   })}

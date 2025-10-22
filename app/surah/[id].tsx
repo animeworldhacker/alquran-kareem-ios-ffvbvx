@@ -8,7 +8,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import AyahCard from '../../components/AyahCard';
 import AudioPlayer from '../../components/AudioPlayer';
 import Icon from '../../components/Icon';
-import Svg, { Path, Rect } from 'react-native-svg';
 
 export default function SurahScreen() {
   const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
@@ -29,17 +28,9 @@ export default function SurahScreen() {
   const { settings, colors, textSizes } = useTheme();
   
   const [surah, setSurah] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-  const [scrollViewHeight, setScrollViewHeight] = useState(0);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
   const scrollViewRef = useRef<ScrollView>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     try {
@@ -70,26 +61,6 @@ export default function SurahScreen() {
     }
   }, [targetAyah, surah]);
 
-  useEffect(() => {
-    if (contentHeight > scrollViewHeight && scrollViewHeight > 0) {
-      setShowScrollIndicator(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setShowScrollIndicator(false);
-      });
-    }
-  }, [contentHeight, scrollViewHeight, fadeAnim]);
-
-  // Set callback for continuous playback
   useEffect(() => {
     setOnAyahEnd((surah: number, ayah: number) => {
       console.log(`Ayah ended, moving to next: ${surah}:${ayah}`);
@@ -123,61 +94,6 @@ export default function SurahScreen() {
            audioState.currentAyah === ayahNumber;
   };
 
-  const handleScroll = (event: any) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    setScrollPosition(contentOffset.y);
-    setContentHeight(contentSize.height);
-    setScrollViewHeight(layoutMeasurement.height);
-  };
-
-  const handleScrollIndicatorPress = (event: any) => {
-    const { locationY } = event.nativeEvent;
-    const scrollIndicatorHeight = screenHeight * 0.6;
-    const scrollRatio = locationY / scrollIndicatorHeight;
-    const targetScrollY = scrollRatio * (contentHeight - scrollViewHeight);
-    
-    scrollViewRef.current?.scrollTo({
-      y: Math.max(0, Math.min(targetScrollY, contentHeight - scrollViewHeight)),
-      animated: true,
-    });
-  };
-
-  const getScrollIndicatorStyle = () => {
-    if (contentHeight <= scrollViewHeight) return { height: 0, top: 0 };
-    
-    const scrollIndicatorHeight = screenHeight * 0.6;
-    const scrollRatio = scrollPosition / (contentHeight - scrollViewHeight);
-    const indicatorSize = Math.max(20, (scrollViewHeight / contentHeight) * scrollIndicatorHeight);
-    const indicatorPosition = scrollRatio * (scrollIndicatorHeight - indicatorSize);
-    
-    return {
-      height: indicatorSize,
-      top: indicatorPosition,
-    };
-  };
-
-  const ayahsPerPage = 10;
-  const totalPages = surah && surah.ayahs ? Math.ceil(surah.ayahs.length / ayahsPerPage) : 0;
-  
-  const getCurrentPageAyahs = () => {
-    if (!surah?.ayahs || !Array.isArray(surah.ayahs)) return [];
-    const startIndex = currentPage * ayahsPerPage;
-    const endIndex = startIndex + ayahsPerPage;
-    return surah.ayahs.slice(startIndex, endIndex);
-  };
-
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
   const handleBackPress = () => {
     try {
       router.back();
@@ -203,7 +119,7 @@ export default function SurahScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#f8f6f0',
+      backgroundColor: '#F5EEE3',
     },
     centerContent: {
       justifyContent: 'center',
@@ -211,255 +127,133 @@ export default function SurahScreen() {
       flex: 1,
       padding: 20,
     },
-    scrollView: {
-      flex: 1,
-    },
-    header: {
-      backgroundColor: '#c9a961',
+    ornateHeader: {
+      backgroundColor: '#1E5B4C',
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 12,
       paddingVertical: 16,
       paddingHorizontal: 20,
+      borderRadius: 20,
+      borderWidth: 3,
+      borderColor: '#D4AF37',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      elevation: 5,
     },
     backButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      backgroundColor: 'rgba(212, 175, 55, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
-    },
-    backIcon: {
-      color: '#fff',
     },
     headerContent: {
       flex: 1,
       alignItems: 'center',
     },
     headerTitle: {
-      fontSize: textSizes.title,
+      fontSize: 22,
       fontWeight: 'bold',
-      color: '#fff',
+      color: '#D4AF37',
       fontFamily: 'Amiri_700Bold',
+      textAlign: 'center',
     },
     headerSubtitle: {
-      fontSize: textSizes.caption,
-      color: '#fff',
-      opacity: 0.9,
+      fontSize: 14,
+      color: '#D4AF37',
+      opacity: 0.8,
       fontFamily: 'Amiri_400Regular',
+      textAlign: 'center',
+      marginTop: 2,
     },
     headerInfo: {
+      width: 40,
       alignItems: 'center',
     },
     ayahCount: {
-      fontSize: textSizes.caption,
-      color: '#fff',
-      opacity: 0.9,
+      fontSize: 12,
+      color: '#D4AF37',
       fontFamily: 'Amiri_400Regular',
     },
-    errorContainer: {
-      backgroundColor: '#ffebee',
-      padding: 20,
-      margin: 16,
-      borderRadius: 8,
-      borderLeftWidth: 4,
-      borderLeftColor: '#f44336',
-    },
-    errorText: {
-      fontSize: textSizes.body,
-      color: '#c62828',
-      fontFamily: 'Amiri_400Regular',
-      textAlign: 'center',
-    },
-    retryButton: {
-      backgroundColor: '#c9a961',
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 8,
-      marginTop: 10,
-    },
-    retryButtonText: {
-      color: '#fff',
-      fontSize: textSizes.body,
-      fontFamily: 'Amiri_700Bold',
-      textAlign: 'center',
-    },
-    decorativeHeader: {
-      backgroundColor: '#f8f6f0',
-      paddingVertical: 20,
-      alignItems: 'center',
-      borderBottomWidth: 1,
-      borderBottomColor: '#d4c5a0',
-    },
-    decorativeBorderTop: {
-      height: 60,
-      width: '100%',
-      backgroundColor: '#c9a961',
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    ornamentContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      paddingVertical: 10,
-    },
-    surahNameContainer: {
-      backgroundColor: '#fff',
-      paddingHorizontal: 40,
-      paddingVertical: 15,
-      borderRadius: 50,
-      borderWidth: 3,
-      borderColor: '#c9a961',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    surahTitle: {
-      fontSize: 32,
-      fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F',
-      fontWeight: 'bold',
-      textAlign: 'center',
+    scrollView: {
+      flex: 1,
     },
     bismillahContainer: {
-      paddingVertical: 30,
+      paddingVertical: 24,
       paddingHorizontal: 20,
       alignItems: 'center',
-      backgroundColor: '#f8f6f0',
+      backgroundColor: '#F5EEE3',
+      marginHorizontal: 16,
+      marginBottom: 12,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
     },
     bismillah: {
-      fontSize: 28,
+      fontSize: 24,
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: '#2F4F4F',
+      color: '#2C2416',
       textAlign: 'center',
       fontWeight: 'bold',
-    },
-    ayahContainer: {
-      paddingHorizontal: 0,
-      paddingVertical: 10,
-      backgroundColor: '#f8f6f0',
     },
     footer: {
       padding: 30,
       alignItems: 'center',
-      backgroundColor: '#f8f6f0',
+      backgroundColor: '#F5EEE3',
+      marginBottom: 20,
     },
     footerText: {
       fontSize: 20,
-      color: '#8B4513',
+      color: '#1E5B4C',
       textAlign: 'center',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
-    flipContainer: {
-      flex: 1,
-      backgroundColor: '#f8f6f0',
+    errorContainer: {
+      backgroundColor: '#FFEBEE',
+      padding: 20,
       margin: 16,
       borderRadius: 12,
-      overflow: 'hidden',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 20,
-      elevation: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: '#C62828',
     },
-    pageHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-      paddingBottom: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: '#d4c5a0',
-      paddingHorizontal: 20,
-      paddingTop: 20,
-    },
-    pageNumber: {
-      fontSize: textSizes.caption,
-      color: '#8B4513',
-      fontFamily: 'Amiri_700Bold',
-    },
-    navigationButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      backgroundColor: '#f8f6f0',
-      borderTopWidth: 1,
-      borderTopColor: '#d4c5a0',
-    },
-    navButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: '#c9a961',
-      opacity: 1,
-    },
-    navButtonDisabled: {
-      opacity: 0.3,
-    },
-    navButtonText: {
-      color: '#fff',
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_700Bold',
-      marginHorizontal: 4,
-    },
-    pageIndicator: {
-      alignItems: 'center',
-    },
-    pageIndicatorText: {
-      fontSize: textSizes.caption,
-      color: '#8B4513',
+    errorText: {
+      fontSize: 16,
+      color: '#C62828',
       fontFamily: 'Amiri_400Regular',
+      textAlign: 'center',
     },
-    scrollIndicatorContainer: {
-      position: 'absolute',
-      right: 8,
-      top: screenHeight * 0.15,
-      width: 6,
-      height: screenHeight * 0.6,
-      backgroundColor: 'rgba(201, 169, 97, 0.2)',
-      borderRadius: 3,
-      zIndex: 1000,
+    retryButton: {
+      backgroundColor: '#1E5B4C',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
+      marginTop: 10,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
     },
-    scrollIndicator: {
-      position: 'absolute',
-      right: 0,
-      width: 6,
-      backgroundColor: '#c9a961',
-      borderRadius: 3,
-      minHeight: 20,
-    },
-    scrollIndicatorThumb: {
-      position: 'absolute',
-      right: -2,
-      width: 10,
-      backgroundColor: '#b8941f',
-      borderRadius: 5,
-      minHeight: 20,
-    },
-    contentContainer: {
-      position: 'relative',
-      flex: 1,
+    retryButtonText: {
+      color: '#D4AF37',
+      fontSize: 16,
+      fontFamily: 'Amiri_700Bold',
+      textAlign: 'center',
     },
   });
 
   if (error || quranError) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.ornateHeader}>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+            <Icon name="arrow-back" size={24} style={{ color: '#D4AF37' }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -489,12 +283,12 @@ export default function SurahScreen() {
   if (quranLoading || !surah) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.ornateHeader}>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+            <Icon name="arrow-back" size={24} style={{ color: '#D4AF37' }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -505,7 +299,7 @@ export default function SurahScreen() {
         </View>
         
         <View style={styles.centerContent}>
-          <Text style={{ fontSize: textSizes.title, color: '#8B4513', fontFamily: 'Amiri_700Bold' }}>
+          <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>
             جاري تحميل السورة...
           </Text>
         </View>
@@ -516,12 +310,12 @@ export default function SurahScreen() {
   if (!surah.ayahs || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.ornateHeader}>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={styles.backIcon} />
+            <Icon name="arrow-back" size={24} style={{ color: '#D4AF37' }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -544,110 +338,14 @@ export default function SurahScreen() {
 
   const validAyahs = surah.ayahs.filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
 
-  if (settings.readingMode === 'flip') {
-    const currentPageAyahs = getCurrentPageAyahs().filter((ayah: any) => ayah.text && ayah.text.trim().length > 0);
-    
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={handleBackPress}
-          >
-            <Icon name="arrow-back" size={24} style={styles.backIcon} />
-          </TouchableOpacity>
-          
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{surah.name || 'السورة'}</Text>
-            <Text style={styles.headerSubtitle}>{surah.englishName || ''}</Text>
-          </View>
-          
-          <View style={styles.headerInfo}>
-            <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
-          </View>
-        </View>
-
-        <View style={styles.flipContainer}>
-          <View style={styles.decorativeBorderTop} />
-          
-          <View style={styles.pageHeader}>
-            <Text style={styles.pageNumber}>صفحة {currentPage + 1} من {totalPages}</Text>
-            <Text style={styles.pageNumber}>{surah.name || 'السورة'}</Text>
-          </View>
-
-          {currentPage === 0 && surahNumber !== 1 && surahNumber !== 9 && (
-            <View style={styles.bismillahContainer}>
-              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
-            </View>
-          )}
-
-          <ScrollView style={styles.ayahContainer} showsVerticalScrollIndicator={false}>
-            {currentPageAyahs.map((ayah: any) => (
-              <AyahCard
-                key={`${surahNumber}-${ayah.numberInSurah}`}
-                ayah={ayah}
-                surahNumber={surahNumber}
-                surahName={surah.name || 'السورة'}
-                surahEnglishName={surah.englishName || ''}
-                onPlayAudio={handlePlayAyah}
-                onPlayFromHere={handlePlayFromHere}
-                isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-                isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
-              />
-            ))}
-
-            {currentPage === totalPages - 1 && (
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>صدق الله العظيم</Text>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-
-        <View style={styles.navigationButtons}>
-          <TouchableOpacity
-            style={[styles.navButton, currentPage === 0 && styles.navButtonDisabled]}
-            onPress={prevPage}
-            disabled={currentPage === 0}
-          >
-            <Icon name="chevron-back" size={16} style={{ color: '#fff' }} />
-            <Text style={styles.navButtonText}>السابق</Text>
-          </TouchableOpacity>
-
-          <View style={styles.pageIndicator}>
-            <Text style={styles.pageIndicatorText}>
-              {currentPage + 1} / {totalPages}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.navButton, currentPage === totalPages - 1 && styles.navButtonDisabled]}
-            onPress={nextPage}
-            disabled={currentPage === totalPages - 1}
-          >
-            <Text style={styles.navButtonText}>التالي</Text>
-            <Icon name="chevron-forward" size={16} style={{ color: '#fff' }} />
-          </TouchableOpacity>
-        </View>
-
-        <AudioPlayer
-          audioState={audioState}
-          onPlay={resumeAudio}
-          onPause={pauseAudio}
-          onStop={stopAudio}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.ornateHeader}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleBackPress}
         >
-          <Icon name="arrow-back" size={24} style={styles.backIcon} />
+          <Icon name="arrow-back" size={24} style={{ color: '#D4AF37' }} />
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
@@ -656,66 +354,39 @@ export default function SurahScreen() {
         </View>
         
         <View style={styles.headerInfo}>
-          <Text style={styles.ayahCount}>{validAyahs.length} آية</Text>
+          <Text style={styles.ayahCount}>{validAyahs.length}</Text>
         </View>
       </View>
       
-      <View style={styles.contentContainer}>
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView} 
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-        >
-          <View style={styles.decorativeBorderTop} />
-          
-          <View style={styles.decorativeHeader}>
-            <View style={styles.surahNameContainer}>
-              <Text style={styles.surahTitle}>{surah.name || 'السورة'}</Text>
-            </View>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
+        {surahNumber !== 1 && surahNumber !== 9 && (
+          <View style={styles.bismillahContainer}>
+            <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
           </View>
-
-          {surahNumber !== 1 && surahNumber !== 9 && (
-            <View style={styles.bismillahContainer}>
-              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
-            </View>
-          )}
-          
-          {validAyahs.map((ayah: any) => (
-            <AyahCard
-              key={`${surahNumber}-${ayah.numberInSurah}`}
-              ayah={ayah}
-              surahNumber={surahNumber}
-              surahName={surah.name || 'السورة'}
-              surahEnglishName={surah.englishName || ''}
-              onPlayAudio={handlePlayAyah}
-              onPlayFromHere={handlePlayFromHere}
-              isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-              isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
-            />
-          ))}
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>صدق الله العظيم</Text>
-          </View>
-        </ScrollView>
-        
-        {showScrollIndicator && (
-          <Animated.View 
-            style={[styles.scrollIndicatorContainer, { opacity: fadeAnim }]}
-          >
-            <TouchableOpacity
-              style={StyleSheet.absoluteFillObject}
-              onPress={handleScrollIndicatorPress}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.scrollIndicator, getScrollIndicatorStyle()]} />
-              <View style={[styles.scrollIndicatorThumb, getScrollIndicatorStyle()]} />
-            </TouchableOpacity>
-          </Animated.View>
         )}
-      </View>
+        
+        {validAyahs.map((ayah: any) => (
+          <AyahCard
+            key={`${surahNumber}-${ayah.numberInSurah}`}
+            ayah={ayah}
+            surahNumber={surahNumber}
+            surahName={surah.name || 'السورة'}
+            surahEnglishName={surah.englishName || ''}
+            onPlayAudio={handlePlayAyah}
+            onPlayFromHere={handlePlayFromHere}
+            isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
+            isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
+          />
+        ))}
+        
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>صدق الله العظيم</Text>
+        </View>
+      </ScrollView>
       
       <AudioPlayer
         audioState={audioState}

@@ -1,23 +1,35 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
+// Elegant Ornate Design System Colors
 export const colors = {
-  primary: '#316612',      // Green
-  secondary: '#8B4513',    // Brown
-  accent: '#316612',       // Green
-  background: '#ffffff',   // White
-  backgroundAlt: '#f8f6f0', // Cream
-  surface: '#f8f6f0',      // Cream
-  text: '#2F4F4F',         // Dark slate gray
-  textSecondary: '#666666', // Medium gray
-  grey: '#9E9E9E',
-  card: '#FFFFFF',
+  // Primary Colors
+  background: '#F5EEE3',        // Parchment cream
+  backgroundAlt: '#F5EEE3',     // Parchment cream
+  surface: '#F5EEE3',           // Parchment cream
+  primary: '#1E5B4C',           // Emerald/teal
+  secondary: '#6D6558',         // Muted brown
+  accent: '#D4AF37',            // Rich gold
+  
+  // Text Colors
+  text: '#2C2416',              // Dark brown
+  textSecondary: '#6D6558',     // Muted brown
+  
+  // UI Colors
+  border: '#D4AF37',            // Rich gold
+  card: '#F5EEE3',              // Parchment cream
   shadow: '#000000',
-  error: '#F44336',
-  success: '#4CAF50',
-  warning: '#FF9800',
-  info: '#2196F3',
-  border: '#e8e6e0',
+  error: '#C62828',
+  success: '#2E7D32',
+  warning: '#F57C00',
+  info: '#1976D2',
+  
+  // Special Colors
+  gold: '#D4AF37',              // Rich gold
+  emerald: '#1E5B4C',           // Emerald/teal
+  cream: '#F5EEE3',             // Parchment cream
+  darkBrown: '#2C2416',         // Dark brown
+  mutedBrown: '#6D6558',        // Muted brown
 };
 
 export const buttonStyles = StyleSheet.create({
@@ -37,7 +49,7 @@ export const buttonStyles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -45,11 +57,11 @@ export const buttonStyles = StyleSheet.create({
     backgroundColor: colors.backgroundAlt,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.gold,
   },
 });
 
@@ -77,9 +89,9 @@ export const commonStyles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
-    color: colors.text,
+    color: colors.gold,
     marginBottom: 10,
-    fontFamily: 'Amiri_400Regular',
+    fontFamily: 'Amiri_700Bold',
   },
   text: {
     fontSize: 16,
@@ -91,11 +103,11 @@ export const commonStyles = StyleSheet.create({
     fontFamily: 'Amiri_400Regular',
   },
   arabicText: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: '400',
     color: colors.text,
     textAlign: 'right',
-    lineHeight: 32,
+    lineHeight: 48,
     fontFamily: 'ScheherazadeNew_400Regular',
   },
   section: {
@@ -111,13 +123,13 @@ export const commonStyles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderColor: colors.grey,
-    borderWidth: 1,
-    borderRadius: 10,
+    borderColor: colors.gold,
+    borderWidth: 2,
+    borderRadius: 16,
     padding: 16,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
     elevation: 3,
   },
   header: {
@@ -127,11 +139,15 @@ export const commonStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: colors.gold,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: colors.backgroundAlt,
+    color: colors.gold,
     fontFamily: 'Amiri_700Bold',
   },
   icon: {

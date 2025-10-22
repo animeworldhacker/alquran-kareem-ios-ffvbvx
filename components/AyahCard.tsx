@@ -46,7 +46,6 @@ export default function AyahCard({
 
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
-  // Auto-expand tafsir if setting is enabled
   useEffect(() => {
     if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
       handleTafsirToggle();
@@ -69,19 +68,16 @@ export default function AyahCard({
   }, [ayah.text, surahNumber, ayah.numberInSurah]);
 
   const handleTafsirToggle = async () => {
-    // If already showing, just hide
     if (showTafsir) {
       setShowTafsir(false);
       return;
     }
 
-    // If already loaded, just show
     if (tafsirText) {
       setShowTafsir(true);
       return;
     }
 
-    // Load tafsir
     try {
       setTafsirLoading(true);
       setTafsirError(null);
@@ -186,23 +182,15 @@ export default function AyahCard({
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: colors.surface,
+      backgroundColor: '#F5EEE3',
       marginHorizontal: 16,
       marginVertical: 8,
       padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: isPlaying ? colors.primary : colors.border,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    playingCard: {
-      backgroundColor: settings.theme === 'dark' ? '#2d2520' : '#fffbf0',
+      borderRadius: 16,
       borderWidth: 2,
-      borderColor: colors.primary,
+      borderColor: isPlaying ? '#1E5B4C' : '#D4AF37',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+      elevation: 3,
     },
     header: {
       flexDirection: 'row',
@@ -210,9 +198,19 @@ export default function AyahCard({
       alignItems: 'center',
       marginBottom: 12,
     },
-    ayahNumber: {
-      fontSize: textSizes.caption,
-      color: colors.secondary,
+    verseNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#D4AF37',
+      borderWidth: 2,
+      borderColor: '#1E5B4C',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    verseNumberText: {
+      fontSize: 14,
+      color: '#1E5B4C',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
@@ -221,37 +219,42 @@ export default function AyahCard({
       gap: 8,
     },
     actionButton: {
-      padding: 8,
-      borderRadius: 8,
-      backgroundColor: colors.backgroundAlt,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#F5EEE3',
+      borderWidth: 2,
+      borderColor: '#D4AF37',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     activeButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: '#1E5B4C',
     },
     playingButton: {
-      backgroundColor: colors.success,
+      backgroundColor: '#2E7D32',
     },
     icon: {
-      color: colors.textSecondary,
+      color: '#6D6558',
     },
     activeIcon: {
-      color: '#fff',
+      color: '#D4AF37',
     },
     ayahText: {
-      fontSize: textSizes.arabic,
-      lineHeight: textSizes.arabic * 1.8,
+      fontSize: 26,
+      lineHeight: 48,
       textAlign: 'right',
-      color: colors.text,
+      color: '#2C2416',
       fontFamily: 'ScheherazadeNew_400Regular',
       marginBottom: 12,
     },
     tafsirContainer: {
       marginTop: 12,
       padding: 16,
-      backgroundColor: settings.theme === 'dark' ? '#2a2520' : '#f8f6f0',
-      borderRadius: 8,
-      borderRightWidth: 4,
-      borderRightColor: colors.primary,
+      backgroundColor: 'rgba(212, 175, 55, 0.1)',
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
     },
     tafsirHeader: {
       flexDirection: 'row',
@@ -260,18 +263,18 @@ export default function AyahCard({
       marginBottom: 12,
       paddingBottom: 8,
       borderBottomWidth: 1,
-      borderBottomColor: settings.theme === 'dark' ? '#3a3530' : '#e8e6e0',
+      borderBottomColor: '#D4AF37',
     },
     tafsirTitle: {
-      fontSize: textSizes.body,
+      fontSize: 16,
       fontFamily: 'Amiri_700Bold',
-      color: colors.secondary,
+      color: '#1E5B4C',
     },
     tafsirText: {
-      fontSize: textSizes.body,
-      lineHeight: textSizes.body * 1.8,
+      fontSize: 16,
+      lineHeight: 28,
       textAlign: 'right',
-      color: colors.text,
+      color: '#2C2416',
       fontFamily: 'Amiri_400Regular',
       marginBottom: 12,
     },
@@ -285,23 +288,23 @@ export default function AyahCard({
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
-      backgroundColor: colors.primary,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: '#1E5B4C',
       gap: 4,
+      borderWidth: 2,
+      borderColor: '#D4AF37',
     },
     tafsirButtonSecondary: {
-      backgroundColor: colors.backgroundAlt,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: '#F5EEE3',
     },
     tafsirButtonText: {
-      color: '#fff',
-      fontSize: textSizes.caption,
+      color: '#D4AF37',
+      fontSize: 13,
       fontFamily: 'Amiri_700Bold',
     },
     tafsirButtonTextSecondary: {
-      color: colors.text,
+      color: '#1E5B4C',
     },
     loadingContainer: {
       padding: 20,
@@ -309,21 +312,21 @@ export default function AyahCard({
     },
     loadingText: {
       marginTop: 8,
-      fontSize: textSizes.caption,
-      color: colors.textSecondary,
+      fontSize: 14,
+      color: '#6D6558',
       fontFamily: 'Amiri_400Regular',
     },
     errorContainer: {
       marginTop: 12,
       padding: 12,
-      backgroundColor: settings.theme === 'dark' ? '#3d2020' : '#ffebee',
-      borderRadius: 8,
-      borderRightWidth: 3,
-      borderRightColor: colors.error,
+      backgroundColor: '#FFEBEE',
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#C62828',
     },
     errorText: {
-      fontSize: textSizes.caption,
-      color: colors.error,
+      fontSize: 14,
+      color: '#C62828',
       fontFamily: 'Amiri_400Regular',
       textAlign: 'right',
       marginBottom: 8,
@@ -332,35 +335,40 @@ export default function AyahCard({
       alignSelf: 'flex-end',
       paddingHorizontal: 12,
       paddingVertical: 6,
-      borderRadius: 6,
-      backgroundColor: colors.error,
+      borderRadius: 20,
+      backgroundColor: '#C62828',
     },
     retryButtonText: {
       color: '#fff',
-      fontSize: textSizes.caption,
+      fontSize: 13,
       fontFamily: 'Amiri_700Bold',
     },
     playingIndicator: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.success,
+      backgroundColor: '#2E7D32',
       paddingHorizontal: 12,
       paddingVertical: 6,
-      borderRadius: 6,
+      borderRadius: 20,
       marginTop: 8,
+      alignSelf: 'flex-start',
     },
     playingText: {
       color: '#fff',
-      fontSize: textSizes.caption,
+      fontSize: 13,
       fontFamily: 'Amiri_700Bold',
       marginLeft: 6,
     },
   });
 
   return (
-    <View style={[styles.card, isPlaying && styles.playingCard]}>
+    <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.ayahNumber}>آية {toArabicNumerals(ayah.numberInSurah)}</Text>
+        <View style={styles.verseNumber}>
+          <Text style={styles.verseNumberText}>
+            {toArabicNumerals(ayah.numberInSurah)}
+          </Text>
+        </View>
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionButton, bookmarked && styles.activeButton]}
@@ -368,7 +376,7 @@ export default function AyahCard({
           >
             <Icon
               name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={20}
+              size={18}
               style={bookmarked ? styles.activeIcon : styles.icon}
             />
           </TouchableOpacity>
@@ -379,11 +387,11 @@ export default function AyahCard({
             disabled={tafsirLoading}
           >
             {tafsirLoading ? (
-              <ActivityIndicator size="small" color={colors.textSecondary} />
+              <ActivityIndicator size="small" color="#6D6558" />
             ) : (
               <Icon
                 name="book-outline"
-                size={20}
+                size={18}
                 style={showTafsir ? styles.activeIcon : styles.icon}
               />
             )}
@@ -403,7 +411,7 @@ export default function AyahCard({
               ) : (
                 <Icon
                   name="play-skip-forward"
-                  size={20}
+                  size={18}
                   style={isContinuousPlaying ? styles.activeIcon : styles.icon}
                 />
               )}
@@ -420,7 +428,7 @@ export default function AyahCard({
             ) : (
               <Icon
                 name={isPlaying ? 'pause' : 'play'}
-                size={20}
+                size={18}
                 style={isPlaying ? styles.activeIcon : styles.icon}
               />
             )}
@@ -432,7 +440,7 @@ export default function AyahCard({
 
       {isPlaying && (
         <View style={styles.playingIndicator}>
-          <Icon name="volume-high" size={16} style={styles.activeIcon} />
+          <Icon name="volume-high" size={14} style={styles.activeIcon} />
           <Text style={styles.playingText}>
             {isContinuousPlaying ? 'تشغيل مستمر...' : 'جاري التشغيل...'}
           </Text>
@@ -447,7 +455,7 @@ export default function AyahCard({
                 style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
                 onPress={handleShareTafsir}
               >
-                <Icon name="share-outline" size={14} style={{ color: colors.text }} />
+                <Icon name="share-outline" size={14} style={{ color: '#1E5B4C' }} />
                 <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
                   مشاركة
                 </Text>
@@ -457,7 +465,7 @@ export default function AyahCard({
                 style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
                 onPress={handleCopyTafsir}
               >
-                <Icon name="copy-outline" size={14} style={{ color: colors.text }} />
+                <Icon name="copy-outline" size={14} style={{ color: '#1E5B4C' }} />
                 <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
                   نسخ
                 </Text>
