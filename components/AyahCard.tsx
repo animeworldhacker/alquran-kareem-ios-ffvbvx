@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard, Image } from 'react-native';
 import { Ayah } from '../types';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useTheme } from '../contexts/ThemeContext';
@@ -198,21 +198,24 @@ export default function AyahCard({
       alignItems: 'center',
       marginBottom: 12,
     },
-    verseNumber: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: '#D4AF37',
-      borderWidth: 2,
-      borderColor: '#1E5B4C',
+    verseNumberContainer: {
+      width: 48,
+      height: 48,
       alignItems: 'center',
       justifyContent: 'center',
+      position: 'relative',
+    },
+    verseNumberImage: {
+      width: 48,
+      height: 48,
+      position: 'absolute',
     },
     verseNumberText: {
-      fontSize: 14,
-      color: '#1E5B4C',
+      fontSize: 16,
+      color: '#2C2416',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
+      zIndex: 1,
     },
     actions: {
       flexDirection: 'row',
@@ -364,7 +367,12 @@ export default function AyahCard({
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.verseNumber}>
+        <View style={styles.verseNumberContainer}>
+          <Image 
+            source={require('../assets/images/8683a5b3-d596-4d40-b189-82163cc3e43a.png')}
+            style={styles.verseNumberImage}
+            resizeMode="contain"
+          />
           <Text style={styles.verseNumberText}>
             {toArabicNumerals(ayah.numberInSurah)}
           </Text>
