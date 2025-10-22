@@ -77,6 +77,16 @@ export default function SurahScreen() {
     }
   };
 
+  const handleStopAudio = async () => {
+    try {
+      console.log('Stopping audio from AyahCard');
+      await stopAudio();
+    } catch (error) {
+      console.error('Error stopping audio:', error);
+      Alert.alert('خطأ', 'فشل في إيقاف الآية. يرجى المحاولة مرة أخرى.');
+    }
+  };
+
   const handlePlayFromHere = async (ayahNumber: number) => {
     try {
       console.log(`Playing from Surah ${surahNumber}, Ayah ${ayahNumber} continuously`);
@@ -377,6 +387,7 @@ export default function SurahScreen() {
             surahName={surah.name || 'السورة'}
             surahEnglishName={surah.englishName || ''}
             onPlayAudio={handlePlayAyah}
+            onStopAudio={handleStopAudio}
             onPlayFromHere={handlePlayFromHere}
             isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
             isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}

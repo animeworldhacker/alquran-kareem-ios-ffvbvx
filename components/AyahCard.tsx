@@ -15,6 +15,7 @@ interface AyahCardProps {
   surahName: string;
   surahEnglishName: string;
   onPlayAudio: (ayahNumber: number) => void;
+  onStopAudio?: () => void;
   onPlayFromHere?: (ayahNumber: number) => void;
   isPlaying: boolean;
   isContinuousPlaying?: boolean;
@@ -31,6 +32,7 @@ export default function AyahCard({
   surahName,
   surahEnglishName,
   onPlayAudio,
+  onStopAudio,
   onPlayFromHere,
   isPlaying,
   isContinuousPlaying,
@@ -160,10 +162,20 @@ export default function AyahCard({
   const handlePlayAudio = async () => {
     try {
       setAudioLoading(true);
-      console.log(`🎵 AyahCard: Playing audio for ${surahNumber}:${ayah.numberInSurah}`);
-      await onPlayAudio(ayah.numberInSurah);
+      
+      // If this ayah is currently playing, stop it
+      if (isPlaying) {
+        console.log(`⏹️ AyahCard: Stopping audio for ${surahNumber}:${ayah.numberInSurah}`);
+        if (onStopAudio) {
+          await onStopAudio();
+        }
+      } else {
+        // Otherwise, start playing this ayah
+        console.log(`🎵 AyahCard: Playing audio for ${surahNumber}:${ayah.numberInSurah}`);
+        await onPlayAudio(ayah.numberInSurah);
+      }
     } catch (error) {
-      console.error('❌ AyahCard: Error playing audio:', error);
+      console.error('❌ AyahCard: Error toggling audio:', error);
       Alert.alert('خطأ', 'فشل في تشغيل الآية. يرجى التحقق من اتصالك بالإنترنت.');
     } finally {
       setAudioLoading(false);
@@ -440,7 +452,7 @@ export default function AyahCard({
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Icon
-                name={isPlaying ? 'pause' : 'play'}
+                name={isPlaying ? 'stop' : 'play'}
                 size={18}
                 style={isPlaying ? styles.activeIcon : styles.icon}
               />
