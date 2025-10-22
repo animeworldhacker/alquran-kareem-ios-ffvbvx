@@ -30,11 +30,25 @@ export default function ChaptersTab() {
   const filteredSurahs = useMemo(() => {
     if (!search.trim()) return surahs;
     const q = search.trim().toLowerCase();
-    return surahs.filter(s => 
-      s.name.toLowerCase().includes(q) ||
-      s.englishName.toLowerCase().includes(q) ||
-      s.englishNameTranslation.toLowerCase().includes(q)
-    );
+    
+    console.log('Searching for:', q);
+    
+    return surahs.filter(s => {
+      const arabicName = s.name.toLowerCase();
+      const englishName = s.englishName.toLowerCase();
+      const translation = s.englishNameTranslation.toLowerCase();
+      
+      // Check if any of the fields contain the search query
+      const matches = arabicName.includes(q) || 
+                     englishName.includes(q) || 
+                     translation.includes(q);
+      
+      if (matches) {
+        console.log(`Match found: ${s.name} (${s.englishName})`);
+      }
+      
+      return matches;
+    });
   }, [surahs, search]);
 
   const navigateToSurah = (surahNumber: number) => {
@@ -149,6 +163,18 @@ export default function ChaptersTab() {
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
+    noResultsContainer: {
+      padding: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    noResultsText: {
+      fontSize: 18,
+      color: '#6D6558',
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 10,
+    },
   });
 
   if (loading) {
@@ -194,18 +220,29 @@ export default function ChaptersTab() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {filteredSurahs.map((surah) => (
-            <SurahCard
-              key={surah.number}
-              surah={surah}
-              onPress={() => navigateToSurah(surah.number)}
-            />
-          ))}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              تم تطوير هذا التطبيق بحمد الله وتوفيقه
-            </Text>
-          </View>
+          {filteredSurahs.length > 0 ? (
+            <>
+              {filteredSurahs.map((surah) => (
+                <SurahCard
+                  key={surah.number}
+                  surah={surah}
+                  onPress={() => navigateToSurah(surah.number)}
+                />
+              ))}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                  تم تطوير هذا التطبيق بحمد الله وتوفيقه
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.noResultsContainer}>
+              <Icon name="search" size={48} style={{ color: '#D4AF37', opacity: 0.5 }} />
+              <Text style={styles.noResultsText}>
+                لم يتم العثور على نتائج للبحث &quot;{search}&quot;
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
     </View>
