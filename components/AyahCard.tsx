@@ -41,7 +41,7 @@ export default function AyahCard({
   const [tafsirError, setTafsirError] = useState<string | null>(null);
   const [processedAyahText, setProcessedAyahText] = useState<string>('');
   const [audioLoading, setAudioLoading] = useState(false);
-  const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
+  const { addBookmark, removeBookmarkByAyah, isBookmarked } = useBookmarks();
   const { settings, colors, textSizes } = useTheme();
 
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
@@ -136,8 +136,11 @@ export default function AyahCard({
   const handleBookmarkToggle = async () => {
     try {
       if (bookmarked) {
-        await removeBookmark(surahNumber, ayah.numberInSurah);
+        console.log('Removing bookmark for:', surahNumber, ayah.numberInSurah);
+        await removeBookmarkByAyah(surahNumber, ayah.numberInSurah);
+        Alert.alert('تم الحذف', 'تم حذف العلامة المرجعية');
       } else {
+        console.log('Adding bookmark for:', surahNumber, ayah.numberInSurah);
         await addBookmark({
           surahNumber,
           surahName,
@@ -145,10 +148,12 @@ export default function AyahCard({
           ayahNumber: ayah.numberInSurah,
           ayahText: ayah.text,
         });
+        Alert.alert('تم الحفظ', 'تم حفظ العلامة المرجعية');
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      Alert.alert('خطأ', 'فشل في حفظ العلامة المرجعية');
+      const errorMsg = error instanceof Error ? error.message : 'فشل في حفظ العلامة المرجعية';
+      Alert.alert('خطأ', errorMsg);
     }
   };
 
@@ -490,7 +495,7 @@ export default function AyahCard({
           <View style={styles.tafsirActions}>
             <TouchableOpacity style={styles.tafsirButton} onPress={handleFullTafsir}>
               <Icon name="book" size={14} style={styles.activeIcon} />
-              <Text style={styles.tafsirButtonText}>التفسير الكامل</Text>
+              <Text style={styles.tafsirButtonText}>قراة المزيد</Text>
             </TouchableOpacity>
           </View>
         </View>

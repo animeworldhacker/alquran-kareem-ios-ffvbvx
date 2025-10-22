@@ -34,6 +34,7 @@ export function useBookmarks() {
     try {
       const newBookmark = await bookmarkService.addBookmark(bookmarkData);
       setBookmarks(prev => [...prev, newBookmark]);
+      console.log('Bookmark added successfully:', newBookmark.id);
       return newBookmark;
     } catch (err) {
       console.error('Error adding bookmark:', err);
@@ -45,11 +46,37 @@ export function useBookmarks() {
     try {
       await bookmarkService.removeBookmark(bookmarkId);
       setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+      console.log('Bookmark removed successfully:', bookmarkId);
     } catch (err) {
       console.error('Error removing bookmark:', err);
       throw err;
     }
   }, []);
+
+  const removeBookmarkByAyah = useCallback(async (surahNumber: number, ayahNumber: number) => {
+    try {
+      const bookmark = bookmarks.find(b => 
+        b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
+      );
+      
+      if (bookmark) {
+        await bookmarkService.removeBookmark(bookmark.id);
+        setBookmarks(prev => prev.filter(b => b.id !== bookmark.id));
+        console.log('Bookmark removed by ayah:', bookmark.id);
+      } else {
+        console.warn('Bookmark not found for removal:', surahNumber, ayahNumber);
+      }
+    } catch (err) {
+      console.error('Error removing bookmark by ayah:', err);
+      throw err;
+    }
+  }, [bookmarks]);
+
+  const getBookmarkByAyah = useCallback((surahNumber: number, ayahNumber: number) => {
+    return bookmarks.find(b => 
+      b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
+    );
+  }, [bookmarks]);
 
   const isBookmarked = useCallback((surahNumber: number, ayahNumber: number) => {
     return bookmarks.some(b => 
@@ -63,6 +90,7 @@ export function useBookmarks() {
       setBookmarks(prev => prev.map(b => 
         b.id === bookmarkId ? { ...b, note } : b
       ));
+      console.log('Bookmark note updated:', bookmarkId);
     } catch (err) {
       console.error('Error updating bookmark note:', err);
       throw err;
@@ -79,6 +107,8 @@ export function useBookmarks() {
     error,
     addBookmark,
     removeBookmark,
+    removeBookmarkByAyah,
+    getBookmarkByAyah,
     isBookmarked,
     updateBookmarkNote,
     refreshBookmarks: loadBookmarks
