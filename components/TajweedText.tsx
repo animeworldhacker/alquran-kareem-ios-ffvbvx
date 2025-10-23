@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { parseTajweedHTML, TajweedSegment } from '../utils/tajweedColors';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -24,7 +24,7 @@ export default function TajweedText({ html, style, showTajweed = true }: Tajweed
     <Text style={[styles.container, style]}>
       {segments.map((segment, index) => (
         <Text
-          key={index}
+          key={`segment-${index}`}
           style={[
             styles.segment,
             shouldShowTajweed && segment.color ? { color: segment.color } : {},
@@ -39,8 +39,8 @@ export default function TajweedText({ html, style, showTajweed = true }: Tajweed
 
 const styles = StyleSheet.create({
   container: {
-    fontSize: 26,
-    lineHeight: 48,
+    fontSize: 32,
+    lineHeight: 60,
     textAlign: 'right',
     color: '#2C2416',
     fontFamily: 'ScheherazadeNew_400Regular',

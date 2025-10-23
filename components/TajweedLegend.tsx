@@ -18,9 +18,10 @@ export default function TajweedLegend() {
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
       >
         {TAJWEED_RULES.map((rule, index) => (
-          <View key={index} style={styles.ruleChip}>
+          <View key={`rule-${index}`} style={styles.ruleChip}>
             <Text style={[styles.sampleLetter, { color: rule.color }]}>
               {rule.sampleLetter}
             </Text>
@@ -36,38 +37,45 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#F5EEE3',
     marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 12,
+    marginVertical: 12,
+    padding: 14,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#D4AF37',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+    elevation: 2,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Amiri_700Bold',
     color: '#1E5B4C',
     textAlign: 'center',
     marginBottom: 12,
   },
+  scrollView: {
+    flexGrow: 0,
+  },
   scrollContent: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   ruleChip: {
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#D4AF37',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 80,
+    minWidth: 85,
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.06)',
+    elevation: 1,
   },
   sampleLetter: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: 'ScheherazadeNew_400Regular',
     fontWeight: 'bold',
     marginBottom: 4,
@@ -77,5 +85,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Amiri_400Regular',
     color: '#2C2416',
     textAlign: 'center',
+    lineHeight: 16,
   },
 });

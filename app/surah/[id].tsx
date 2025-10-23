@@ -230,7 +230,7 @@ export default function SurahScreen() {
       boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
     },
     bismillah: {
-      fontSize: 24,
+      fontSize: 28,
       fontFamily: 'ScheherazadeNew_400Regular',
       color: '#2C2416',
       textAlign: 'center',
