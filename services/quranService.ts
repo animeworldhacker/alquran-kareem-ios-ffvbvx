@@ -1,10 +1,13 @@
 
-import { QuranData, Surah, Ayah } from '../types';
+import { QuranData, Surah, Ayah, TajweedVerse, VerseMetadata } from '../types';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 
 class QuranService {
   private baseUrl = 'https://api.alquran.cloud/v1';
+  private quranComBaseUrl = 'https://api.quran.com/api/v4';
   private cachedQuran: QuranData | null = null;
+  private tajweedCache: Map<number, TajweedVerse[]> = new Map();
+  private metadataCache: Map<number, VerseMetadata[]> = new Map();
   private processingStats = {
     totalSurahs: 0,
     processedSurahs: 0,
@@ -30,11 +33,9 @@ class QuranService {
       
       if (data.code === 200 && data.data) {
         console.log('Processing Quran data to remove Bismillah from all first verses...');
-        // Process the Quran data to remove Bismillah from first verses and fix verse numbering
         const processedData = this.processQuranData(data.data);
         this.cachedQuran = processedData;
         
-        // Log processing statistics
         console.log('Quran data processing completed:', this.processingStats);
         
         return this.cachedQuran;
@@ -44,6 +45,86 @@ class QuranService {
     } catch (error) {
       console.error('Error fetching Quran:', error);
       throw new Error(`Failed to fetch Quran data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getTajweedText(surahNumber: number): Promise<TajweedVerse[]> {
+    if (this.tajweedCache.has(surahNumber)) {
+      console.log(`Returning cached Tajweed data for Surah ${surahNumber}`);
+      return this.tajweedCache.get(surahNumber)!;
+    }
+
+    try {
+      console.log(`Fetching Tajweed text for Surah ${surahNumber}...`);
+      const response = await fetch(
+        `${this.quranComBaseUrl}/quran/verses/uthmani_tajweed?chapter_number=${surahNumber}`
+      );
+
+      if (!response.ok) {
+        console.warn(`Failed to fetch Tajweed text: ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      
+      if (data.verses && Array.isArray(data.verses)) {
+        const tajweedVerses: TajweedVerse[] = data.verses.map((v: any) => ({
+          verse_key: v.verse_key,
+          text_uthmani_tajweed: v.text_uthmani_tajweed || v.text_uthmani || '',
+        }));
+        
+        this.tajweedCache.set(surahNumber, tajweedVerses);
+        console.log(`Cached Tajweed data for Surah ${surahNumber}: ${tajweedVerses.length} verses`);
+        return tajweedVerses;
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Error fetching Tajweed text for Surah ${surahNumber}:`, error);
+      return [];
+    }
+  }
+
+  async getVerseMetadata(surahNumber: number): Promise<VerseMetadata[]> {
+    if (this.metadataCache.has(surahNumber)) {
+      console.log(`Returning cached metadata for Surah ${surahNumber}`);
+      return this.metadataCache.get(surahNumber)!;
+    }
+
+    try {
+      console.log(`Fetching verse metadata for Surah ${surahNumber}...`);
+      const response = await fetch(
+        `${this.quranComBaseUrl}/verses/by_chapter/${surahNumber}?language=ar&words=false&fields=verse_key,verse_number,juz_number,hizb_number,rub_el_hizb_number,sajdah,text_uthmani`
+      );
+
+      if (!response.ok) {
+        console.warn(`Failed to fetch verse metadata: ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      
+      if (data.verses && Array.isArray(data.verses)) {
+        const metadata: VerseMetadata[] = data.verses.map((v: any) => ({
+          id: v.id,
+          verse_key: v.verse_key,
+          verse_number: v.verse_number,
+          juz_number: v.juz_number,
+          hizb_number: v.hizb_number,
+          rub_el_hizb_number: v.rub_el_hizb_number,
+          sajdah: v.sajdah || false,
+          text_uthmani: v.text_uthmani || '',
+        }));
+        
+        this.metadataCache.set(surahNumber, metadata);
+        console.log(`Cached metadata for Surah ${surahNumber}: ${metadata.length} verses`);
+        return metadata;
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Error fetching verse metadata for Surah ${surahNumber}:`, error);
+      return [];
     }
   }
 
@@ -60,6 +141,13 @@ class QuranService {
         const cachedSurah = this.cachedQuran.surahs.find(s => s.number === surahNumber);
         if (cachedSurah) {
           console.log(`Returning cached Surah ${surahNumber}`);
+          
+          // Fetch Tajweed and metadata in parallel
+          const [tajweedVerses, metadata] = await Promise.all([
+            this.getTajweedText(surahNumber),
+            this.getVerseMetadata(surahNumber),
+          ]);
+          
           return {
             number: cachedSurah.number,
             name: cachedSurah.name,
@@ -67,7 +155,9 @@ class QuranService {
             englishNameTranslation: cachedSurah.englishNameTranslation,
             numberOfAyahs: cachedSurah.numberOfAyahs,
             revelationType: cachedSurah.revelationType,
-            ayahs: cachedSurah.ayahs
+            ayahs: cachedSurah.ayahs,
+            tajweedVerses,
+            metadata,
           };
         }
       }
@@ -82,10 +172,20 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
-        // Process the surah data to remove Bismillah from first verse and fix verse numbering
         const processedSurah = this.processSurahData(data.data, surahNumber);
+        
+        // Fetch Tajweed and metadata in parallel
+        const [tajweedVerses, metadata] = await Promise.all([
+          this.getTajweedText(surahNumber),
+          this.getVerseMetadata(surahNumber),
+        ]);
+        
         console.log(`Surah ${surahNumber} fetched and processed successfully`);
-        return processedSurah;
+        return {
+          ...processedSurah,
+          tajweedVerses,
+          metadata,
+        };
       } else {
         throw new Error(`API error: ${data.status || 'Unknown error'}`);
       }
@@ -120,7 +220,6 @@ class QuranService {
   private processQuranData(quranData: QuranData): QuranData {
     console.log('Processing Quran data to remove Bismillah from first verses and fix verse numbering...');
     
-    // Reset processing stats
     this.processingStats = {
       totalSurahs: quranData.surahs.length,
       processedSurahs: 0,
@@ -128,7 +227,6 @@ class QuranService {
       processingErrors: 0
     };
     
-    // Process each surah to remove Bismillah from first verses and fix verse numbering
     const processedSurahs = quranData.surahs.map(surah => {
       try {
         this.processingStats.processedSurahs++;
@@ -136,20 +234,16 @@ class QuranService {
         if (surah.ayahs && Array.isArray(surah.ayahs)) {
           const processedAyahs = surah.ayahs.map(ayah => {
             try {
-              // Process the text to remove Bismillah from first verse
               const originalText = ayah.text || '';
               const processedText = processAyahText(originalText, surah.number, ayah.numberInSurah);
               
-              // Validate the processing
               const validation = validateTextProcessing(originalText, processedText, surah.number, ayah.numberInSurah);
               
-              // Count processed first verses
               if (ayah.numberInSurah === 1 && originalText !== processedText) {
                 this.processingStats.bismillahRemoved++;
                 console.log(`✓ Bismillah removed from Surah ${surah.number}:1`);
               }
               
-              // Log validation issues
               if (validation.hasIssues) {
                 console.warn(`Processing issue in Surah ${surah.number}:${ayah.numberInSurah}: ${validation.details}`);
               }
@@ -161,11 +255,10 @@ class QuranService {
             } catch (ayahError) {
               console.error(`Error processing ayah ${surah.number}:${ayah.numberInSurah}:`, ayahError);
               this.processingStats.processingErrors++;
-              return ayah; // Return original ayah if processing fails
+              return ayah;
             }
           });
           
-          // Filter out empty ayahs (where Bismillah was the only content)
           const filteredAyahs = processedAyahs.filter(ayah => {
             const hasContent = ayah.text && ayah.text.trim().length > 0;
             if (!hasContent) {
@@ -174,13 +267,11 @@ class QuranService {
             return hasContent;
           });
           
-          // Renumber ayahs to start from 1 and be consecutive
           const renumberedAyahs = filteredAyahs.map((ayah, index) => ({
             ...ayah,
             numberInSurah: index + 1
           }));
           
-          // Update the numberOfAyahs to reflect the actual count after processing
           const updatedSurah = {
             ...surah,
             ayahs: renumberedAyahs,
@@ -196,7 +287,7 @@ class QuranService {
       } catch (surahError) {
         console.error(`Error processing Surah ${surah.number}:`, surahError);
         this.processingStats.processingErrors++;
-        return surah; // Return original surah if processing fails
+        return surah;
       }
     });
 
@@ -208,8 +299,7 @@ class QuranService {
       successRate: `${((this.processingStats.processedSurahs / this.processingStats.totalSurahs) * 100).toFixed(1)}%`
     });
     
-    // Verify that all expected first verses had Bismillah removed (except Surah 9)
-    const expectedRemovals = this.processingStats.totalSurahs - 1; // All except Surah 9
+    const expectedRemovals = this.processingStats.totalSurahs - 1;
     if (this.processingStats.bismillahRemoved < expectedRemovals) {
       console.warn(`Warning: Expected ${expectedRemovals} Bismillah removals, but only ${this.processingStats.bismillahRemoved} were processed`);
     }
@@ -223,15 +313,12 @@ class QuranService {
   private processSurahData(surahData: any, surahNumber: number): any {
     console.log(`Processing individual Surah ${surahNumber} data to remove Bismillah and fix verse numbering...`);
     
-    // Process individual surah data to remove Bismillah from first verse and fix verse numbering
     if (surahData.ayahs && Array.isArray(surahData.ayahs)) {
       const processedAyahs = surahData.ayahs.map((ayah: any) => {
         try {
-          // Process the text to remove Bismillah from first verse
           const originalText = ayah.text || '';
           const processedText = processAyahText(originalText, surahNumber, ayah.numberInSurah);
           
-          // Validate the processing
           const validation = validateTextProcessing(originalText, processedText, surahNumber, ayah.numberInSurah);
           
           if (validation.hasIssues) {
@@ -244,11 +331,10 @@ class QuranService {
           };
         } catch (error) {
           console.error(`Error processing ayah ${surahNumber}:${ayah.numberInSurah}:`, error);
-          return ayah; // Return original ayah if processing fails
+          return ayah;
         }
       });
       
-      // Filter out empty ayahs (where Bismillah was the only content)
       const filteredAyahs = processedAyahs.filter((ayah: any) => {
         const hasContent = ayah.text && ayah.text.trim().length > 0;
         if (!hasContent) {
@@ -257,7 +343,6 @@ class QuranService {
         return hasContent;
       });
       
-      // Renumber ayahs to start from 1 and be consecutive
       const renumberedAyahs = filteredAyahs.map((ayah: any, index: number) => ({
         ...ayah,
         numberInSurah: index + 1
@@ -275,10 +360,11 @@ class QuranService {
     return surahData;
   }
 
-  // Clear cache to force refresh
   clearCache(): void {
     console.log('Clearing Quran cache');
     this.cachedQuran = null;
+    this.tajweedCache.clear();
+    this.metadataCache.clear();
     this.processingStats = {
       totalSurahs: 0,
       processedSurahs: 0,
@@ -287,17 +373,14 @@ class QuranService {
     };
   }
 
-  // Get cache status
   isCached(): boolean {
     return this.cachedQuran !== null;
   }
 
-  // Get processing statistics
   getProcessingStats() {
     return { ...this.processingStats };
   }
 
-  // Force reprocess all data
   async forceReprocess(): Promise<void> {
     console.log('Force reprocessing Quran data...');
     this.clearCache();

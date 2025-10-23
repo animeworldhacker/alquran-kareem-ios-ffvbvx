@@ -7,7 +7,9 @@ import { useAudio } from '../../hooks/useAudio';
 import { useTheme } from '../../contexts/ThemeContext';
 import AyahCard from '../../components/AyahCard';
 import AudioPlayer from '../../components/AudioPlayer';
+import TajweedLegend from '../../components/TajweedLegend';
 import Icon from '../../components/Icon';
+import { TajweedVerse, VerseMetadata } from '../../types';
 
 export default function SurahScreen() {
   const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
@@ -28,6 +30,8 @@ export default function SurahScreen() {
   const { settings, colors, textSizes } = useTheme();
   
   const [surah, setSurah] = useState<any>(null);
+  const [tajweedVerses, setTajweedVerses] = useState<TajweedVerse[]>([]);
+  const [metadata, setMetadata] = useState<VerseMetadata[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const scrollViewRef = useRef<ScrollView>(null);
@@ -42,8 +46,11 @@ export default function SurahScreen() {
       const surahData = getSurah(surahNumber);
       if (surahData) {
         setSurah(surahData);
+        setTajweedVerses(surahData.tajweedVerses || []);
+        setMetadata(surahData.metadata || []);
         setError(null);
         console.log(`Loaded Surah ${surahNumber}:`, surahData?.name, `with ${surahData?.ayahs?.length} ayahs`);
+        console.log(`Tajweed verses: ${surahData.tajweedVerses?.length || 0}, Metadata: ${surahData.metadata?.length || 0}`);
       } else if (!quranLoading) {
         setError(`لم يتم العثور على السورة رقم ${surahNumber}`);
       }
@@ -119,11 +126,29 @@ export default function SurahScreen() {
       const surahData = getSurah(surahNumber);
       if (surahData) {
         setSurah(surahData);
+        setTajweedVerses(surahData.tajweedVerses || []);
+        setMetadata(surahData.metadata || []);
       }
     } catch (err) {
       console.error('Retry failed:', err);
       setError('فشل في إعادة المحاولة');
     }
+  };
+
+  const getTajweedVerseForAyah = (ayahNumber: number): TajweedVerse | undefined => {
+    return tajweedVerses.find(v => {
+      const parts = v.verse_key.split(':');
+      return parseInt(parts[1]) === ayahNumber;
+    });
+  };
+
+  const getMetadataForAyah = (ayahNumber: number): VerseMetadata | undefined => {
+    return metadata.find(m => m.verse_number === ayahNumber);
+  };
+
+  const getPreviousMetadata = (ayahNumber: number): VerseMetadata | undefined => {
+    if (ayahNumber === 1) return undefined;
+    return metadata.find(m => m.verse_number === ayahNumber - 1);
   };
 
   const styles = StyleSheet.create({
@@ -378,6 +403,8 @@ export default function SurahScreen() {
             <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
           </View>
         )}
+
+        <TajweedLegend />
         
         {validAyahs.map((ayah: any) => (
           <AyahCard
@@ -391,6 +418,9 @@ export default function SurahScreen() {
             onPlayFromHere={handlePlayFromHere}
             isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
             isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
+            tajweedVerse={getTajweedVerseForAyah(ayah.numberInSurah)}
+            metadata={getMetadataForAyah(ayah.numberInSurah)}
+            previousMetadata={getPreviousMetadata(ayah.numberInSurah)}
           />
         ))}
         

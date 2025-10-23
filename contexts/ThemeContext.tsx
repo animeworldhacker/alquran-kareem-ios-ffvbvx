@@ -51,6 +51,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     readingMode: 'scroll',
     squareAdjustment: 50,
     showTajweed: true,
+    showTajweedLegend: true,
     autoExpandTafsir: false,
   });
 

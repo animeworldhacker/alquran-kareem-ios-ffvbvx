@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard, Image } from 'react-native';
-import { Ayah } from '../types';
+import { Ayah, VerseMetadata, TajweedVerse } from '../types';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useTheme } from '../contexts/ThemeContext';
 import { tafsirService } from '../services/tafsirService';
 import { router } from 'expo-router';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 import Icon from './Icon';
+import TajweedText from './TajweedText';
+import VerseMarkers from './VerseMarkers';
 
 interface AyahCardProps {
   ayah: Ayah;
@@ -19,6 +21,9 @@ interface AyahCardProps {
   onPlayFromHere?: (ayahNumber: number) => void;
   isPlaying: boolean;
   isContinuousPlaying?: boolean;
+  tajweedVerse?: TajweedVerse;
+  metadata?: VerseMetadata;
+  previousMetadata?: VerseMetadata;
 }
 
 const toArabicNumerals = (num: number): string => {
@@ -36,6 +41,9 @@ export default function AyahCard({
   onPlayFromHere,
   isPlaying,
   isContinuousPlaying,
+  tajweedVerse,
+  metadata,
+  previousMetadata,
 }: AyahCardProps) {
   const [showTafsir, setShowTafsir] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
@@ -163,14 +171,12 @@ export default function AyahCard({
     try {
       setAudioLoading(true);
       
-      // If this ayah is currently playing, stop it
       if (isPlaying) {
         console.log(`⏹️ AyahCard: Stopping audio for ${surahNumber}:${ayah.numberInSurah}`);
         if (onStopAudio) {
           await onStopAudio();
         }
       } else {
-        // Otherwise, start playing this ayah
         console.log(`🎵 AyahCard: Playing audio for ${surahNumber}:${ayah.numberInSurah}`);
         await onPlayAudio(ayah.numberInSurah);
       }
@@ -383,6 +389,10 @@ export default function AyahCard({
 
   return (
     <View style={styles.card}>
+      {metadata && (
+        <VerseMarkers metadata={metadata} previousMetadata={previousMetadata} />
+      )}
+
       <View style={styles.header}>
         <View style={styles.verseNumberContainer}>
           <Image 
@@ -461,7 +471,15 @@ export default function AyahCard({
         </View>
       </View>
 
-      <Text style={styles.ayahText}>{processedAyahText || ayah.text}</Text>
+      {tajweedVerse && settings.showTajweed ? (
+        <TajweedText 
+          html={tajweedVerse.text_uthmani_tajweed} 
+          style={styles.ayahText}
+          showTajweed={settings.showTajweed}
+        />
+      ) : (
+        <Text style={styles.ayahText}>{processedAyahText || ayah.text}</Text>
+      )}
 
       {isPlaying && (
         <View style={styles.playingIndicator}>
