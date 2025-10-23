@@ -3,28 +3,27 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Surah } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 interface SurahCardProps {
   surah: Surah;
   onPress: () => void;
 }
 
-// Arabic numerals conversion
-const toArabicNumerals = (num: number): string => {
-  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+// Arabic-Indic numerals conversion
+const toArabicIndic = (num: number): string => {
+  const arabicIndic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return num.toString().split('').map(digit => arabicIndic[parseInt(digit)]).join('');
 };
 
 export default function SurahCard({ surah, onPress }: SurahCardProps) {
-  const { textSizes, colors } = useTheme();
+  const { colors } = useTheme();
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.cream,
       borderRadius: 16,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       marginHorizontal: 16,
       marginVertical: 6,
       overflow: 'hidden',
@@ -38,15 +37,15 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     },
     ribbonContainer: {
       width: 70,
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.emerald,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
     },
     ribbonNumber: {
-      fontSize: 24,
+      fontSize: 26,
       fontWeight: 'bold',
-      color: '#D4AF37',
+      color: colors.gold,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
     },
@@ -65,7 +64,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     surahName: {
       fontSize: 20,
       fontWeight: 'bold',
-      color: '#2C2416',
+      color: colors.darkBrown,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'right',
     },
@@ -74,14 +73,14 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       height: 36,
       borderRadius: 18,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.cream,
     },
     chevronText: {
       fontSize: 18,
-      color: '#1E5B4C',
+      color: colors.emerald,
       fontWeight: 'bold',
     },
     metaRow: {
@@ -92,13 +91,13 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     },
     metaText: {
       fontSize: 14,
-      color: '#6D6558',
+      color: colors.mutedBrown,
       fontFamily: 'Amiri_400Regular',
       textAlign: 'right',
     },
     separator: {
       fontSize: 14,
-      color: '#6D6558',
+      color: colors.mutedBrown,
     },
   });
 
@@ -107,7 +106,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       <View style={styles.cardContent}>
         <View style={styles.ribbonContainer}>
           <Text style={styles.ribbonNumber}>
-            {toArabicNumerals(surah.number)}
+            {toArabicIndic(surah.number)}
           </Text>
         </View>
         
@@ -125,7 +124,7 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
             </Text>
             <Text style={styles.separator}>•</Text>
             <Text style={styles.metaText}>
-              {toArabicNumerals(surah.numberOfAyahs)} آية
+              {toArabicIndic(surah.numberOfAyahs)} آية
             </Text>
           </View>
         </View>

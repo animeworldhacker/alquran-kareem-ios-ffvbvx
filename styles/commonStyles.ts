@@ -1,23 +1,23 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-// Gold and Emerald Islamic Design System Colors
+// Elegant Ornate Islamic Design System Colors
 export const colors = {
   // Primary Colors - Emerald and Gold Theme
-  background: '#F5F5DC', // Cream background
-  backgroundAlt: '#FFFEF0', // Lighter cream
+  background: '#F5EEE3', // Parchment cream
+  backgroundAlt: '#F5EEE3',
   surface: '#1E5B4C', // Emerald
   primary: '#1E5B4C', // Emerald
-  secondary: '#D4AF37', // Gold
-  accent: '#D4AF37', // Gold
+  secondary: '#D4AF37', // Rich gold
+  accent: '#D4AF37', // Rich gold
   
   // Text Colors
-  text: '#2C2416', // Dark brown for contrast
-  textSecondary: '#5C4A2F', // Muted brown
+  text: '#2C2416', // Dark brown
+  textSecondary: '#6D6558', // Muted brown
   
   // UI Colors
   border: '#D4AF37', // Gold borders
-  card: '#FFFEF0', // Light cream for cards
+  card: '#F5EEE3', // Cream for cards
   shadow: '#000000',
   error: '#C62828',
   success: '#2E7D32',
@@ -27,12 +27,12 @@ export const colors = {
   // Special Colors
   gold: '#D4AF37',
   emerald: '#1E5B4C',
-  cream: '#FFFEF0',
+  cream: '#F5EEE3',
   darkBrown: '#2C2416',
-  mutedBrown: '#5C4A2F',
+  mutedBrown: '#6D6558',
   
   // Frosted glass effect
-  frostedGlass: 'rgba(255, 254, 240, 0.85)',
+  frostedGlass: 'rgba(245, 238, 227, 0.95)',
   
   // Verse number colors
   verseNumberBg: '#D4AF37',

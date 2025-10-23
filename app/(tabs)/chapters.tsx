@@ -1,152 +1,48 @@
 
-import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Dimensions, Animated } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
-import { useBookmarks } from '../../hooks/useBookmarks';
 import { useTheme } from '../../contexts/ThemeContext';
 import SurahCard from '../../components/SurahCard';
+import OrnateHeader from '../../components/OrnateHeader';
+import OrnateSearchField from '../../components/OrnateSearchField';
 import Icon from '../../components/Icon';
-
-const toArabicNumerals = (num: number): string => {
-  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
-};
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ChaptersTab() {
   const { surahs, loading, error } = useQuran();
-  const { bookmarks } = useBookmarks();
-  const { settings, colors, textSizes } = useTheme();
-
+  const { colors } = useTheme();
   const [search, setSearch] = useState('');
-  const [scrollIndicatorPosition, setScrollIndicatorPosition] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-  const [scrollViewHeight, setScrollViewHeight] = useState(0);
-  
-  const scrollViewRef = useRef<ScrollView>(null);
 
   const filteredSurahs = useMemo(() => {
     if (!search.trim()) return surahs;
     const q = search.trim().toLowerCase();
-    
-    console.log('Searching for:', q);
     
     return surahs.filter(s => {
       const arabicName = s.name.toLowerCase();
       const englishName = s.englishName.toLowerCase();
       const translation = s.englishNameTranslation.toLowerCase();
       
-      // Check if any of the fields contain the search query
-      const matches = arabicName.includes(q) || 
-                     englishName.includes(q) || 
-                     translation.includes(q);
-      
-      if (matches) {
-        console.log(`Match found: ${s.name} (${s.englishName})`);
-      }
-      
-      return matches;
+      return arabicName.includes(q) || 
+             englishName.includes(q) || 
+             translation.includes(q);
     });
   }, [surahs, search]);
 
   const navigateToSurah = (surahNumber: number) => {
-    console.log(`Navigating to Surah ${surahNumber}`);
     router.push(`/surah/${surahNumber}`);
-  };
-
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const contentHeight = event.nativeEvent.contentSize.height;
-    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
-    
-    setContentHeight(contentHeight);
-    setScrollViewHeight(scrollViewHeight);
-    
-    if (contentHeight > scrollViewHeight) {
-      const scrollPercentage = offsetY / (contentHeight - scrollViewHeight);
-      const indicatorHeight = 80;
-      const maxPosition = scrollViewHeight - indicatorHeight - 40;
-      setScrollIndicatorPosition(scrollPercentage * maxPosition);
-    }
-  };
-
-  const handleScrollIndicatorPress = (event: any) => {
-    const touchY = event.nativeEvent.locationY;
-    const indicatorHeight = 80;
-    const maxPosition = scrollViewHeight - indicatorHeight - 40;
-    
-    if (contentHeight > scrollViewHeight && scrollViewRef.current) {
-      const scrollPercentage = touchY / maxPosition;
-      const targetOffset = scrollPercentage * (contentHeight - scrollViewHeight);
-      scrollViewRef.current.scrollTo({ y: Math.max(0, targetOffset), animated: true });
-    }
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.background,
     },
     centerContent: {
+      flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-    },
-    ornateHeader: {
-      backgroundColor: '#1E5B4C',
-      marginHorizontal: 16,
-      marginTop: 16,
-      marginBottom: 12,
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      borderRadius: 20,
-      borderWidth: 3,
-      borderColor: '#D4AF37',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
-      elevation: 5,
-      position: 'relative',
-    },
-    headerTitle: {
-      fontFamily: 'Amiri_700Bold',
-      fontSize: 22,
-      color: '#D4AF37',
-      textAlign: 'center',
-    },
-    headerSubtitle: {
-      fontFamily: 'Amiri_400Regular',
-      fontSize: 14,
-      color: '#D4AF37',
-      opacity: 0.8,
-      textAlign: 'center',
-      marginTop: 4,
-    },
-    searchField: {
-      marginHorizontal: 16,
-      marginBottom: 12,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 24,
-      borderWidth: 2,
-      borderColor: '#D4AF37',
-      backgroundColor: '#F5EEE3',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      boxShadow: 'inset 0px 2px 4px rgba(0, 0, 0, 0.1)',
-    },
-    searchInput: {
-      flex: 1,
-      fontFamily: 'Amiri_400Regular',
-      color: '#2C2416',
-      fontSize: 16,
-      textAlign: 'right',
-    },
-    contentWrapper: {
-      flex: 1,
-      position: 'relative',
+      padding: 20,
     },
     scrollView: {
       flex: 1,
@@ -159,7 +55,7 @@ export default function ChaptersTab() {
     },
     footerText: {
       fontSize: 16,
-      color: '#6D6558',
+      color: colors.mutedBrown,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
@@ -170,81 +66,90 @@ export default function ChaptersTab() {
     },
     noResultsText: {
       fontSize: 18,
-      color: '#6D6558',
+      color: colors.mutedBrown,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
       marginTop: 10,
+    },
+    loadingText: {
+      fontSize: 20,
+      color: colors.darkBrown,
+      fontFamily: 'Amiri_700Bold',
+    },
+    errorText: {
+      fontSize: 20,
+      color: colors.darkBrown,
+      fontFamily: 'Amiri_700Bold',
+    },
+    errorSubtext: {
+      fontSize: 16,
+      color: colors.mutedBrown,
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 8,
     },
   });
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+      <View style={styles.container}>
+        <OrnateHeader title="القرآن الكريم" subtitle="المصحف الشريف" showBismillahWatermark />
+        <View style={styles.centerContent}>
+          <Text style={styles.loadingText}>جاري تحميل القرآن الكريم...</Text>
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: 16, color: '#6D6558', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+      <View style={styles.container}>
+        <OrnateHeader title="القرآن الكريم" subtitle="المصحف الشريف" showBismillahWatermark />
+        <View style={styles.centerContent}>
+          <Text style={styles.errorText}>خطأ في تحميل البيانات</Text>
+          <Text style={styles.errorSubtext}>{error}</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.ornateHeader}>
-        <Text style={styles.headerTitle}>القرآن الكريم</Text>
-        <Text style={styles.headerSubtitle}>المصحف الشريف</Text>
-      </View>
-
-      <View style={styles.searchField}>
-        <Icon name="search" size={20} style={{ color: '#D4AF37' }} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="البحث في السور..."
-          placeholderTextColor="#6D6558"
-          style={styles.searchInput}
-        />
-      </View>
+      <OrnateHeader title="القرآن الكريم" subtitle="المصحف الشريف" showBismillahWatermark />
       
-      <View style={styles.contentWrapper}>
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView} 
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-        >
-          {filteredSurahs.length > 0 ? (
-            <>
-              {filteredSurahs.map((surah) => (
-                <SurahCard
-                  key={surah.number}
-                  surah={surah}
-                  onPress={() => navigateToSurah(surah.number)}
-                />
-              ))}
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  تم تطوير هذا التطبيق بحمد الله وتوفيقه
-                </Text>
-              </View>
-            </>
-          ) : (
-            <View style={styles.noResultsContainer}>
-              <Icon name="search" size={48} style={{ color: '#D4AF37', opacity: 0.5 }} />
-              <Text style={styles.noResultsText}>
-                لم يتم العثور على نتائج للبحث &quot;{search}&quot;
+      <OrnateSearchField
+        value={search}
+        onChangeText={setSearch}
+        placeholder="البحث في السور..."
+      />
+      
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredSurahs.length > 0 ? (
+          <>
+            {filteredSurahs.map((surah) => (
+              <SurahCard
+                key={surah.number}
+                surah={surah}
+                onPress={() => navigateToSurah(surah.number)}
+              />
+            ))}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                تم تطوير هذا التطبيق بحمد الله وتوفيقه
               </Text>
             </View>
-          )}
-        </ScrollView>
-      </View>
+          </>
+        ) : (
+          <View style={styles.noResultsContainer}>
+            <Icon name="search" size={48} style={{ color: colors.gold, opacity: 0.5 }} />
+            <Text style={styles.noResultsText}>
+              لم يتم العثور على نتائج للبحث &quot;{search}&quot;
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
