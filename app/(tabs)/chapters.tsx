@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Dimensions, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
@@ -7,6 +7,7 @@ import { useBookmarks } from '../../hooks/useBookmarks';
 import { useTheme } from '../../contexts/ThemeContext';
 import SurahCard from '../../components/SurahCard';
 import Icon from '../../components/Icon';
+import { normalizeArabicForSearch } from '../../utils/textProcessor';
 
 const toArabicNumerals = (num: number): string => {
   const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -21,26 +22,62 @@ export default function ChaptersTab() {
   const { settings, colors, textSizes } = useTheme();
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [scrollIndicatorPosition, setScrollIndicatorPosition] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   
   const scrollViewRef = useRef<ScrollView>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce search input with 250ms delay
+  useEffect(() => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [search]);
 
   const filteredSurahs = useMemo(() => {
-    if (!search.trim()) return surahs;
-    const q = search.trim().toLowerCase();
+    const trimmedSearch = debouncedSearch.trim();
     
-    console.log('Searching for:', q);
+    // If search is empty, return all surahs
+    if (!trimmedSearch) {
+      return surahs;
+    }
     
-    return surahs.filter(s => {
-      const arabicName = s.name.toLowerCase();
-      const englishName = s.englishName.toLowerCase();
-      const translation = s.englishNameTranslation.toLowerCase();
+    // Normalize the search query for Arabic-friendly matching
+    const normalizedQuery = normalizeArabicForSearch(trimmedSearch);
+    
+    console.log('Searching with normalized query:', {
+      original: trimmedSearch,
+      normalized: normalizedQuery,
+      length: normalizedQuery.length
+    });
+    
+    // Filter surahs using normalized text matching
+    const results = surahs.filter(s => {
+      // Normalize all searchable fields
+      const normalizedArabicName = normalizeArabicForSearch(s.name);
+      const normalizedEnglishName = normalizeArabicForSearch(s.englishName);
+      const normalizedTranslation = normalizeArabicForSearch(s.englishNameTranslation);
       
-      const matches = arabicName.includes(q) || 
-                     englishName.includes(q) || 
-                     translation.includes(q);
+      // Check if any field contains the normalized query
+      const matches = normalizedArabicName.includes(normalizedQuery) || 
+                     normalizedEnglishName.includes(normalizedQuery) || 
+                     normalizedTranslation.includes(normalizedQuery);
       
       if (matches) {
         console.log(`Match found: ${s.name} (${s.englishName})`);
@@ -48,7 +85,11 @@ export default function ChaptersTab() {
       
       return matches;
     });
-  }, [surahs, search]);
+    
+    console.log(`Search results: ${results.length} of ${surahs.length} surahs`);
+    
+    return results;
+  }, [surahs, debouncedSearch]);
 
   const navigateToSurah = (surahNumber: number) => {
     console.log(`Navigating to Surah ${surahNumber}`);
@@ -81,6 +122,11 @@ export default function ChaptersTab() {
       const targetOffset = scrollPercentage * (contentHeight - scrollViewHeight);
       scrollViewRef.current.scrollTo({ y: Math.max(0, targetOffset), animated: true });
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearch('');
+    setDebouncedSearch('');
   };
 
   const styles = StyleSheet.create({
@@ -143,6 +189,9 @@ export default function ChaptersTab() {
       fontSize: textSizes.body,
       textAlign: 'right',
     },
+    clearButton: {
+      padding: 4,
+    },
     contentWrapper: {
       flex: 1,
       position: 'relative',
@@ -173,6 +222,14 @@ export default function ChaptersTab() {
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
       marginTop: 10,
+    },
+    noResultsSubtext: {
+      fontSize: textSizes.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 8,
+      opacity: 0.7,
     },
   });
 
@@ -209,6 +266,11 @@ export default function ChaptersTab() {
           placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+            <Icon name="close-circle" size={20} style={{ color: colors.gold }} />
+          </TouchableOpacity>
+        )}
       </View>
       
       <View style={styles.contentWrapper}>
@@ -238,8 +300,31 @@ export default function ChaptersTab() {
             <View style={styles.noResultsContainer}>
               <Icon name="search" size={48} style={{ color: colors.gold, opacity: 0.5 }} />
               <Text style={styles.noResultsText}>
+                لا توجد نتائج
+              </Text>
+              <Text style={styles.noResultsSubtext}>
                 لم يتم العثور على نتائج للبحث &quot;{search}&quot;
               </Text>
+              <TouchableOpacity 
+                onPress={handleClearSearch}
+                style={{
+                  marginTop: 20,
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  backgroundColor: colors.primary,
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: colors.gold,
+                }}
+              >
+                <Text style={{
+                  fontFamily: 'Amiri_700Bold',
+                  fontSize: textSizes.body,
+                  color: colors.gold,
+                }}>
+                  مسح البحث
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>

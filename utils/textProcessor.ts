@@ -147,6 +147,55 @@ export function normalizeArabicText(text: string): string {
 }
 
 /**
+ * Normalizes Arabic text for search purposes
+ * Removes diacritics and normalizes character variants for case/diacritics-insensitive matching
+ * @param text - The text to normalize for search
+ * @returns The normalized text suitable for search matching
+ */
+export function normalizeArabicForSearch(text: string): string {
+  if (!text) return '';
+  
+  let normalized = text;
+  
+  // Remove all Arabic diacritics (tashkeel/harakat)
+  // This includes: fatha, damma, kasra, sukun, shadda, tanween, etc.
+  normalized = normalized.replace(/[\u064B-\u065F]/g, ''); // Arabic diacritics range
+  normalized = normalized.replace(/[\u0670]/g, ''); // Arabic letter superscript alef
+  normalized = normalized.replace(/[\u06D6-\u06ED]/g, ''); // Additional Arabic marks
+  
+  // Remove tatweel (kashida) - the elongation character
+  normalized = normalized.replace(/\u0640/g, '');
+  
+  // Normalize alef variants to plain alef
+  // أ (alef with hamza above), إ (alef with hamza below), آ (alef with madda), ٱ (alef wasla) → ا (plain alef)
+  normalized = normalized.replace(/[\u0623\u0625\u0622\u0671]/g, '\u0627');
+  
+  // Normalize taa marbuta to haa
+  // ة (taa marbuta) → ه (haa)
+  normalized = normalized.replace(/\u0629/g, '\u0647');
+  
+  // Normalize yaa variants
+  // ى (alef maksura) → ي (yaa)
+  normalized = normalized.replace(/\u0649/g, '\u064A');
+  
+  // Normalize waw with hamza to plain waw
+  // ؤ (waw with hamza) → و (plain waw)
+  normalized = normalized.replace(/\u0624/g, '\u0648');
+  
+  // Normalize yaa with hamza to plain yaa
+  // ئ (yaa with hamza) → ي (plain yaa)
+  normalized = normalized.replace(/\u0626/g, '\u064A');
+  
+  // Remove excessive whitespace and trim
+  normalized = normalized.replace(/\s+/g, ' ').trim();
+  
+  // Convert to lowercase for case-insensitive matching
+  normalized = normalized.toLowerCase();
+  
+  return normalized;
+}
+
+/**
  * Checks if text contains any variation of Bismillah
  * @param text - The text to check
  * @returns True if text contains Bismillah

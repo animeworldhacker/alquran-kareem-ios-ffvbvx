@@ -1,5 +1,5 @@
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { useQuran } from '../hooks/useQuran';
@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import SurahCard from '../components/SurahCard';
 import Icon from '../components/Icon';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { normalizeArabicForSearch } from '../utils/textProcessor';
 
 type DivisionTab = 'juz' | 'hizb' | 'quarter' | 'sajda';
 
@@ -17,21 +18,68 @@ export default function HomeScreen() {
   const { settings, colors, textSizes } = useTheme();
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DivisionTab>('juz');
   const [sajdaList, setSajdaList] = useState<any[]>([]);
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['45%', '80%'], []);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce search input with 250ms delay
+  useEffect(() => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [search]);
 
   const filteredSurahs = useMemo(() => {
-    if (!search.trim()) return surahs;
-    const q = search.trim().toLowerCase();
-    return surahs.filter(s => 
-      s.name.toLowerCase().includes(q) ||
-      s.englishName.toLowerCase().includes(q) ||
-      s.englishNameTranslation.toLowerCase().includes(q)
-    );
-  }, [surahs, search]);
+    const trimmedSearch = debouncedSearch.trim();
+    
+    // If search is empty, return all surahs
+    if (!trimmedSearch) {
+      return surahs;
+    }
+    
+    // Normalize the search query for Arabic-friendly matching
+    const normalizedQuery = normalizeArabicForSearch(trimmedSearch);
+    
+    console.log('Home search with normalized query:', {
+      original: trimmedSearch,
+      normalized: normalizedQuery,
+      length: normalizedQuery.length
+    });
+    
+    // Filter surahs using normalized text matching
+    const results = surahs.filter(s => {
+      // Normalize all searchable fields
+      const normalizedArabicName = normalizeArabicForSearch(s.name);
+      const normalizedEnglishName = normalizeArabicForSearch(s.englishName);
+      const normalizedTranslation = normalizeArabicForSearch(s.englishNameTranslation);
+      
+      // Check if any field contains the normalized query
+      return normalizedArabicName.includes(normalizedQuery) || 
+             normalizedEnglishName.includes(normalizedQuery) || 
+             normalizedTranslation.includes(normalizedQuery);
+    });
+    
+    console.log(`Home search results: ${results.length} of ${surahs.length} surahs`);
+    
+    return results;
+  }, [surahs, debouncedSearch]);
 
   const openSheet = (tab: DivisionTab) => {
     setActiveTab(tab);
@@ -114,6 +162,11 @@ export default function HomeScreen() {
     await handleSelectQuarter(firstQuarter);
   };
 
+  const handleClearSearch = () => {
+    setSearch('');
+    setDebouncedSearch('');
+  };
+
   const styles = StyleSheet.create({
     centerContent: {
       justifyContent: 'center',
@@ -180,6 +233,9 @@ export default function HomeScreen() {
       paddingVertical: 4,
       textAlign: 'left',
     },
+    clearButton: {
+      padding: 4,
+    },
     quickRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -214,6 +270,18 @@ export default function HomeScreen() {
       color: colors.textSecondary,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
+    },
+    noResultsContainer: {
+      padding: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    noResultsText: {
+      fontSize: textSizes.title,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontFamily: 'Amiri_400Regular',
+      marginTop: 10,
     },
     sheetContainer: {
       flex: 1,
@@ -348,6 +416,11 @@ export default function HomeScreen() {
           placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+            <Icon name="close-circle" size={18} style={{ color: colors.textSecondary }} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.quickRow}>
@@ -366,18 +439,49 @@ export default function HomeScreen() {
       </View>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {filteredSurahs.map((surah) => (
-          <SurahCard
-            key={surah.number}
-            surah={surah}
-            onPress={() => navigateToSurah(surah.number)}
-          />
-        ))}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            تم تطوير هذا التطبيق بحمد الله وتوفيقه
-          </Text>
-        </View>
+        {filteredSurahs.length > 0 ? (
+          <>
+            {filteredSurahs.map((surah) => (
+              <SurahCard
+                key={surah.number}
+                surah={surah}
+                onPress={() => navigateToSurah(surah.number)}
+              />
+            ))}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                تم تطوير هذا التطبيق بحمد الله وتوفيقه
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.noResultsContainer}>
+            <Icon name="search" size={48} style={{ color: colors.textSecondary, opacity: 0.5 }} />
+            <Text style={styles.noResultsText}>
+              No results found for &quot;{search}&quot;
+            </Text>
+            <TouchableOpacity 
+              onPress={handleClearSearch}
+              style={{
+                marginTop: 20,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                backgroundColor: colors.primary,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Text style={{
+                fontFamily: 'Amiri_700Bold',
+                fontSize: textSizes.body,
+                color: colors.text,
+              }}>
+                Clear Search
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {sheetOpen && (
