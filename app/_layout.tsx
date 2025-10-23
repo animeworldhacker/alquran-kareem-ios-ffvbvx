@@ -21,6 +21,26 @@ export default function RootLayout() {
     try {
       setupErrorLogging();
 
+      // Add global promise rejection handler
+      const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+        console.error('🚨 Unhandled Promise Rejection:', event.reason);
+        console.error('Promise:', event.promise);
+        
+        // Prevent the default behavior (which would crash the app)
+        event.preventDefault();
+        
+        // Log the error for debugging
+        if (event.reason instanceof Error) {
+          console.error('Error message:', event.reason.message);
+          console.error('Error stack:', event.reason.stack);
+        }
+      };
+
+      // Add event listener for unhandled promise rejections
+      if (typeof window !== 'undefined') {
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+      }
+
       if (Platform.OS === 'web') {
         if (emulate) {
           localStorage.setItem(STORAGE_KEY, emulate);
@@ -32,6 +52,13 @@ export default function RootLayout() {
           }
         }
       }
+
+      // Cleanup
+      return () => {
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        }
+      };
     } catch (error) {
       console.error('Error in RootLayout useEffect:', error);
     }

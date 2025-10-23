@@ -17,7 +17,9 @@ export const useAudio = () => {
   const [continuousPlayback, setContinuousPlayback] = useState(false);
 
   useEffect(() => {
-    initializeAudio();
+    initializeAudio().catch(error => {
+      console.error('Error in audio initialization effect:', error);
+    });
   }, []);
 
   const initializeAudio = async () => {
@@ -140,7 +142,11 @@ export const useAudio = () => {
   };
 
   const setOnAyahEnd = (callback: (surah: number, ayah: number) => void) => {
-    audioService.setOnAyahEndCallback(callback);
+    try {
+      audioService.setOnAyahEndCallback(callback);
+    } catch (error) {
+      console.error('Error setting ayah end callback:', error);
+    }
   };
 
   return {

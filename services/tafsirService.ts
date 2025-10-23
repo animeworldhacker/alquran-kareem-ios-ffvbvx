@@ -20,10 +20,39 @@ class TafsirService {
   private cacheStorageKey = 'tafsir_cache';
   private tafsirIdStorageKey = 'tafsir_ibn_kathir_id';
   private requestQueue: Map<string, Promise<string>> = new Map();
+  private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeTafsirId();
-    this.loadPersistentCache();
+    // Start initialization but don't await it
+    // Store the promise so we can await it later when needed
+    this.initializationPromise = this.initialize().catch(error => {
+      console.error('Error during tafsir service initialization:', error);
+    });
+  }
+
+  /**
+   * Initialize the service
+   */
+  private async initialize(): Promise<void> {
+    try {
+      await Promise.all([
+        this.initializeTafsirId(),
+        this.loadPersistentCache()
+      ]);
+      console.log('✅ Tafsir service initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing tafsir service:', error);
+      // Don't throw - allow the service to continue with defaults
+    }
+  }
+
+  /**
+   * Ensure the service is initialized before use
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+    }
   }
 
   /**
@@ -255,62 +284,70 @@ class TafsirService {
    * Main method to fetch tafsir for a specific ayah
    */
   async getTafsir(surah: number, ayah: number): Promise<string> {
-    // Validate input
-    if (!surah || !ayah || surah < 1 || surah > 114 || ayah < 1) {
-      throw new Error(`Invalid parameters: surah ${surah}, ayah ${ayah}`);
-    }
-
-    // Wait for tafsir ID to be initialized
-    if (this.tafsirId === null) {
-      await this.initializeTafsirId();
-    }
-
-    const cacheKey = this.getCacheKey(surah, ayah);
-
-    // Check cache first
-    if (this.tafsirCache.has(cacheKey)) {
-      console.log(`Cache hit for ${surah}:${ayah}`);
-      return this.tafsirCache.get(cacheKey)!;
-    }
-
-    // Check if already loading (debounce)
-    if (this.requestQueue.has(cacheKey)) {
-      console.log(`Request already in progress for ${surah}:${ayah}, waiting...`);
-      return this.requestQueue.get(cacheKey)!;
-    }
-
-    // Check if previous error
-    if (this.errorTafsirKeys.has(cacheKey)) {
-      const errorMsg = this.errorTafsirKeys.get(cacheKey)!;
-      console.log(`Previous error for ${surah}:${ayah}: ${errorMsg}`);
-    }
-
-    // Create new request
-    const requestPromise = this.fetchTafsirFromAPI(surah, ayah);
-    this.requestQueue.set(cacheKey, requestPromise);
-    this.loadingTafsirKeys.add(cacheKey);
-
     try {
-      const tafsirText = await requestPromise;
-      
-      // Cache the result
-      this.evictLRUCache();
-      this.tafsirCache.set(cacheKey, tafsirText);
-      this.errorTafsirKeys.delete(cacheKey);
-      
-      // Save to persistent storage (debounced)
-      this.debouncedSaveCache();
+      // Validate input
+      if (!surah || !ayah || surah < 1 || surah > 114 || ayah < 1) {
+        throw new Error(`Invalid parameters: surah ${surah}, ayah ${ayah}`);
+      }
 
-      console.log(`Successfully fetched and cached tafsir for ${surah}:${ayah}`);
-      return tafsirText;
+      // Ensure service is initialized
+      await this.ensureInitialized();
+
+      // Wait for tafsir ID to be initialized
+      if (this.tafsirId === null) {
+        await this.initializeTafsirId();
+      }
+
+      const cacheKey = this.getCacheKey(surah, ayah);
+
+      // Check cache first
+      if (this.tafsirCache.has(cacheKey)) {
+        console.log(`Cache hit for ${surah}:${ayah}`);
+        return this.tafsirCache.get(cacheKey)!;
+      }
+
+      // Check if already loading (debounce)
+      if (this.requestQueue.has(cacheKey)) {
+        console.log(`Request already in progress for ${surah}:${ayah}, waiting...`);
+        return this.requestQueue.get(cacheKey)!;
+      }
+
+      // Check if previous error
+      if (this.errorTafsirKeys.has(cacheKey)) {
+        const errorMsg = this.errorTafsirKeys.get(cacheKey)!;
+        console.log(`Previous error for ${surah}:${ayah}: ${errorMsg}`);
+      }
+
+      // Create new request
+      const requestPromise = this.fetchTafsirFromAPI(surah, ayah);
+      this.requestQueue.set(cacheKey, requestPromise);
+      this.loadingTafsirKeys.add(cacheKey);
+
+      try {
+        const tafsirText = await requestPromise;
+        
+        // Cache the result
+        this.evictLRUCache();
+        this.tafsirCache.set(cacheKey, tafsirText);
+        this.errorTafsirKeys.delete(cacheKey);
+        
+        // Save to persistent storage (debounced)
+        this.debouncedSaveCache();
+
+        console.log(`Successfully fetched and cached tafsir for ${surah}:${ayah}`);
+        return tafsirText;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        this.errorTafsirKeys.set(cacheKey, errorMsg);
+        console.error(`Error fetching tafsir for ${surah}:${ayah}:`, error);
+        throw error;
+      } finally {
+        this.loadingTafsirKeys.delete(cacheKey);
+        this.requestQueue.delete(cacheKey);
+      }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.errorTafsirKeys.set(cacheKey, errorMsg);
-      console.error(`Error fetching tafsir for ${surah}:${ayah}:`, error);
+      console.error('Error in getTafsir:', error);
       throw error;
-    } finally {
-      this.loadingTafsirKeys.delete(cacheKey);
-      this.requestQueue.delete(cacheKey);
     }
   }
 
@@ -353,7 +390,9 @@ class TafsirService {
     }
 
     this.saveTimeout = setTimeout(() => {
-      this.savePersistentCache();
+      this.savePersistentCache().catch(error => {
+        console.error('Error in debounced save:', error);
+      });
     }, 5000); // Save after 5 seconds of inactivity
   }
 
@@ -385,41 +424,45 @@ class TafsirService {
    * Prefetch tafsir for a range of ayahs (for optimization)
    */
   async prefetchTafsirRange(surah: number, startAyah: number, endAyah: number): Promise<void> {
-    console.log(`Prefetching tafsir for ${surah}:${startAyah}-${endAyah}`);
-    
-    const promises: Promise<string>[] = [];
-    
-    for (let ayah = startAyah; ayah <= endAyah; ayah++) {
-      const cacheKey = this.getCacheKey(surah, ayah);
+    try {
+      console.log(`Prefetching tafsir for ${surah}:${startAyah}-${endAyah}`);
       
-      // Only prefetch if not already cached or loading
-      if (!this.tafsirCache.has(cacheKey) && !this.loadingTafsirKeys.has(cacheKey)) {
-        promises.push(
-          this.getTafsir(surah, ayah).catch(error => {
-            console.log(`Prefetch failed for ${surah}:${ayah}:`, error);
-            return ''; // Don't fail the whole prefetch
-          })
-        );
+      const promises: Promise<string>[] = [];
+      
+      for (let ayah = startAyah; ayah <= endAyah; ayah++) {
+        const cacheKey = this.getCacheKey(surah, ayah);
         
-        // Add delay between requests to avoid rate limiting
-        await this.delay(200);
+        // Only prefetch if not already cached or loading
+        if (!this.tafsirCache.has(cacheKey) && !this.loadingTafsirKeys.has(cacheKey)) {
+          promises.push(
+            this.getTafsir(surah, ayah).catch(error => {
+              console.log(`Prefetch failed for ${surah}:${ayah}:`, error);
+              return ''; // Don't fail the whole prefetch
+            })
+          );
+          
+          // Add delay between requests to avoid rate limiting
+          await this.delay(200);
+        }
       }
-    }
 
-    await Promise.all(promises);
-    console.log(`Prefetch completed for ${surah}:${startAyah}-${endAyah}`);
+      await Promise.all(promises);
+      console.log(`Prefetch completed for ${surah}:${startAyah}-${endAyah}`);
+    } catch (error) {
+      console.error('Error in prefetchTafsirRange:', error);
+    }
   }
 
   /**
    * Clear all cache
    */
   async clearCache(): Promise<void> {
-    this.tafsirCache.clear();
-    this.errorTafsirKeys.clear();
-    this.loadingTafsirKeys.clear();
-    this.requestQueue.clear();
-    
     try {
+      this.tafsirCache.clear();
+      this.errorTafsirKeys.clear();
+      this.loadingTafsirKeys.clear();
+      this.requestQueue.clear();
+      
       await AsyncStorage.removeItem(this.cacheStorageKey);
       console.log('Tafsir cache cleared');
     } catch (error) {
@@ -448,14 +491,19 @@ class TafsirService {
    * Refresh tafsir (force refetch)
    */
   async refreshTafsir(surah: number, ayah: number): Promise<string> {
-    const cacheKey = this.getCacheKey(surah, ayah);
-    
-    // Remove from cache
-    this.tafsirCache.delete(cacheKey);
-    this.errorTafsirKeys.delete(cacheKey);
-    
-    // Fetch fresh
-    return this.getTafsir(surah, ayah);
+    try {
+      const cacheKey = this.getCacheKey(surah, ayah);
+      
+      // Remove from cache
+      this.tafsirCache.delete(cacheKey);
+      this.errorTafsirKeys.delete(cacheKey);
+      
+      // Fetch fresh
+      return this.getTafsir(surah, ayah);
+    } catch (error) {
+      console.error('Error in refreshTafsir:', error);
+      throw error;
+    }
   }
 }
 

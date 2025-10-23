@@ -16,9 +16,17 @@ class AudioService {
   private currentAyah: number | null = null;
   private totalAyahs: number = 0;
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
+  private initializationPromise: Promise<void> | null = null;
   
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
+
+  constructor() {
+    // Start loading cache but don't await it
+    this.initializationPromise = this.loadAudioCache().catch(error => {
+      console.error('Error loading audio cache in constructor:', error);
+    });
+  }
 
   async initializeAudio() {
     try {
@@ -37,8 +45,10 @@ class AudioService {
         playThroughEarpieceAndroid: false,
       });
 
-      // Load audio URL cache from localStorage
-      await this.loadAudioCache();
+      // Wait for cache to load if it's still loading
+      if (this.initializationPromise) {
+        await this.initializationPromise;
+      }
       
       this.isInitialized = true;
       console.log('✅ Audio initialized successfully');
@@ -223,7 +233,9 @@ class AudioService {
       } else {
         console.log('⚠️ Cached URL is no longer valid, removing from cache');
         delete this.audioCache[cacheKey];
-        await this.saveAudioCache();
+        await this.saveAudioCache().catch(error => {
+          console.error('Error saving cache after deletion:', error);
+        });
       }
     }
     
@@ -237,7 +249,9 @@ class AudioService {
     if (isAvailable) {
       console.log('✅ CDN URL works!');
       this.audioCache[cacheKey] = audioUrl;
-      await this.saveAudioCache();
+      await this.saveAudioCache().catch(error => {
+        console.error('Error saving cache:', error);
+      });
       return audioUrl;
     }
     
@@ -250,7 +264,9 @@ class AudioService {
       if (apiUrlValid) {
         console.log('✅ API URL works!');
         this.audioCache[cacheKey] = apiUrl;
-        await this.saveAudioCache();
+        await this.saveAudioCache().catch(error => {
+          console.error('Error saving cache:', error);
+        });
         return apiUrl;
       }
     }
@@ -328,45 +344,49 @@ class AudioService {
   }
 
   private async onPlaybackStatusUpdate(status: any) {
-    if (status.didJustFinish && !status.isLooping) {
-      console.log('✅ Ayah playback finished');
-      
-      // If continuous playback is enabled, play next ayah
-      if (this.continuousPlayback && this.currentSurah && this.currentAyah) {
-        const nextAyah = this.currentAyah + 1;
+    try {
+      if (status.didJustFinish && !status.isLooping) {
+        console.log('✅ Ayah playback finished');
         
-        if (nextAyah <= this.totalAyahs) {
-          console.log(`⏭️ Playing next ayah: ${this.currentSurah}:${nextAyah}`);
+        // If continuous playback is enabled, play next ayah
+        if (this.continuousPlayback && this.currentSurah && this.currentAyah) {
+          const nextAyah = this.currentAyah + 1;
           
-          // Notify callback if set
-          if (this.onAyahEndCallback) {
-            this.onAyahEndCallback(this.currentSurah, nextAyah);
-          }
-          
-          // Play next ayah with a small delay
-          setTimeout(async () => {
-            try {
-              await this.playAyah(
-                this.currentSurah!, 
-                nextAyah, 
-                true, 
-                this.totalAyahs
-              );
-            } catch (error) {
-              console.error('❌ Error playing next ayah:', error);
-              this.continuousPlayback = false;
+          if (nextAyah <= this.totalAyahs) {
+            console.log(`⏭️ Playing next ayah: ${this.currentSurah}:${nextAyah}`);
+            
+            // Notify callback if set
+            if (this.onAyahEndCallback) {
+              this.onAyahEndCallback(this.currentSurah, nextAyah);
             }
-          }, 500);
-        } else {
-          console.log('🏁 Reached end of surah');
-          this.continuousPlayback = false;
-          this.currentlyPlayingKey = null;
+            
+            // Play next ayah with a small delay
+            setTimeout(async () => {
+              try {
+                await this.playAyah(
+                  this.currentSurah!, 
+                  nextAyah, 
+                  true, 
+                  this.totalAyahs
+                );
+              } catch (error) {
+                console.error('❌ Error playing next ayah:', error);
+                this.continuousPlayback = false;
+              }
+            }, 500);
+          } else {
+            console.log('🏁 Reached end of surah');
+            this.continuousPlayback = false;
+            this.currentlyPlayingKey = null;
+          }
         }
       }
-    }
 
-    if (status.error) {
-      console.error('❌ Playback error:', status.error);
+      if (status.error) {
+        console.error('❌ Playback error:', status.error);
+      }
+    } catch (error) {
+      console.error('❌ Error in playback status update:', error);
     }
   }
 
@@ -439,9 +459,13 @@ class AudioService {
   }
 
   async clearCache(): Promise<void> {
-    this.audioCache = {};
-    await AsyncStorage.removeItem('audioUrlCache');
-    console.log('🗑️ Audio cache cleared');
+    try {
+      this.audioCache = {};
+      await AsyncStorage.removeItem('audioUrlCache');
+      console.log('🗑️ Audio cache cleared');
+    } catch (error) {
+      console.error('Error clearing audio cache:', error);
+    }
   }
 }
 
