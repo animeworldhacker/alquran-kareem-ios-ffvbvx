@@ -38,7 +38,6 @@ export default function ChaptersTab() {
       const englishName = s.englishName.toLowerCase();
       const translation = s.englishNameTranslation.toLowerCase();
       
-      // Check if any of the fields contain the search query
       const matches = arabicName.includes(q) || 
                      englishName.includes(q) || 
                      translation.includes(q);
@@ -87,14 +86,14 @@ export default function ChaptersTab() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.background,
     },
     centerContent: {
       justifyContent: 'center',
       alignItems: 'center',
     },
     ornateHeader: {
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
       marginHorizontal: 16,
       marginTop: 16,
       marginBottom: 12,
@@ -102,7 +101,7 @@ export default function ChaptersTab() {
       paddingHorizontal: 20,
       borderRadius: 20,
       borderWidth: 3,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
@@ -111,14 +110,14 @@ export default function ChaptersTab() {
     },
     headerTitle: {
       fontFamily: 'Amiri_700Bold',
-      fontSize: 22,
-      color: '#D4AF37',
+      fontSize: textSizes.heading,
+      color: colors.gold,
       textAlign: 'center',
     },
     headerSubtitle: {
       fontFamily: 'Amiri_400Regular',
-      fontSize: 14,
-      color: '#D4AF37',
+      fontSize: textSizes.small,
+      color: colors.gold,
       opacity: 0.8,
       textAlign: 'center',
       marginTop: 4,
@@ -130,8 +129,8 @@ export default function ChaptersTab() {
       paddingVertical: 12,
       borderRadius: 24,
       borderWidth: 2,
-      borderColor: '#D4AF37',
-      backgroundColor: '#F5EEE3',
+      borderColor: colors.gold,
+      backgroundColor: colors.card,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
@@ -140,8 +139,8 @@ export default function ChaptersTab() {
     searchInput: {
       flex: 1,
       fontFamily: 'Amiri_400Regular',
-      color: '#2C2416',
-      fontSize: 16,
+      color: colors.text,
+      fontSize: textSizes.body,
       textAlign: 'right',
     },
     contentWrapper: {
@@ -158,8 +157,8 @@ export default function ChaptersTab() {
       marginBottom: 80,
     },
     footerText: {
-      fontSize: 16,
-      color: '#6D6558',
+      fontSize: textSizes.body,
+      color: colors.textSecondary,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
     },
@@ -169,8 +168,8 @@ export default function ChaptersTab() {
       justifyContent: 'center',
     },
     noResultsText: {
-      fontSize: 18,
-      color: '#6D6558',
+      fontSize: textSizes.title,
+      color: colors.textSecondary,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
       marginTop: 10,
@@ -180,7 +179,7 @@ export default function ChaptersTab() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>جاري تحميل القرآن الكريم...</Text>
       </View>
     );
   }
@@ -188,8 +187,8 @@ export default function ChaptersTab() {
   if (error) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={{ fontSize: 20, color: '#2C2416', fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
-        <Text style={{ fontSize: 16, color: '#6D6558', fontFamily: 'Amiri_400Regular' }}>{error}</Text>
+        <Text style={{ fontSize: textSizes.title, color: colors.text, fontFamily: 'Amiri_700Bold' }}>خطأ في تحميل البيانات</Text>
+        <Text style={{ fontSize: textSizes.body, color: colors.textSecondary, fontFamily: 'Amiri_400Regular' }}>{error}</Text>
       </View>
     );
   }
@@ -202,12 +201,12 @@ export default function ChaptersTab() {
       </View>
 
       <View style={styles.searchField}>
-        <Icon name="search" size={20} style={{ color: '#D4AF37' }} />
+        <Icon name="search" size={20} style={{ color: colors.gold }} />
         <TextInput
           value={search}
           onChangeText={setSearch}
           placeholder="البحث في السور..."
-          placeholderTextColor="#6D6558"
+          placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
       </View>
@@ -237,7 +236,7 @@ export default function ChaptersTab() {
             </>
           ) : (
             <View style={styles.noResultsContainer}>
-              <Icon name="search" size={48} style={{ color: '#D4AF37', opacity: 0.5 }} />
+              <Icon name="search" size={48} style={{ color: colors.gold, opacity: 0.5 }} />
               <Text style={styles.noResultsText}>
                 لم يتم العثور على نتائج للبحث &quot;{search}&quot;
               </Text>

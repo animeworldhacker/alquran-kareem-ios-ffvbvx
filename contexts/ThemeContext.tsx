@@ -19,6 +19,12 @@ interface ThemeContextType {
     error: string;
     success: string;
     warning: string;
+    emerald: string;
+    gold: string;
+    cream: string;
+    darkBrown: string;
+    mutedBrown: string;
+    card: string;
   };
   textSizes: {
     small: number;
@@ -93,18 +99,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const isDark = settings.theme === 'dark';
     
     return {
-      background: isDark ? '#1a1a1a' : '#ffffff',
-      backgroundAlt: isDark ? '#2d2d2d' : '#f5f5f5',
-      surface: isDark ? '#2d2d2d' : '#ffffff',
-      primary: '#d4af37',
-      secondary: '#8B4513',
-      text: isDark ? '#ffffff' : '#2F4F4F',
-      textSecondary: isDark ? '#cccccc' : '#666666',
-      border: isDark ? '#404040' : '#e0e0e0',
-      accent: '#FF6B6B',
-      error: '#f44336',
-      success: '#4caf50',
-      warning: '#ff9800',
+      background: isDark ? '#1a1a1a' : '#F5EEE3',
+      backgroundAlt: isDark ? '#2d2d2d' : '#F5EEE3',
+      surface: isDark ? '#2d2d2d' : '#F5EEE3',
+      primary: isDark ? '#1E5B4C' : '#1E5B4C',
+      secondary: isDark ? '#8B7355' : '#6D6558',
+      text: isDark ? '#F5EEE3' : '#2C2416',
+      textSecondary: isDark ? '#B8B8B8' : '#6D6558',
+      border: isDark ? '#D4AF37' : '#D4AF37',
+      accent: isDark ? '#FF8A65' : '#FF6B6B',
+      error: isDark ? '#EF5350' : '#C62828',
+      success: isDark ? '#66BB6A' : '#2E7D32',
+      warning: isDark ? '#FFA726' : '#F57C00',
+      emerald: isDark ? '#1E5B4C' : '#1E5B4C',
+      gold: '#D4AF37',
+      cream: isDark ? '#3a3a3a' : '#F5EEE3',
+      darkBrown: isDark ? '#F5EEE3' : '#2C2416',
+      mutedBrown: isDark ? '#B8B8B8' : '#6D6558',
+      card: isDark ? '#2d2d2d' : '#F5EEE3',
     };
   };
 
@@ -122,8 +134,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       title: baseSize + 4,
       heading: baseSize + 8,
       caption: baseSize - 4,
-      arabic: baseSize + 6,
-      ayah: baseSize + 8,
+      arabic: baseSize + 10,
+      ayah: baseSize + 12,
     };
   };
 

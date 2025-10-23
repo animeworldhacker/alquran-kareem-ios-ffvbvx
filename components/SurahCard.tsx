@@ -10,7 +10,6 @@ interface SurahCardProps {
   onPress: () => void;
 }
 
-// Arabic numerals conversion
 const toArabicNumerals = (num: number): string => {
   const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
   return num.toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
@@ -21,10 +20,10 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.card,
       borderRadius: 16,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       marginHorizontal: 16,
       marginVertical: 6,
       overflow: 'hidden',
@@ -38,15 +37,15 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
     },
     ribbonContainer: {
       width: 70,
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
     },
     ribbonNumber: {
-      fontSize: 24,
+      fontSize: textSizes.heading,
       fontWeight: 'bold',
-      color: '#D4AF37',
+      color: colors.gold,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
     },
@@ -63,9 +62,9 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       marginBottom: 8,
     },
     surahName: {
-      fontSize: 20,
+      fontSize: textSizes.title,
       fontWeight: 'bold',
-      color: '#2C2416',
+      color: colors.text,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'right',
     },
@@ -74,14 +73,14 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       height: 36,
       borderRadius: 18,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.card,
     },
     chevronText: {
       fontSize: 18,
-      color: '#1E5B4C',
+      color: colors.primary,
       fontWeight: 'bold',
     },
     metaRow: {
@@ -91,14 +90,14 @@ export default function SurahCard({ surah, onPress }: SurahCardProps) {
       gap: 12,
     },
     metaText: {
-      fontSize: 14,
-      color: '#6D6558',
+      fontSize: textSizes.small,
+      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
       textAlign: 'right',
     },
     separator: {
-      fontSize: 14,
-      color: '#6D6558',
+      fontSize: textSizes.small,
+      color: colors.textSecondary,
     },
   });
 

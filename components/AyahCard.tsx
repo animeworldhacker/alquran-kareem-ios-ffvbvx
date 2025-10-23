@@ -163,14 +163,12 @@ export default function AyahCard({
     try {
       setAudioLoading(true);
       
-      // If this ayah is currently playing, stop it
       if (isPlaying) {
         console.log(`⏹️ AyahCard: Stopping audio for ${surahNumber}:${ayah.numberInSurah}`);
         if (onStopAudio) {
           await onStopAudio();
         }
       } else {
-        // Otherwise, start playing this ayah
         console.log(`🎵 AyahCard: Playing audio for ${surahNumber}:${ayah.numberInSurah}`);
         await onPlayAudio(ayah.numberInSurah);
       }
@@ -199,13 +197,13 @@ export default function AyahCard({
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.card,
       marginHorizontal: 16,
       marginVertical: 8,
       padding: 16,
       borderRadius: 16,
       borderWidth: 2,
-      borderColor: isPlaying ? '#1E5B4C' : '#D4AF37',
+      borderColor: isPlaying ? colors.primary : colors.gold,
       boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
       elevation: 3,
     },
@@ -228,8 +226,8 @@ export default function AyahCard({
       position: 'absolute',
     },
     verseNumberText: {
-      fontSize: 16,
-      color: '#2C2416',
+      fontSize: textSizes.body,
+      color: colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
       zIndex: 1,
@@ -242,39 +240,39 @@ export default function AyahCard({
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.card,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
     },
     activeButton: {
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
     },
     playingButton: {
-      backgroundColor: '#2E7D32',
+      backgroundColor: colors.success,
     },
     icon: {
-      color: '#6D6558',
+      color: colors.textSecondary,
     },
     activeIcon: {
-      color: '#D4AF37',
+      color: colors.gold,
     },
     ayahText: {
-      fontSize: 26,
-      lineHeight: 48,
+      fontSize: textSizes.ayah,
+      lineHeight: textSizes.ayah * 1.8,
       textAlign: 'right',
-      color: '#2C2416',
+      color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       marginBottom: 12,
     },
     tafsirContainer: {
       marginTop: 12,
       padding: 16,
-      backgroundColor: 'rgba(212, 175, 55, 0.1)',
+      backgroundColor: colors.backgroundAlt,
       borderRadius: 12,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
     },
     tafsirHeader: {
       flexDirection: 'row',
@@ -283,18 +281,18 @@ export default function AyahCard({
       marginBottom: 12,
       paddingBottom: 8,
       borderBottomWidth: 1,
-      borderBottomColor: '#D4AF37',
+      borderBottomColor: colors.gold,
     },
     tafsirTitle: {
-      fontSize: 16,
+      fontSize: textSizes.body,
       fontFamily: 'Amiri_700Bold',
-      color: '#1E5B4C',
+      color: colors.primary,
     },
     tafsirText: {
-      fontSize: 16,
-      lineHeight: 28,
+      fontSize: textSizes.body,
+      lineHeight: textSizes.body * 1.75,
       textAlign: 'right',
-      color: '#2C2416',
+      color: colors.text,
       fontFamily: 'Amiri_400Regular',
       marginBottom: 12,
     },
@@ -310,21 +308,21 @@ export default function AyahCard({
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 20,
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
       gap: 4,
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
     },
     tafsirButtonSecondary: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.card,
     },
     tafsirButtonText: {
-      color: '#D4AF37',
-      fontSize: 13,
+      color: colors.gold,
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
     },
     tafsirButtonTextSecondary: {
-      color: '#1E5B4C',
+      color: colors.primary,
     },
     loadingContainer: {
       padding: 20,
@@ -332,21 +330,21 @@ export default function AyahCard({
     },
     loadingText: {
       marginTop: 8,
-      fontSize: 14,
-      color: '#6D6558',
+      fontSize: textSizes.small,
+      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
     },
     errorContainer: {
       marginTop: 12,
       padding: 12,
-      backgroundColor: '#FFEBEE',
+      backgroundColor: colors.backgroundAlt,
       borderRadius: 12,
       borderWidth: 2,
-      borderColor: '#C62828',
+      borderColor: colors.error,
     },
     errorText: {
-      fontSize: 14,
-      color: '#C62828',
+      fontSize: textSizes.small,
+      color: colors.error,
       fontFamily: 'Amiri_400Regular',
       textAlign: 'right',
       marginBottom: 8,
@@ -356,17 +354,17 @@ export default function AyahCard({
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 20,
-      backgroundColor: '#C62828',
+      backgroundColor: colors.error,
     },
     retryButtonText: {
       color: '#fff',
-      fontSize: 13,
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
     },
     playingIndicator: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#2E7D32',
+      backgroundColor: colors.success,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 20,
@@ -375,7 +373,7 @@ export default function AyahCard({
     },
     playingText: {
       color: '#fff',
-      fontSize: 13,
+      fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
       marginLeft: 6,
     },
@@ -412,7 +410,7 @@ export default function AyahCard({
             disabled={tafsirLoading}
           >
             {tafsirLoading ? (
-              <ActivityIndicator size="small" color="#6D6558" />
+              <ActivityIndicator size="small" color={colors.textSecondary} />
             ) : (
               <Icon
                 name="book-outline"
@@ -480,7 +478,7 @@ export default function AyahCard({
                 style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
                 onPress={handleShareTafsir}
               >
-                <Icon name="share-outline" size={14} style={{ color: '#1E5B4C' }} />
+                <Icon name="share-outline" size={14} style={{ color: colors.primary }} />
                 <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
                   مشاركة
                 </Text>
@@ -490,7 +488,7 @@ export default function AyahCard({
                 style={[styles.tafsirButton, styles.tafsirButtonSecondary]} 
                 onPress={handleCopyTafsir}
               >
-                <Icon name="copy-outline" size={14} style={{ color: '#1E5B4C' }} />
+                <Icon name="copy-outline" size={14} style={{ color: colors.primary }} />
                 <Text style={[styles.tafsirButtonText, styles.tafsirButtonTextSecondary]}>
                   نسخ
                 </Text>
