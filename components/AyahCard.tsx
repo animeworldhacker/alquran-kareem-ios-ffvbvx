@@ -198,8 +198,126 @@ export default function AyahCard({
     }
   }, [onPlayFromHere, ayah.numberInSurah]);
 
+  const styles = StyleSheet.create({
+    container: {
+      marginVertical: 8,
+      marginHorizontal: 16,
+      borderRadius: 12,
+      padding: 16,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+      elevation: 2,
+    },
+    ayahHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    ayahNumberContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    ayahNumberBadge: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 2,
+      borderColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    ayahNumber: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.primary,
+    },
+    ayahActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    actionButton: {
+      padding: 8,
+    },
+    ayahTextContainer: {
+      marginBottom: 12,
+    },
+    ayahText: {
+      fontSize: 24,
+      lineHeight: 42,
+      textAlign: 'right',
+      fontFamily: 'Amiri',
+      color: colors.text,
+    },
+    tafsirSection: {
+      marginTop: 8,
+    },
+    tafsirButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 10,
+      borderRadius: 8,
+      gap: 8,
+      backgroundColor: colors.backgroundAlt,
+    },
+    tafsirButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    tafsirErrorContainer: {
+      marginTop: 8,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    },
+    tafsirError: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 8,
+      color: colors.error,
+    },
+    retryButton: {
+      fontSize: 14,
+      textAlign: 'center',
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    tafsirContent: {
+      marginTop: 12,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.backgroundAlt,
+    },
+    tafsirText: {
+      fontSize: 14,
+      lineHeight: 22,
+      textAlign: 'right',
+      marginBottom: 12,
+      color: colors.textSecondary,
+    },
+    tafsirActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 16,
+    },
+    tafsirActionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    tafsirActionText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+  });
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
+    <View style={styles.container}>
       <VerseMarkers
         metadata={metadata}
         previousMetadata={previousMetadata}
@@ -207,8 +325,8 @@ export default function AyahCard({
 
       <View style={styles.ayahHeader}>
         <View style={styles.ayahNumberContainer}>
-          <View style={[styles.ayahNumberBadge, { borderColor: colors.accent }]}>
-            <Text style={[styles.ayahNumber, { color: colors.accent }]}>
+          <View style={styles.ayahNumberBadge}>
+            <Text style={styles.ayahNumber}>
               {toArabicNumerals(ayah.numberInSurah)}
             </Text>
           </View>
@@ -256,10 +374,10 @@ export default function AyahCard({
         {settings.showTajweed && tajweedVerse?.text_uthmani_tajweed ? (
           <TajweedText 
             html={tajweedVerse.text_uthmani_tajweed}
-            style={[styles.ayahText, { color: colors.text }]}
+            style={styles.ayahText}
           />
         ) : (
-          <Text style={[styles.ayahText, { color: colors.text }]}>
+          <Text style={styles.ayahText}>
             {ayah.text}
           </Text>
         )}
@@ -268,29 +386,29 @@ export default function AyahCard({
       <View style={styles.tafsirSection}>
         <TouchableOpacity 
           onPress={handleTafsirToggle}
-          style={[styles.tafsirButton, { backgroundColor: colors.background }]}
+          style={styles.tafsirButton}
           disabled={tafsirLoading}
         >
           <Icon 
             name="book-outline" 
             size={18} 
-            color={colors.accent} 
+            color={colors.primary} 
           />
-          <Text style={[styles.tafsirButtonText, { color: colors.accent }]}>
+          <Text style={styles.tafsirButtonText}>
             {tafsirLoading ? 'جاري التحميل...' : 'التفسير'}
           </Text>
           {tafsirLoading && (
-            <ActivityIndicator size="small" color={colors.accent} />
+            <ActivityIndicator size="small" color={colors.primary} />
           )}
         </TouchableOpacity>
 
         {tafsirError && (
           <View style={styles.tafsirErrorContainer}>
-            <Text style={[styles.tafsirError, { color: colors.error }]}>
+            <Text style={styles.tafsirError}>
               {tafsirError}
             </Text>
             <TouchableOpacity onPress={handleRetryTafsir}>
-              <Text style={[styles.retryButton, { color: colors.accent }]}>
+              <Text style={styles.retryButton}>
                 إعادة المحاولة
               </Text>
             </TouchableOpacity>
@@ -299,23 +417,23 @@ export default function AyahCard({
 
         {tafsirExpanded && tafsirText && (
           <View style={styles.tafsirContent}>
-            <Text style={[styles.tafsirText, { color: colors.textSecondary }]} numberOfLines={5}>
+            <Text style={styles.tafsirText} numberOfLines={5}>
               {tafsirText}
             </Text>
             
             <View style={styles.tafsirActions}>
               <TouchableOpacity onPress={handleFullTafsir} style={styles.tafsirActionButton}>
-                <Text style={[styles.tafsirActionText, { color: colors.accent }]}>
+                <Text style={styles.tafsirActionText}>
                   عرض كامل
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity onPress={handleCopyTafsir} style={styles.tafsirActionButton}>
-                <Icon name="copy-outline" size={16} color={colors.accent} />
+                <Icon name="copy-outline" size={16} color={colors.primary} />
               </TouchableOpacity>
               
               <TouchableOpacity onPress={handleShareTafsir} style={styles.tafsirActionButton}>
-                <Icon name="share-outline" size={16} color={colors.accent} />
+                <Icon name="share-outline" size={16} color={colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -324,112 +442,3 @@ export default function AyahCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  ayahHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  ayahNumberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ayahNumberBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ayahNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  ayahActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    padding: 8,
-  },
-  ayahTextContainer: {
-    marginBottom: 12,
-  },
-  ayahText: {
-    fontSize: 24,
-    lineHeight: 42,
-    textAlign: 'right',
-    fontFamily: 'Amiri',
-  },
-  tafsirSection: {
-    marginTop: 8,
-  },
-  tafsirButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    borderRadius: 8,
-    gap: 8,
-  },
-  tafsirButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  tafsirErrorContainer: {
-    marginTop: 8,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
-  },
-  tafsirError: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  retryButton: {
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  tafsirContent: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  tafsirText: {
-    fontSize: 14,
-    lineHeight: 22,
-    textAlign: 'right',
-    marginBottom: 12,
-  },
-  tafsirActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 16,
-  },
-  tafsirActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  tafsirActionText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

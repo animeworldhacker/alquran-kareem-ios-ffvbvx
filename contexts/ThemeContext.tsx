@@ -16,6 +16,7 @@ interface ThemeContextType {
     textSecondary: string;
     border: string;
     accent: string;
+    card: string;
     error: string;
     success: string;
     warning: string;
@@ -97,12 +98,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       background: isDark ? '#1a1a1a' : '#ffffff',
       backgroundAlt: isDark ? '#2d2d2d' : '#f5f5f5',
       surface: isDark ? '#2d2d2d' : '#ffffff',
-      primary: '#d4af37',
-      secondary: '#8B4513',
-      text: isDark ? '#ffffff' : '#2F4F4F',
-      textSecondary: isDark ? '#cccccc' : '#666666',
+      primary: isDark ? '#42A5F5' : '#2196F3',
+      secondary: isDark ? '#9E9E9E' : '#757575',
+      text: isDark ? '#ffffff' : '#212121',
+      textSecondary: isDark ? '#b0b0b0' : '#757575',
       border: isDark ? '#404040' : '#e0e0e0',
       accent: '#FF6B6B',
+      card: isDark ? '#2d2d2d' : '#ffffff',
       error: '#f44336',
       success: '#4caf50',
       warning: '#ff9800',

@@ -11,7 +11,7 @@ interface TajweedTextProps {
 }
 
 export default function TajweedText({ html, style, showTajweed = true }: TajweedTextProps) {
-  const { settings } = useTheme();
+  const { settings, colors } = useTheme();
   const shouldShowTajweed = showTajweed && settings.showTajweed;
 
   if (!html) {
@@ -21,7 +21,7 @@ export default function TajweedText({ html, style, showTajweed = true }: Tajweed
   const segments = parseTajweedHTML(html);
 
   return (
-    <Text style={[styles.container, style]}>
+    <Text style={[styles.container, { color: colors.text }, style]}>
       {segments.map((segment, index) => (
         <Text
           key={`segment-${index}`}
@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 60,
     textAlign: 'right',
-    color: '#2C2416',
     fontFamily: 'ScheherazadeNew_400Regular',
     writingDirection: 'rtl',
   },
