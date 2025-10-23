@@ -12,10 +12,7 @@ export function useBookmarks() {
     try {
       setLoading(true);
       setError(null);
-      const loadedBookmarks = await bookmarkService.getBookmarks().catch(error => {
-        console.error('Error from bookmarkService.getBookmarks:', error);
-        throw error;
-      });
+      const loadedBookmarks = await bookmarkService.getBookmarks();
       setBookmarks(loadedBookmarks);
       console.log('Bookmarks loaded:', loadedBookmarks.length);
     } catch (err) {
@@ -35,10 +32,7 @@ export function useBookmarks() {
     note?: string;
   }) => {
     try {
-      const newBookmark = await bookmarkService.addBookmark(bookmarkData).catch(error => {
-        console.error('Error from bookmarkService.addBookmark:', error);
-        throw error;
-      });
+      const newBookmark = await bookmarkService.addBookmark(bookmarkData);
       setBookmarks(prev => [...prev, newBookmark]);
       console.log('Bookmark added successfully:', newBookmark.id);
       return newBookmark;
@@ -50,10 +44,7 @@ export function useBookmarks() {
 
   const removeBookmark = useCallback(async (bookmarkId: string) => {
     try {
-      await bookmarkService.removeBookmark(bookmarkId).catch(error => {
-        console.error('Error from bookmarkService.removeBookmark:', error);
-        throw error;
-      });
+      await bookmarkService.removeBookmark(bookmarkId);
       setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
       console.log('Bookmark removed successfully:', bookmarkId);
     } catch (err) {
@@ -69,10 +60,7 @@ export function useBookmarks() {
       );
       
       if (bookmark) {
-        await bookmarkService.removeBookmark(bookmark.id).catch(error => {
-          console.error('Error from bookmarkService.removeBookmark:', error);
-          throw error;
-        });
+        await bookmarkService.removeBookmark(bookmark.id);
         setBookmarks(prev => prev.filter(b => b.id !== bookmark.id));
         console.log('Bookmark removed by ayah:', bookmark.id);
       } else {
@@ -85,33 +73,20 @@ export function useBookmarks() {
   }, [bookmarks]);
 
   const getBookmarkByAyah = useCallback((surahNumber: number, ayahNumber: number) => {
-    try {
-      return bookmarks.find(b => 
-        b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
-      );
-    } catch (error) {
-      console.error('Error in getBookmarkByAyah:', error);
-      return undefined;
-    }
+    return bookmarks.find(b => 
+      b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
+    );
   }, [bookmarks]);
 
   const isBookmarked = useCallback((surahNumber: number, ayahNumber: number) => {
-    try {
-      return bookmarks.some(b => 
-        b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
-      );
-    } catch (error) {
-      console.error('Error in isBookmarked:', error);
-      return false;
-    }
+    return bookmarks.some(b => 
+      b.surahNumber === surahNumber && b.ayahNumber === ayahNumber
+    );
   }, [bookmarks]);
 
   const updateBookmarkNote = useCallback(async (bookmarkId: string, note: string) => {
     try {
-      await bookmarkService.updateBookmarkNote(bookmarkId, note).catch(error => {
-        console.error('Error from bookmarkService.updateBookmarkNote:', error);
-        throw error;
-      });
+      await bookmarkService.updateBookmarkNote(bookmarkId, note);
       setBookmarks(prev => prev.map(b => 
         b.id === bookmarkId ? { ...b, note } : b
       ));
@@ -123,9 +98,7 @@ export function useBookmarks() {
   }, []);
 
   useEffect(() => {
-    loadBookmarks().catch(error => {
-      console.error('Error in useBookmarks effect:', error);
-    });
+    loadBookmarks();
   }, [loadBookmarks]);
 
   return {

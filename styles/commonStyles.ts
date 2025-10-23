@@ -1,23 +1,23 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-// Elegant Ornate Islamic Design System Colors
+// Elegant Ornate Design System Colors
 export const colors = {
-  // Primary Colors - Emerald and Gold Theme
-  background: '#F5EEE3', // Parchment cream
-  backgroundAlt: '#F5EEE3',
-  surface: '#1E5B4C', // Emerald
-  primary: '#1E5B4C', // Emerald
-  secondary: '#D4AF37', // Rich gold
-  accent: '#D4AF37', // Rich gold
+  // Primary Colors
+  background: '#F5EEE3',        // Parchment cream
+  backgroundAlt: '#F5EEE3',     // Parchment cream
+  surface: '#F5EEE3',           // Parchment cream
+  primary: '#1E5B4C',           // Emerald/teal
+  secondary: '#6D6558',         // Muted brown
+  accent: '#D4AF37',            // Rich gold
   
   // Text Colors
-  text: '#2C2416', // Dark brown
-  textSecondary: '#6D6558', // Muted brown
+  text: '#2C2416',              // Dark brown
+  textSecondary: '#6D6558',     // Muted brown
   
   // UI Colors
-  border: '#D4AF37', // Gold borders
-  card: '#F5EEE3', // Cream for cards
+  border: '#D4AF37',            // Rich gold
+  card: '#F5EEE3',              // Parchment cream
   shadow: '#000000',
   error: '#C62828',
   success: '#2E7D32',
@@ -25,18 +25,11 @@ export const colors = {
   info: '#1976D2',
   
   // Special Colors
-  gold: '#D4AF37',
-  emerald: '#1E5B4C',
-  cream: '#F5EEE3',
-  darkBrown: '#2C2416',
-  mutedBrown: '#6D6558',
-  
-  // Frosted glass effect
-  frostedGlass: 'rgba(245, 238, 227, 0.95)',
-  
-  // Verse number colors
-  verseNumberBg: '#D4AF37',
-  verseNumberBorder: '#1E5B4C',
+  gold: '#D4AF37',              // Rich gold
+  emerald: '#1E5B4C',           // Emerald/teal
+  cream: '#F5EEE3',             // Parchment cream
+  darkBrown: '#2C2416',         // Dark brown
+  mutedBrown: '#6D6558',        // Muted brown
 };
 
 export const buttonStyles = StyleSheet.create({
@@ -56,7 +49,7 @@ export const buttonStyles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -64,26 +57,11 @@ export const buttonStyles = StyleSheet.create({
     backgroundColor: colors.backgroundAlt,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pillButton: {
-    backgroundColor: colors.emerald,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pillButtonText: {
-    color: colors.gold,
-    fontSize: 14,
-    fontWeight: '600',
+    borderWidth: 2,
+    borderColor: colors.gold,
   },
 });
 
@@ -109,15 +87,15 @@ export const commonStyles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '800',
     textAlign: 'center',
-    color: colors.text,
+    color: colors.gold,
     marginBottom: 10,
     fontFamily: 'Amiri_700Bold',
   },
   text: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: '500',
     color: colors.text,
     marginBottom: 8,
     lineHeight: 24,
@@ -125,11 +103,11 @@ export const commonStyles = StyleSheet.create({
     fontFamily: 'Amiri_400Regular',
   },
   arabicText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '400',
     color: colors.text,
     textAlign: 'right',
-    lineHeight: 42,
+    lineHeight: 48,
     fontFamily: 'ScheherazadeNew_400Regular',
   },
   section: {
@@ -145,13 +123,13 @@ export const commonStyles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderColor: colors.border,
+    borderColor: colors.gold,
     borderWidth: 2,
     borderRadius: 16,
-    padding: 18,
+    padding: 16,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
     elevation: 3,
   },
   header: {
@@ -161,12 +139,14 @@ export const commonStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 0,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: colors.gold,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: 'bold',
     color: colors.gold,
     fontFamily: 'Amiri_700Bold',
   },

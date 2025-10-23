@@ -22,13 +22,10 @@ class AudioService {
   private readonly RECITATION_ID = 2;
 
   constructor() {
-    // Start loading cache but don't await it - with proper error handling
-    this.initializationPromise = this.loadAudioCache()
-      .catch(error => {
-        console.error('Error loading audio cache in constructor:', error);
-        // Don't throw - allow service to continue
-        return Promise.resolve();
-      });
+    // Start loading cache but don't await it
+    this.initializationPromise = this.loadAudioCache().catch(error => {
+      console.error('Error loading audio cache in constructor:', error);
+    });
   }
 
   async initializeAudio() {
@@ -50,9 +47,7 @@ class AudioService {
 
       // Wait for cache to load if it's still loading
       if (this.initializationPromise) {
-        await this.initializationPromise.catch(error => {
-          console.error('Cache loading failed, continuing anyway:', error);
-        });
+        await this.initializationPromise;
       }
       
       this.isInitialized = true;
@@ -63,7 +58,7 @@ class AudioService {
     }
   }
 
-  private async loadAudioCache(): Promise<void> {
+  private async loadAudioCache() {
     try {
       const cached = await AsyncStorage.getItem('audioUrlCache');
       if (cached) {
@@ -73,17 +68,15 @@ class AudioService {
     } catch (error) {
       console.error('⚠️ Error loading audio cache:', error);
       this.audioCache = {};
-      // Don't throw - allow service to continue without cache
     }
   }
 
-  private async saveAudioCache(): Promise<void> {
+  private async saveAudioCache() {
     try {
       await AsyncStorage.setItem('audioUrlCache', JSON.stringify(this.audioCache));
       console.log('💾 Saved audio URL cache');
     } catch (error) {
       console.error('⚠️ Error saving audio cache:', error);
-      // Don't throw - cache save failure shouldn't break functionality
     }
   }
 
@@ -350,7 +343,7 @@ class AudioService {
     }
   }
 
-  private async onPlaybackStatusUpdate(status: any): Promise<void> {
+  private async onPlaybackStatusUpdate(status: any) {
     try {
       if (status.didJustFinish && !status.isLooping) {
         console.log('✅ Ayah playback finished');

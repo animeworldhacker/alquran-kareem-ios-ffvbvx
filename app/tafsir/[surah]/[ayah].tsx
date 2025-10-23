@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share, Clipboard, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -21,7 +21,11 @@ export default function TafsirScreen() {
   const [surahData, setSurahData] = useState<any>(null);
   const [ayahData, setAyahData] = useState<any>(null);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    loadData();
+  }, [surahNumber, ayahNumber]);
+
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -49,26 +53,22 @@ export default function TafsirScreen() {
     } finally {
       setLoading(false);
     }
-  }, [surahNumber, ayahNumber, getSurah]);
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     try {
       router.back();
     } catch (error) {
       console.error('Error navigating back:', error);
       router.push(`/surah/${surahNumber}`);
     }
-  }, [surahNumber]);
+  };
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     loadData();
-  }, [loadData]);
+  };
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -81,9 +81,9 @@ export default function TafsirScreen() {
     } finally {
       setLoading(false);
     }
-  }, [surahNumber, ayahNumber]);
+  };
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = async () => {
     if (tafsir) {
       try {
         const fullText = `${surahData?.name || `سورة ${surahNumber}`} - آية ${ayahNumber}\n\n${ayahData?.text || ''}\n\nتفسير ابن كثير:\n${tafsir}`;
@@ -94,9 +94,9 @@ export default function TafsirScreen() {
         Alert.alert('خطأ', 'فشل في نسخ التفسير');
       }
     }
-  }, [tafsir, surahData, surahNumber, ayahNumber, ayahData]);
+  };
 
-  const handleShare = useCallback(async () => {
+  const handleShare = async () => {
     if (tafsir) {
       try {
         await Share.share({
@@ -106,7 +106,7 @@ export default function TafsirScreen() {
         console.error('Error sharing tafsir:', error);
       }
     }
-  }, [tafsir, surahData, surahNumber, ayahNumber, ayahData]);
+  };
 
   const styles = StyleSheet.create({
     container: {

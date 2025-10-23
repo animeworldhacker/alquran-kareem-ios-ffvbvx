@@ -38,7 +38,6 @@ class SettingsService {
         'readingMode', 
         'squareAdjustment', 
         'showTajweed',
-        'showTajweedLegend',
         'autoExpandTafsir'
       ];
       
@@ -96,7 +95,6 @@ class SettingsService {
       readingMode: 'scroll',
       squareAdjustment: 50,
       showTajweed: true,
-      showTajweedLegend: true,
       autoExpandTafsir: false,
     };
   }
