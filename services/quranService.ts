@@ -142,10 +142,16 @@ class QuranService {
         if (cachedSurah) {
           console.log(`Returning cached Surah ${surahNumber}`);
           
-          // Fetch Tajweed and metadata in parallel
+          // Fetch Tajweed and metadata in parallel with error handling
           const [tajweedVerses, metadata] = await Promise.all([
-            this.getTajweedText(surahNumber),
-            this.getVerseMetadata(surahNumber),
+            this.getTajweedText(surahNumber).catch(error => {
+              console.error('Error fetching tajweed:', error);
+              return [];
+            }),
+            this.getVerseMetadata(surahNumber).catch(error => {
+              console.error('Error fetching metadata:', error);
+              return [];
+            }),
           ]);
           
           return {
@@ -174,10 +180,16 @@ class QuranService {
       if (data.code === 200 && data.data) {
         const processedSurah = this.processSurahData(data.data, surahNumber);
         
-        // Fetch Tajweed and metadata in parallel
+        // Fetch Tajweed and metadata in parallel with error handling
         const [tajweedVerses, metadata] = await Promise.all([
-          this.getTajweedText(surahNumber),
-          this.getVerseMetadata(surahNumber),
+          this.getTajweedText(surahNumber).catch(error => {
+            console.error('Error fetching tajweed:', error);
+            return [];
+          }),
+          this.getVerseMetadata(surahNumber).catch(error => {
+            console.error('Error fetching metadata:', error);
+            return [];
+          }),
         ]);
         
         console.log(`Surah ${surahNumber} fetched and processed successfully`);

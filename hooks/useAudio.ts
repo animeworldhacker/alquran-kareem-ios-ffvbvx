@@ -17,9 +17,11 @@ export const useAudio = () => {
   const [continuousPlayback, setContinuousPlayback] = useState(false);
 
   useEffect(() => {
-    initializeAudio().catch(error => {
-      console.error('Error in audio initialization effect:', error);
-    });
+    initializeAudio()
+      .catch(error => {
+        console.error('Error in audio initialization effect:', error);
+        // Don't throw - allow component to continue
+      });
   }, []);
 
   const initializeAudio = async () => {
