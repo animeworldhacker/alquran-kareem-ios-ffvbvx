@@ -20,6 +20,14 @@ interface ThemeContextType {
     error: string;
     success: string;
     warning: string;
+    gold: string;
+    emerald: string;
+    cream: string;
+    darkBrown: string;
+    mutedBrown: string;
+    frostedGlass: string;
+    verseNumberBg: string;
+    verseNumberBorder: string;
   };
   textSizes: {
     small: number;
@@ -94,20 +102,55 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const getColors = () => {
     const isDark = settings.theme === 'dark';
     
+    if (isDark) {
+      return {
+        background: '#1a1a1a',
+        backgroundAlt: '#2d2d2d',
+        surface: '#2d2d2d',
+        primary: '#42A5F5',
+        secondary: '#9E9E9E',
+        text: '#ffffff',
+        textSecondary: '#b0b0b0',
+        border: '#404040',
+        accent: '#FF6B6B',
+        card: '#2d2d2d',
+        error: '#f44336',
+        success: '#4caf50',
+        warning: '#ff9800',
+        gold: '#D4AF37',
+        emerald: '#50C878',
+        cream: '#FFFDD0',
+        darkBrown: '#654321',
+        mutedBrown: '#8B7355',
+        frostedGlass: 'rgba(45, 45, 45, 0.85)',
+        verseNumberBg: '#D4AF37',
+        verseNumberBorder: '#50C878',
+      };
+    }
+    
+    // Light theme with gold and emerald
     return {
-      background: isDark ? '#1a1a1a' : '#ffffff',
-      backgroundAlt: isDark ? '#2d2d2d' : '#f5f5f5',
-      surface: isDark ? '#2d2d2d' : '#ffffff',
-      primary: isDark ? '#42A5F5' : '#2196F3',
-      secondary: isDark ? '#9E9E9E' : '#757575',
-      text: isDark ? '#ffffff' : '#212121',
-      textSecondary: isDark ? '#b0b0b0' : '#757575',
-      border: isDark ? '#404040' : '#e0e0e0',
-      accent: '#FF6B6B',
-      card: isDark ? '#2d2d2d' : '#ffffff',
-      error: '#f44336',
-      success: '#4caf50',
-      warning: '#ff9800',
+      background: '#F5F5DC',
+      backgroundAlt: '#FFFEF0',
+      surface: '#1E5B4C',
+      primary: '#1E5B4C',
+      secondary: '#D4AF37',
+      text: '#2C2416',
+      textSecondary: '#5C4A2F',
+      border: '#D4AF37',
+      accent: '#D4AF37',
+      card: '#FFFEF0',
+      error: '#C62828',
+      success: '#2E7D32',
+      warning: '#F57C00',
+      gold: '#D4AF37',
+      emerald: '#1E5B4C',
+      cream: '#FFFEF0',
+      darkBrown: '#2C2416',
+      mutedBrown: '#5C4A2F',
+      frostedGlass: 'rgba(255, 254, 240, 0.85)',
+      verseNumberBg: '#D4AF37',
+      verseNumberBorder: '#1E5B4C',
     };
   };
 

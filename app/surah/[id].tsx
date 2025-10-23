@@ -202,94 +202,102 @@ export default function SurahScreen() {
       padding: 20,
     },
     header: {
-      backgroundColor: colors.primary,
-      paddingVertical: 16,
-      paddingHorizontal: 16,
+      backgroundColor: colors.emerald,
+      paddingVertical: 18,
+      paddingHorizontal: 20,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-      elevation: 3,
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.12)',
+      elevation: 4,
+      borderBottomWidth: 2,
+      borderBottomColor: colors.gold,
     },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(212, 175, 55, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
+      borderWidth: 2,
+      borderColor: colors.gold,
     },
     headerContent: {
       flex: 1,
       alignItems: 'center',
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: '#ffffff',
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.gold,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
     },
     headerSubtitle: {
       fontSize: 14,
-      color: '#ffffff',
+      color: colors.gold,
       opacity: 0.9,
       fontFamily: 'Amiri_400Regular',
       textAlign: 'center',
       marginTop: 2,
     },
     headerInfo: {
-      width: 40,
+      width: 44,
       alignItems: 'center',
     },
     ayahCount: {
-      fontSize: 12,
-      color: '#ffffff',
-      fontFamily: 'Amiri_400Regular',
+      fontSize: 13,
+      color: colors.gold,
+      fontFamily: 'Amiri_700Bold',
+      fontWeight: '600',
     },
     scrollView: {
       flex: 1,
     },
     bismillahContainer: {
-      paddingVertical: 24,
-      paddingHorizontal: 20,
+      paddingVertical: 28,
+      paddingHorizontal: 24,
       alignItems: 'center',
       backgroundColor: colors.card,
-      marginHorizontal: 16,
-      marginTop: 16,
-      marginBottom: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.05)',
+      marginHorizontal: 18,
+      marginTop: 18,
+      marginBottom: 14,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.gold,
+      boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.08)',
+      elevation: 4,
     },
     bismillah: {
-      fontSize: 28,
+      fontSize: 30,
       fontFamily: 'ScheherazadeNew_400Regular',
-      color: colors.text,
+      color: colors.emerald,
       textAlign: 'center',
       fontWeight: 'bold',
     },
     footer: {
-      padding: 30,
+      padding: 36,
       alignItems: 'center',
       backgroundColor: colors.background,
-      marginBottom: 20,
+      marginBottom: 80,
     },
     footerText: {
-      fontSize: 20,
-      color: colors.text,
+      fontSize: 22,
+      color: colors.emerald,
       textAlign: 'center',
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
     errorContainer: {
-      backgroundColor: colors.backgroundAlt,
+      backgroundColor: colors.card,
       padding: 20,
-      margin: 16,
-      borderRadius: 12,
+      margin: 18,
+      borderRadius: 16,
       borderLeftWidth: 4,
       borderLeftColor: colors.error,
+      borderWidth: 2,
+      borderColor: colors.gold,
     },
     errorText: {
       fontSize: 16,
@@ -298,17 +306,34 @@ export default function SurahScreen() {
       textAlign: 'center',
     },
     retryButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 8,
-      marginTop: 10,
+      backgroundColor: colors.emerald,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 24,
+      marginTop: 12,
+      borderWidth: 2,
+      borderColor: colors.gold,
     },
     retryButtonText: {
-      color: '#ffffff',
+      color: colors.gold,
       fontSize: 16,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'center',
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 90,
+      right: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.gold,
+      justifyContent: 'center',
+      alignItems: 'center',
+      boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.15)',
+      elevation: 6,
+      borderWidth: 2,
+      borderColor: colors.emerald,
     },
   });
 
@@ -320,7 +345,7 @@ export default function SurahScreen() {
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={{ color: '#ffffff' }} />
+            <Icon name="arrow-back" size={24} style={{ color: colors.gold }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -355,7 +380,7 @@ export default function SurahScreen() {
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={{ color: '#ffffff' }} />
+            <Icon name="arrow-back" size={24} style={{ color: colors.gold }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -366,7 +391,7 @@ export default function SurahScreen() {
         </View>
         
         <View style={styles.centerContent}>
-          <Text style={{ fontSize: 18, color: colors.text, fontFamily: 'Amiri_700Bold' }}>
+          <Text style={{ fontSize: 18, color: colors.emerald, fontFamily: 'Amiri_700Bold' }}>
             جاري تحميل السورة...
           </Text>
         </View>
@@ -382,7 +407,7 @@ export default function SurahScreen() {
             style={styles.backButton} 
             onPress={handleBackPress}
           >
-            <Icon name="arrow-back" size={24} style={{ color: '#ffffff' }} />
+            <Icon name="arrow-back" size={24} style={{ color: colors.gold }} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
@@ -412,7 +437,7 @@ export default function SurahScreen() {
           style={styles.backButton} 
           onPress={handleBackPress}
         >
-          <Icon name="arrow-back" size={24} style={{ color: '#ffffff' }} />
+          <Icon name="arrow-back" size={24} style={{ color: colors.gold }} />
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
@@ -460,6 +485,10 @@ export default function SurahScreen() {
           <Text style={styles.footerText}>صدق الله العظيم</Text>
         </View>
       </ScrollView>
+      
+      <TouchableOpacity style={styles.fab} onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}>
+        <Icon name="arrow-up" size={28} style={{ color: colors.emerald }} />
+      </TouchableOpacity>
       
       <AudioPlayer
         audioState={audioState}

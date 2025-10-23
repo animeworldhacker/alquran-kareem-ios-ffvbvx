@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { AudioState } from '../types';
 import Icon from './Icon';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AudioPlayerProps {
   audioState: AudioState;
@@ -25,7 +26,8 @@ export default function AudioPlayer({
   onStop,
   onNext
 }: AudioPlayerProps) {
-  const { colors, textSizes } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   if (!audioState || (!audioState.currentSurah && !audioState.currentAyah)) {
     return null;
@@ -67,16 +69,20 @@ export default function AudioPlayer({
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: '#1E5B4C',
-      paddingVertical: 12,
+      backgroundColor: colors.emerald,
+      height: 56,
       paddingHorizontal: 16,
+      paddingBottom: insets.bottom,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderTopWidth: 3,
-      borderTopColor: '#D4AF37',
-      boxShadow: '0px -4px 12px rgba(0, 0, 0, 0.15)',
-      elevation: 8,
+      borderTopWidth: 2,
+      borderTopColor: colors.gold,
+      borderRadius: 16,
+      marginHorizontal: 12,
+      marginBottom: 12,
+      boxShadow: '0px -4px 16px rgba(0, 0, 0, 0.12)',
+      elevation: 6,
       position: 'relative',
     },
     progressBar: {
@@ -84,51 +90,55 @@ export default function AudioPlayer({
       top: 0,
       left: 0,
       right: 0,
-      height: 3,
-      backgroundColor: '#D4AF37',
+      height: 2,
+      backgroundColor: colors.gold,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
     },
-    info: {
-      flex: 1,
-    },
-    reciterText: {
-      color: '#D4AF37',
-      fontSize: 12,
-      fontWeight: '600',
-      fontFamily: 'Amiri_400Regular',
-      marginBottom: 2,
-    },
-    currentText: {
-      color: '#D4AF37',
-      fontSize: 16,
-      fontWeight: 'bold',
-      fontFamily: 'Amiri_700Bold',
-    },
-    controls: {
+    leftSection: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 10,
+      flex: 1,
+    },
+    centerSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    rightSection: {
+      flex: 1,
+      alignItems: 'flex-end',
+    },
+    reciterText: {
+      color: colors.gold,
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'Amiri_700Bold',
+      textAlign: 'right',
     },
     controlButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: 'rgba(212, 175, 55, 0.2)',
       justifyContent: 'center',
       alignItems: 'center',
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
     },
     playButton: {
-      backgroundColor: '#D4AF37',
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      backgroundColor: colors.gold,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      marginHorizontal: 8,
     },
     controlIcon: {
-      color: '#D4AF37',
+      color: colors.gold,
     },
     playIcon: {
-      color: '#1E5B4C',
+      color: colors.emerald,
     },
   });
 
@@ -136,34 +146,33 @@ export default function AudioPlayer({
     <View style={styles.container}>
       <View style={styles.progressBar} />
       
-      <View style={styles.info}>
-        <Text style={styles.reciterText}>عبد الباسط عبد الصمد</Text>
-        <Text style={styles.currentText}>
-          سورة {toArabicNumerals(audioState.currentSurah || 0)} - آية {toArabicNumerals(audioState.currentAyah || 0)}
-        </Text>
-      </View>
-      
-      <View style={styles.controls}>
+      <View style={styles.leftSection}>
+        <TouchableOpacity style={styles.controlButton} onPress={handleStop}>
+          <Icon name="stop" size={16} style={styles.controlIcon} />
+        </TouchableOpacity>
+        
         {onNext && (
           <TouchableOpacity style={styles.controlButton} onPress={handleNext}>
-            <Icon name="play-skip-forward" size={18} style={styles.controlIcon} />
+            <Icon name="play-skip-back" size={16} style={styles.controlIcon} />
           </TouchableOpacity>
         )}
-        
+      </View>
+      
+      <View style={styles.centerSection}>
         <TouchableOpacity 
           style={[styles.controlButton, styles.playButton]} 
           onPress={audioState.isPlaying ? handlePause : handlePlay}
         >
           <Icon 
             name={audioState.isPlaying ? "pause" : "play"} 
-            size={24} 
+            size={22} 
             style={styles.playIcon} 
           />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.controlButton} onPress={handleStop}>
-          <Icon name="stop" size={18} style={styles.controlIcon} />
-        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.rightSection}>
+        <Text style={styles.reciterText}>عبد الباسط</Text>
       </View>
     </View>
   );

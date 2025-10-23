@@ -1,35 +1,42 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-// Simple Clean Design System Colors
+// Gold and Emerald Islamic Design System Colors
 export const colors = {
-  // Primary Colors
-  background: '#ffffff',
-  backgroundAlt: '#f5f5f5',
-  surface: '#ffffff',
-  primary: '#2196F3',
-  secondary: '#757575',
-  accent: '#FF6B6B',
+  // Primary Colors - Emerald and Gold Theme
+  background: '#F5F5DC', // Cream background
+  backgroundAlt: '#FFFEF0', // Lighter cream
+  surface: '#1E5B4C', // Emerald
+  primary: '#1E5B4C', // Emerald
+  secondary: '#D4AF37', // Gold
+  accent: '#D4AF37', // Gold
   
   // Text Colors
-  text: '#212121',
-  textSecondary: '#757575',
+  text: '#2C2416', // Dark brown for contrast
+  textSecondary: '#5C4A2F', // Muted brown
   
   // UI Colors
-  border: '#e0e0e0',
-  card: '#ffffff',
+  border: '#D4AF37', // Gold borders
+  card: '#FFFEF0', // Light cream for cards
   shadow: '#000000',
-  error: '#f44336',
-  success: '#4caf50',
-  warning: '#ff9800',
-  info: '#2196F3',
+  error: '#C62828',
+  success: '#2E7D32',
+  warning: '#F57C00',
+  info: '#1976D2',
   
   // Special Colors
-  gold: '#FFD700',
-  emerald: '#50C878',
-  cream: '#FFFDD0',
-  darkBrown: '#654321',
-  mutedBrown: '#8B7355',
+  gold: '#D4AF37',
+  emerald: '#1E5B4C',
+  cream: '#FFFEF0',
+  darkBrown: '#2C2416',
+  mutedBrown: '#5C4A2F',
+  
+  // Frosted glass effect
+  frostedGlass: 'rgba(255, 254, 240, 0.85)',
+  
+  // Verse number colors
+  verseNumberBg: '#D4AF37',
+  verseNumberBorder: '#1E5B4C',
 };
 
 export const buttonStyles = StyleSheet.create({
@@ -62,6 +69,21 @@ export const buttonStyles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  pillButton: {
+    backgroundColor: colors.emerald,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pillButtonText: {
+    color: colors.gold,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
@@ -124,13 +146,13 @@ export const commonStyles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
+    borderWidth: 2,
+    borderRadius: 16,
+    padding: 18,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
+    elevation: 3,
   },
   header: {
     backgroundColor: colors.primary,
@@ -145,7 +167,7 @@ export const commonStyles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#ffffff',
+    color: colors.gold,
     fontFamily: 'Amiri_700Bold',
   },
   icon: {
