@@ -1,13 +1,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useAudio } from '../../hooks/useAudio';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AyahCard from '../../components/AyahCard';
 import AudioPlayer from '../../components/AudioPlayer';
+import FloatingTabBar from '../../components/FloatingTabBar';
 import Icon from '../../components/Icon';
+
+const TAB_BAR_HEIGHT = 60;
+const SCROLL_THRESHOLD = 6;
+const HIDE_TIMEOUT = 3000;
 
 export default function SurahScreen() {
   const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
@@ -26,11 +32,16 @@ export default function SurahScreen() {
     loading: audioLoading 
   } = useAudio();
   const { settings, colors, textSizes } = useTheme();
+  const insets = useSafeAreaInsets();
   
   const [surah, setSurah] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tabVisible, setTabVisible] = useState(true);
   
   const scrollViewRef = useRef<ScrollView>(null);
+  const lastScrollY = useRef(0);
+  const tabTranslateY = useRef(new Animated.Value(0)).current;
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     try {
@@ -67,9 +78,65 @@ export default function SurahScreen() {
     });
   }, [setOnAyahEnd]);
 
+  // Animate tab bar visibility
+  useEffect(() => {
+    Animated.timing(tabTranslateY, {
+      toValue: tabVisible ? 0 : TAB_BAR_HEIGHT + insets.bottom,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [tabVisible, insets.bottom]);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentY = event.nativeEvent.contentOffset.y;
+    const delta = currentY - lastScrollY.current;
+    const velocity = event.nativeEvent.velocity?.y || 0;
+
+    // At top of content, always show tab bar
+    if (currentY <= 0) {
+      setTabVisible(true);
+      lastScrollY.current = currentY;
+      return;
+    }
+
+    // Quick downward swipe - force show
+    if (velocity < -0.5) {
+      setTabVisible(true);
+      lastScrollY.current = currentY;
+      return;
+    }
+
+    // Scrolling down (reading) - hide tab bar
+    if (delta < -SCROLL_THRESHOLD) {
+      setTabVisible(false);
+    }
+    // Scrolling up (going back) - show tab bar
+    else if (delta > SCROLL_THRESHOLD) {
+      setTabVisible(true);
+    }
+
+    lastScrollY.current = currentY;
+  };
+
+  const handleUserInteraction = () => {
+    // Hide tab bar on user interaction
+    setTabVisible(false);
+
+    // Clear existing timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
+
+    // Set timeout to allow scroll logic to control visibility again
+    hideTimeoutRef.current = setTimeout(() => {
+      console.log('Interaction timeout ended, scroll logic now controls tab visibility');
+    }, HIDE_TIMEOUT);
+  };
+
   const handlePlayAyah = async (ayahNumber: number) => {
     try {
       console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
+      handleUserInteraction();
       await playAyah(surahNumber, ayahNumber, false, 0);
     } catch (error) {
       console.error('Error playing ayah:', error);
@@ -90,6 +157,7 @@ export default function SurahScreen() {
   const handlePlayFromHere = async (ayahNumber: number) => {
     try {
       console.log(`Playing from Surah ${surahNumber}, Ayah ${ayahNumber} continuously`);
+      handleUserInteraction();
       const totalAyahs = surah?.ayahs?.length || 0;
       await playAyah(surahNumber, ayahNumber, true, totalAyahs);
     } catch (error) {
@@ -191,6 +259,9 @@ export default function SurahScreen() {
     },
     scrollView: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: TAB_BAR_HEIGHT + insets.bottom + 20,
     },
     bismillahContainer: {
       paddingVertical: 24,
@@ -370,8 +441,11 @@ export default function SurahScreen() {
       
       <ScrollView 
         ref={scrollViewRef}
-        style={styles.scrollView} 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {surahNumber !== 1 && surahNumber !== 9 && (
           <View style={styles.bismillahContainer}>
@@ -405,6 +479,8 @@ export default function SurahScreen() {
         onPause={pauseAudio}
         onStop={stopAudio}
       />
+
+      <FloatingTabBar visible={tabVisible} translateY={tabTranslateY} />
     </View>
   );
 }
