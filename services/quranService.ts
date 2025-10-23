@@ -1,6 +1,7 @@
 
 import { QuranData, Surah, Ayah } from '../types';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class QuranService {
   private baseUrl = 'https://api.alquran.cloud/v1';
@@ -11,14 +12,28 @@ class QuranService {
     bismillahRemoved: 0,
     processingErrors: 0
   };
+  private readonly QURAN_STORAGE_KEY = 'quran_full_data';
+  private readonly QURAN_VERSION_KEY = 'quran_data_version';
+  private readonly CURRENT_VERSION = '1.0';
 
   async getFullQuran(): Promise<QuranData> {
     if (this.cachedQuran) {
-      console.log('Returning cached Quran data');
+      console.log('Returning cached Quran data from memory');
       return this.cachedQuran;
     }
 
     try {
+      // Try to load from local storage first
+      console.log('Checking local storage for Quran data...');
+      const storedData = await this.loadFromStorage();
+      
+      if (storedData) {
+        console.log('✅ Loaded Quran data from local storage (offline mode)');
+        this.cachedQuran = storedData;
+        return this.cachedQuran;
+      }
+
+      // If not in storage, fetch from API
       console.log('Fetching Quran data from API...');
       const response = await fetch(`${this.baseUrl}/quran/quran-uthmani`);
       
@@ -30,11 +45,12 @@ class QuranService {
       
       if (data.code === 200 && data.data) {
         console.log('Processing Quran data to remove Bismillah from all first verses...');
-        // Process the Quran data to remove Bismillah from first verses and fix verse numbering
         const processedData = this.processQuranData(data.data);
         this.cachedQuran = processedData;
         
-        // Log processing statistics
+        // Save to local storage for offline use
+        await this.saveToStorage(processedData);
+        
         console.log('Quran data processing completed:', this.processingStats);
         
         return this.cachedQuran;
@@ -43,7 +59,51 @@ class QuranService {
       }
     } catch (error) {
       console.error('Error fetching Quran:', error);
+      
+      // Try one more time to load from storage as fallback
+      const fallbackData = await this.loadFromStorage();
+      if (fallbackData) {
+        console.log('⚠️ Using offline data as fallback');
+        this.cachedQuran = fallbackData;
+        return this.cachedQuran;
+      }
+      
       throw new Error(`Failed to fetch Quran data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async loadFromStorage(): Promise<QuranData | null> {
+    try {
+      const [storedData, storedVersion] = await Promise.all([
+        AsyncStorage.getItem(this.QURAN_STORAGE_KEY),
+        AsyncStorage.getItem(this.QURAN_VERSION_KEY)
+      ]);
+
+      if (storedData && storedVersion === this.CURRENT_VERSION) {
+        const parsed = JSON.parse(storedData);
+        console.log(`📦 Loaded Quran data from storage (${parsed.surahs?.length || 0} surahs)`);
+        return parsed;
+      } else if (storedData && storedVersion !== this.CURRENT_VERSION) {
+        console.log('⚠️ Stored Quran data version mismatch, will fetch fresh data');
+        return null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error loading Quran from storage:', error);
+      return null;
+    }
+  }
+
+  private async saveToStorage(data: QuranData): Promise<void> {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(this.QURAN_STORAGE_KEY, JSON.stringify(data)),
+        AsyncStorage.setItem(this.QURAN_VERSION_KEY, this.CURRENT_VERSION)
+      ]);
+      console.log('💾 Saved Quran data to local storage for offline use');
+    } catch (error) {
+      console.error('Error saving Quran to storage:', error);
     }
   }
 
@@ -72,7 +132,25 @@ class QuranService {
         }
       }
       
-      // Fetch individual surah if not in cache
+      // Try to load full Quran from storage
+      const storedQuran = await this.loadFromStorage();
+      if (storedQuran && storedQuran.surahs) {
+        const storedSurah = storedQuran.surahs.find(s => s.number === surahNumber);
+        if (storedSurah) {
+          console.log(`Returning Surah ${surahNumber} from storage (offline)`);
+          return {
+            number: storedSurah.number,
+            name: storedSurah.name,
+            englishName: storedSurah.englishName,
+            englishNameTranslation: storedSurah.englishNameTranslation,
+            numberOfAyahs: storedSurah.numberOfAyahs,
+            revelationType: storedSurah.revelationType,
+            ayahs: storedSurah.ayahs
+          };
+        }
+      }
+      
+      // Fetch individual surah if not in cache or storage
       const response = await fetch(`${this.baseUrl}/surah/${surahNumber}/ar.asad`);
       
       if (!response.ok) {
@@ -82,7 +160,6 @@ class QuranService {
       const data = await response.json();
       
       if (data.code === 200 && data.data) {
-        // Process the surah data to remove Bismillah from first verse and fix verse numbering
         const processedSurah = this.processSurahData(data.data, surahNumber);
         console.log(`Surah ${surahNumber} fetched and processed successfully`);
         return processedSurah;
@@ -120,7 +197,6 @@ class QuranService {
   private processQuranData(quranData: QuranData): QuranData {
     console.log('Processing Quran data to remove Bismillah from first verses and fix verse numbering...');
     
-    // Reset processing stats
     this.processingStats = {
       totalSurahs: quranData.surahs.length,
       processedSurahs: 0,
@@ -128,7 +204,6 @@ class QuranService {
       processingErrors: 0
     };
     
-    // Process each surah to remove Bismillah from first verses and fix verse numbering
     const processedSurahs = quranData.surahs.map(surah => {
       try {
         this.processingStats.processedSurahs++;
@@ -136,20 +211,16 @@ class QuranService {
         if (surah.ayahs && Array.isArray(surah.ayahs)) {
           const processedAyahs = surah.ayahs.map(ayah => {
             try {
-              // Process the text to remove Bismillah from first verse
               const originalText = ayah.text || '';
               const processedText = processAyahText(originalText, surah.number, ayah.numberInSurah);
               
-              // Validate the processing
               const validation = validateTextProcessing(originalText, processedText, surah.number, ayah.numberInSurah);
               
-              // Count processed first verses
               if (ayah.numberInSurah === 1 && originalText !== processedText) {
                 this.processingStats.bismillahRemoved++;
                 console.log(`✓ Bismillah removed from Surah ${surah.number}:1`);
               }
               
-              // Log validation issues
               if (validation.hasIssues) {
                 console.warn(`Processing issue in Surah ${surah.number}:${ayah.numberInSurah}: ${validation.details}`);
               }
@@ -161,11 +232,10 @@ class QuranService {
             } catch (ayahError) {
               console.error(`Error processing ayah ${surah.number}:${ayah.numberInSurah}:`, ayahError);
               this.processingStats.processingErrors++;
-              return ayah; // Return original ayah if processing fails
+              return ayah;
             }
           });
           
-          // Filter out empty ayahs (where Bismillah was the only content)
           const filteredAyahs = processedAyahs.filter(ayah => {
             const hasContent = ayah.text && ayah.text.trim().length > 0;
             if (!hasContent) {
@@ -174,13 +244,11 @@ class QuranService {
             return hasContent;
           });
           
-          // Renumber ayahs to start from 1 and be consecutive
           const renumberedAyahs = filteredAyahs.map((ayah, index) => ({
             ...ayah,
             numberInSurah: index + 1
           }));
           
-          // Update the numberOfAyahs to reflect the actual count after processing
           const updatedSurah = {
             ...surah,
             ayahs: renumberedAyahs,
@@ -196,7 +264,7 @@ class QuranService {
       } catch (surahError) {
         console.error(`Error processing Surah ${surah.number}:`, surahError);
         this.processingStats.processingErrors++;
-        return surah; // Return original surah if processing fails
+        return surah;
       }
     });
 
@@ -208,8 +276,7 @@ class QuranService {
       successRate: `${((this.processingStats.processedSurahs / this.processingStats.totalSurahs) * 100).toFixed(1)}%`
     });
     
-    // Verify that all expected first verses had Bismillah removed (except Surah 9)
-    const expectedRemovals = this.processingStats.totalSurahs - 1; // All except Surah 9
+    const expectedRemovals = this.processingStats.totalSurahs - 1;
     if (this.processingStats.bismillahRemoved < expectedRemovals) {
       console.warn(`Warning: Expected ${expectedRemovals} Bismillah removals, but only ${this.processingStats.bismillahRemoved} were processed`);
     }
@@ -223,15 +290,12 @@ class QuranService {
   private processSurahData(surahData: any, surahNumber: number): any {
     console.log(`Processing individual Surah ${surahNumber} data to remove Bismillah and fix verse numbering...`);
     
-    // Process individual surah data to remove Bismillah from first verse and fix verse numbering
     if (surahData.ayahs && Array.isArray(surahData.ayahs)) {
       const processedAyahs = surahData.ayahs.map((ayah: any) => {
         try {
-          // Process the text to remove Bismillah from first verse
           const originalText = ayah.text || '';
           const processedText = processAyahText(originalText, surahNumber, ayah.numberInSurah);
           
-          // Validate the processing
           const validation = validateTextProcessing(originalText, processedText, surahNumber, ayah.numberInSurah);
           
           if (validation.hasIssues) {
@@ -244,11 +308,10 @@ class QuranService {
           };
         } catch (error) {
           console.error(`Error processing ayah ${surahNumber}:${ayah.numberInSurah}:`, error);
-          return ayah; // Return original ayah if processing fails
+          return ayah;
         }
       });
       
-      // Filter out empty ayahs (where Bismillah was the only content)
       const filteredAyahs = processedAyahs.filter((ayah: any) => {
         const hasContent = ayah.text && ayah.text.trim().length > 0;
         if (!hasContent) {
@@ -257,7 +320,6 @@ class QuranService {
         return hasContent;
       });
       
-      // Renumber ayahs to start from 1 and be consecutive
       const renumberedAyahs = filteredAyahs.map((ayah: any, index: number) => ({
         ...ayah,
         numberInSurah: index + 1
@@ -275,8 +337,7 @@ class QuranService {
     return surahData;
   }
 
-  // Clear cache to force refresh
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     console.log('Clearing Quran cache');
     this.cachedQuran = null;
     this.processingStats = {
@@ -285,22 +346,35 @@ class QuranService {
       bismillahRemoved: 0,
       processingErrors: 0
     };
+    
+    try {
+      await AsyncStorage.multiRemove([this.QURAN_STORAGE_KEY, this.QURAN_VERSION_KEY]);
+      console.log('✅ Cleared Quran data from storage');
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
   }
 
-  // Get cache status
   isCached(): boolean {
     return this.cachedQuran !== null;
   }
 
-  // Get processing statistics
+  async isStoredOffline(): Promise<boolean> {
+    try {
+      const stored = await AsyncStorage.getItem(this.QURAN_STORAGE_KEY);
+      return stored !== null;
+    } catch {
+      return false;
+    }
+  }
+
   getProcessingStats() {
     return { ...this.processingStats };
   }
 
-  // Force reprocess all data
   async forceReprocess(): Promise<void> {
     console.log('Force reprocessing Quran data...');
-    this.clearCache();
+    await this.clearCache();
     await this.getFullQuran();
   }
 }
