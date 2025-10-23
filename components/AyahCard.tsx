@@ -84,14 +84,16 @@ export default function AyahCard({
     }
   }, [tafsirExpanded, tafsirText, surahNumber, ayah.numberInSurah]);
 
+  // Auto-expand tafsir if setting is enabled
   useEffect(() => {
     if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
       handleTafsirToggle().catch(error => {
         console.error('Error in auto-expand tafsir:', error);
       });
     }
-  }, [settings.autoExpandTafsir, tafsirText, tafsirLoading, tafsirError, handleTafsirToggle]);
+  }, [settings.autoExpandTafsir]);
 
+  // Validate text processing
   useEffect(() => {
     const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
     const validation = validateTextProcessing(ayah.text, processedText, surahNumber, ayah.numberInSurah);
@@ -101,7 +103,7 @@ export default function AyahCard({
     }
   }, [ayah.text, surahNumber, ayah.numberInSurah]);
 
-  const handleRetryTafsir = async () => {
+  const handleRetryTafsir = useCallback(async () => {
     try {
       setTafsirError(null);
       setTafsirText(null);
@@ -109,18 +111,18 @@ export default function AyahCard({
     } catch (error) {
       console.error('Error retrying tafsir:', error);
     }
-  };
+  }, [handleTafsirToggle]);
 
-  const handleFullTafsir = () => {
+  const handleFullTafsir = useCallback(() => {
     try {
       router.push(`/tafsir/${surahNumber}/${ayah.numberInSurah}`);
     } catch (error) {
       console.error('Error navigating to full tafsir:', error);
       Alert.alert('خطأ', 'تعذّر فتح صفحة التفسير', [{ text: 'حسناً' }]);
     }
-  };
+  }, [surahNumber, ayah.numberInSurah]);
 
-  const handleCopyTafsir = async () => {
+  const handleCopyTafsir = useCallback(async () => {
     try {
       if (tafsirText) {
         await Clipboard.setStringAsync(tafsirText).catch(error => {
@@ -133,9 +135,9 @@ export default function AyahCard({
       console.error('Error copying tafsir:', error);
       Alert.alert('خطأ', 'تعذّر نسخ التفسير', [{ text: 'حسناً' }]);
     }
-  };
+  }, [tafsirText]);
 
-  const handleShareTafsir = async () => {
+  const handleShareTafsir = useCallback(async () => {
     try {
       if (tafsirText) {
         await Share.share({
@@ -149,9 +151,9 @@ export default function AyahCard({
       console.error('Error sharing tafsir:', error);
       Alert.alert('خطأ', 'تعذّر مشاركة التفسير', [{ text: 'حسناً' }]);
     }
-  };
+  }, [tafsirText, surahName, ayah.numberInSurah]);
 
-  const handleBookmarkToggle = async () => {
+  const handleBookmarkToggle = useCallback(async () => {
     try {
       if (bookmarked) {
         await removeBookmarkByAyah(surahNumber, ayah.numberInSurah).catch(error => {
@@ -174,9 +176,9 @@ export default function AyahCard({
       console.error('Error toggling bookmark:', error);
       Alert.alert('خطأ', 'تعذّر حفظ الإشارة المرجعية', [{ text: 'حسناً' }]);
     }
-  };
+  }, [bookmarked, surahNumber, ayah.numberInSurah, surahName, surahEnglishName, ayah.text, addBookmark, removeBookmarkByAyah]);
 
-  const handlePlayAudio = () => {
+  const handlePlayAudio = useCallback(() => {
     try {
       if (isPlaying && !isContinuousPlaying) {
         onStopAudio?.();
@@ -186,15 +188,15 @@ export default function AyahCard({
     } catch (error) {
       console.error('Error handling audio playback:', error);
     }
-  };
+  }, [isPlaying, isContinuousPlaying, onStopAudio, onPlayAudio, ayah.numberInSurah]);
 
-  const handlePlayFromHere = () => {
+  const handlePlayFromHere = useCallback(() => {
     try {
       onPlayFromHere?.(ayah.numberInSurah);
     } catch (error) {
       console.error('Error playing from here:', error);
     }
-  };
+  }, [onPlayFromHere, ayah.numberInSurah]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card }]}>

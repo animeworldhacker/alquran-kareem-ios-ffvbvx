@@ -55,20 +55,20 @@ export default function TafsirScreen() {
     loadData();
   }, [loadData]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     try {
       router.back();
     } catch (error) {
       console.error('Error navigating back:', error);
       router.push(`/surah/${surahNumber}`);
     }
-  };
+  }, [surahNumber]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     loadData();
-  };
+  }, [loadData]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -81,9 +81,9 @@ export default function TafsirScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [surahNumber, ayahNumber]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     if (tafsir) {
       try {
         const fullText = `${surahData?.name || `سورة ${surahNumber}`} - آية ${ayahNumber}\n\n${ayahData?.text || ''}\n\nتفسير ابن كثير:\n${tafsir}`;
@@ -94,9 +94,9 @@ export default function TafsirScreen() {
         Alert.alert('خطأ', 'فشل في نسخ التفسير');
       }
     }
-  };
+  }, [tafsir, surahData, surahNumber, ayahNumber, ayahData]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (tafsir) {
       try {
         await Share.share({
@@ -106,7 +106,7 @@ export default function TafsirScreen() {
         console.error('Error sharing tafsir:', error);
       }
     }
-  };
+  }, [tafsir, surahData, surahNumber, ayahNumber, ayahData]);
 
   const styles = StyleSheet.create({
     container: {

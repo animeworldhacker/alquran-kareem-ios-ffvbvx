@@ -6,11 +6,15 @@ import { toArabicIndic, getRubElHizbLabel, getRubElHizbSymbol } from '../utils/t
 import Icon from './Icon';
 
 interface VerseMarkersProps {
-  metadata: VerseMetadata;
+  metadata?: VerseMetadata;
   previousMetadata?: VerseMetadata;
 }
 
 export default function VerseMarkers({ metadata, previousMetadata }: VerseMarkersProps) {
+  if (!metadata) {
+    return null;
+  }
+
   const showJuzMarker = !previousMetadata || metadata.juz_number !== previousMetadata.juz_number;
   const showHizbMarker = !previousMetadata || metadata.hizb_number !== previousMetadata.hizb_number;
   const showRubMarker = metadata.rub_el_hizb_number > 0 && (

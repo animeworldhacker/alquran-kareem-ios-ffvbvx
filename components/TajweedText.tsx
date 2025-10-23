@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { parseTajweedHTML, TajweedSegment } from '../utils/tajweedColors';
+import { parseTajweedHTML } from '../utils/tajweedColors';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface TajweedTextProps {
