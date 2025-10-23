@@ -227,7 +227,7 @@ export default function AyahCard({
     },
     verseNumberText: {
       fontSize: textSizes.body,
-      color: colors.text,
+      color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
       zIndex: 1,
