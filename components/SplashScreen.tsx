@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   dedicationTitle: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#D4AF37',
+    color: '#F5EEE3',
     textAlign: 'center',
     marginBottom: 20,
     fontFamily: 'Amiri_700Bold',
