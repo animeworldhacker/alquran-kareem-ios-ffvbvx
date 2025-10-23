@@ -2,7 +2,7 @@
 // Global type declarations for error handling
 
 declare global {
-  var __promiseRejectionTrackingInstalled: boolean | undefined;
+  let __promiseRejectionTrackingInstalled: boolean | undefined;
   
   interface Window {
     __promiseRejectionTrackingInstalled?: boolean;
@@ -13,7 +13,7 @@ declare global {
     getGlobalHandler: () => ((error: any, isFatal?: boolean) => void) | undefined;
   }
 
-  var ErrorUtils: ErrorUtils | undefined;
+  let ErrorUtils: ErrorUtils | undefined;
 
   interface HermesInternal {
     enablePromiseRejectionTracker?: (options: {
@@ -23,7 +23,7 @@ declare global {
     }) => void;
   }
 
-  var HermesInternal: HermesInternal | undefined;
+  let HermesInternal: HermesInternal | undefined;
 }
 
 export {};

@@ -8,7 +8,7 @@ import TajweedText from './TajweedText';
 import { Ayah, VerseMetadata, TajweedVerse } from '../types';
 import VerseMarkers from './VerseMarkers';
 import { useTheme } from '../contexts/ThemeContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { router } from 'expo-router';
 
 interface AyahCardProps {
@@ -53,24 +53,7 @@ export default function AyahCard({
   const { addBookmark, removeBookmarkByAyah, isBookmarked } = useBookmarks();
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
 
-  useEffect(() => {
-    if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
-      handleTafsirToggle().catch(error => {
-        console.error('Error in auto-expand tafsir:', error);
-      });
-    }
-  }, [settings.autoExpandTafsir]);
-
-  useEffect(() => {
-    const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
-    const validation = validateTextProcessing(ayah.text, processedText, surahNumber, ayah.numberInSurah);
-    
-    if (validation.hasIssues) {
-      console.warn(`Text processing issue in ${surahNumber}:${ayah.numberInSurah}:`, validation.details);
-    }
-  }, [ayah.text, surahNumber, ayah.numberInSurah]);
-
-  const handleTafsirToggle = async () => {
+  const handleTafsirToggle = useCallback(async () => {
     try {
       if (tafsirExpanded) {
         setTafsirExpanded(false);
@@ -99,7 +82,24 @@ export default function AyahCard({
     } finally {
       setTafsirLoading(false);
     }
-  };
+  }, [tafsirExpanded, tafsirText, surahNumber, ayah.numberInSurah]);
+
+  useEffect(() => {
+    if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
+      handleTafsirToggle().catch(error => {
+        console.error('Error in auto-expand tafsir:', error);
+      });
+    }
+  }, [settings.autoExpandTafsir, tafsirText, tafsirLoading, tafsirError, handleTafsirToggle]);
+
+  useEffect(() => {
+    const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
+    const validation = validateTextProcessing(ayah.text, processedText, surahNumber, ayah.numberInSurah);
+    
+    if (validation.hasIssues) {
+      console.warn(`Text processing issue in ${surahNumber}:${ayah.numberInSurah}:`, validation.details);
+    }
+  }, [ayah.text, surahNumber, ayah.numberInSurah]);
 
   const handleRetryTafsir = async () => {
     try {

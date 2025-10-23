@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share, Clipboard, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -21,11 +21,7 @@ export default function TafsirScreen() {
   const [surahData, setSurahData] = useState<any>(null);
   const [ayahData, setAyahData] = useState<any>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [surahNumber, ayahNumber]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -53,7 +49,11 @@ export default function TafsirScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [surahNumber, ayahNumber, getSurah]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleBack = () => {
     try {
