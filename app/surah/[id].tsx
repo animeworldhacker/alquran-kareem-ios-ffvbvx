@@ -37,27 +37,33 @@ export default function SurahScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    try {
-      if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
-        setError(`رقم السورة غير صحيح: ${surahNumber}`);
-        return;
-      }
+    const loadSurahData = async () => {
+      try {
+        if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
+          setError(`رقم السورة غير صحيح: ${surahNumber}`);
+          return;
+        }
 
-      const surahData = getSurah(surahNumber);
-      if (surahData) {
-        setSurah(surahData);
-        setTajweedVerses(surahData.tajweedVerses || []);
-        setMetadata(surahData.metadata || []);
-        setError(null);
-        console.log(`Loaded Surah ${surahNumber}:`, surahData?.name, `with ${surahData?.ayahs?.length} ayahs`);
-        console.log(`Tajweed verses: ${surahData.tajweedVerses?.length || 0}, Metadata: ${surahData.metadata?.length || 0}`);
-      } else if (!quranLoading) {
-        setError(`لم يتم العثور على السورة رقم ${surahNumber}`);
+        const surahData = getSurah(surahNumber);
+        if (surahData) {
+          setSurah(surahData);
+          setTajweedVerses(surahData.tajweedVerses || []);
+          setMetadata(surahData.metadata || []);
+          setError(null);
+          console.log(`Loaded Surah ${surahNumber}:`, surahData?.name, `with ${surahData?.ayahs?.length} ayahs`);
+          console.log(`Tajweed verses: ${surahData.tajweedVerses?.length || 0}, Metadata: ${surahData.metadata?.length || 0}`);
+        } else if (!quranLoading) {
+          setError(`لم يتم العثور على السورة رقم ${surahNumber}`);
+        }
+      } catch (err) {
+        console.error('Error loading surah:', err);
+        setError('خطأ في تحميل السورة');
       }
-    } catch (err) {
-      console.error('Error loading surah:', err);
-      setError('خطأ في تحميل السورة');
-    }
+    };
+
+    loadSurahData().catch(error => {
+      console.error('Error in loadSurahData:', error);
+    });
   }, [surahNumber, getSurah, quranLoading]);
 
   useEffect(() => {
@@ -69,28 +75,38 @@ export default function SurahScreen() {
   }, [targetAyah, surah]);
 
   useEffect(() => {
-    setOnAyahEnd((surah: number, ayah: number) => {
-      console.log(`Ayah ended, moving to next: ${surah}:${ayah}`);
-    });
+    try {
+      setOnAyahEnd((surah: number, ayah: number) => {
+        console.log(`Ayah ended, moving to next: ${surah}:${ayah}`);
+      });
+    } catch (error) {
+      console.error('Error setting ayah end callback:', error);
+    }
   }, [setOnAyahEnd]);
 
   const handlePlayAyah = async (ayahNumber: number) => {
     try {
       console.log(`Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
-      await playAyah(surahNumber, ayahNumber, false, 0);
+      await playAyah(surahNumber, ayahNumber, false, 0).catch(error => {
+        console.error('Error from playAyah:', error);
+        throw error;
+      });
     } catch (error) {
       console.error('Error playing ayah:', error);
-      Alert.alert('خطأ', 'فشل في تشغيل الآية. يرجى المحاولة مرة أخرى.');
+      Alert.alert('خطأ', 'فشل في تشغيل الآية. يرجى المحاولة مرة أخرى.', [{ text: 'حسناً' }]);
     }
   };
 
   const handleStopAudio = async () => {
     try {
       console.log('Stopping audio from AyahCard');
-      await stopAudio();
+      await stopAudio().catch(error => {
+        console.error('Error from stopAudio:', error);
+        throw error;
+      });
     } catch (error) {
       console.error('Error stopping audio:', error);
-      Alert.alert('خطأ', 'فشل في إيقاف الآية. يرجى المحاولة مرة أخرى.');
+      Alert.alert('خطأ', 'فشل في إيقاف الآية. يرجى المحاولة مرة أخرى.', [{ text: 'حسناً' }]);
     }
   };
 
@@ -98,17 +114,25 @@ export default function SurahScreen() {
     try {
       console.log(`Playing from Surah ${surahNumber}, Ayah ${ayahNumber} continuously`);
       const totalAyahs = surah?.ayahs?.length || 0;
-      await playAyah(surahNumber, ayahNumber, true, totalAyahs);
+      await playAyah(surahNumber, ayahNumber, true, totalAyahs).catch(error => {
+        console.error('Error from playAyah (continuous):', error);
+        throw error;
+      });
     } catch (error) {
       console.error('Error playing from here:', error);
-      Alert.alert('خطأ', 'فشل في تشغيل الآيات. يرجى المحاولة مرة أخرى.');
+      Alert.alert('خطأ', 'فشل في تشغيل الآيات. يرجى المحاولة مرة أخرى.', [{ text: 'حسناً' }]);
     }
   };
 
   const isCurrentAyahPlaying = (ayahNumber: number) => {
-    return audioState.isPlaying && 
-           audioState.currentSurah === surahNumber && 
-           audioState.currentAyah === ayahNumber;
+    try {
+      return audioState.isPlaying && 
+             audioState.currentSurah === surahNumber && 
+             audioState.currentAyah === ayahNumber;
+    } catch (error) {
+      console.error('Error checking if ayah is playing:', error);
+      return false;
+    }
   };
 
   const handleBackPress = () => {
@@ -136,19 +160,34 @@ export default function SurahScreen() {
   };
 
   const getTajweedVerseForAyah = (ayahNumber: number): TajweedVerse | undefined => {
-    return tajweedVerses.find(v => {
-      const parts = v.verse_key.split(':');
-      return parseInt(parts[1]) === ayahNumber;
-    });
+    try {
+      return tajweedVerses.find(v => {
+        const parts = v.verse_key.split(':');
+        return parseInt(parts[1]) === ayahNumber;
+      });
+    } catch (error) {
+      console.error('Error getting tajweed verse:', error);
+      return undefined;
+    }
   };
 
   const getMetadataForAyah = (ayahNumber: number): VerseMetadata | undefined => {
-    return metadata.find(m => m.verse_number === ayahNumber);
+    try {
+      return metadata.find(m => m.verse_number === ayahNumber);
+    } catch (error) {
+      console.error('Error getting metadata:', error);
+      return undefined;
+    }
   };
 
   const getPreviousMetadata = (ayahNumber: number): VerseMetadata | undefined => {
-    if (ayahNumber === 1) return undefined;
-    return metadata.find(m => m.verse_number === ayahNumber - 1);
+    try {
+      if (ayahNumber === 1) return undefined;
+      return metadata.find(m => m.verse_number === ayahNumber - 1);
+    } catch (error) {
+      console.error('Error getting previous metadata:', error);
+      return undefined;
+    }
   };
 
   const styles = StyleSheet.create({

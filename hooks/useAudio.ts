@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AudioState } from '../types';
 import { audioService } from '../services/audioService';
 import { Alert } from 'react-native';
@@ -33,11 +33,7 @@ export const useAudio = () => {
     } catch (error) {
       console.error('❌ Error initializing audio hook:', error);
       setError('فشل في تهيئة الصوت');
-      Alert.alert(
-        'خطأ في الصوت',
-        'فشل في تهيئة نظام الصوت. يرجى التحقق من اتصالك بالإنترنت وإعادة تشغيل التطبيق.',
-        [{ text: 'حسناً' }]
-      );
+      // Don't show alert immediately - only when user tries to play
     }
   };
 
@@ -64,7 +60,10 @@ export const useAudio = () => {
         ayahNumber, 
         continuousPlay,
         totalAyahs
-      );
+      ).catch(error => {
+        console.error('Error from audioService.playAyah:', error);
+        throw error;
+      });
       
       setAudioState(prev => ({
         ...prev,
@@ -101,7 +100,10 @@ export const useAudio = () => {
   const stopAudio = async () => {
     try {
       console.log('⏹️ Hook: Stopping audio...');
-      await audioService.stopAudio();
+      await audioService.stopAudio().catch(error => {
+        console.error('Error from audioService.stopAudio:', error);
+        throw error;
+      });
       setContinuousPlayback(false);
       setAudioState(prev => ({
         ...prev,
@@ -120,7 +122,10 @@ export const useAudio = () => {
   const pauseAudio = async () => {
     try {
       console.log('⏸️ Hook: Pausing audio...');
-      await audioService.pauseAudio();
+      await audioService.pauseAudio().catch(error => {
+        console.error('Error from audioService.pauseAudio:', error);
+        throw error;
+      });
       setAudioState(prev => ({ ...prev, isPlaying: false }));
       console.log('✅ Hook: Audio paused successfully');
       setError(null);
@@ -133,7 +138,10 @@ export const useAudio = () => {
   const resumeAudio = async () => {
     try {
       console.log('▶️ Hook: Resuming audio...');
-      await audioService.resumeAudio();
+      await audioService.resumeAudio().catch(error => {
+        console.error('Error from audioService.resumeAudio:', error);
+        throw error;
+      });
       setAudioState(prev => ({ ...prev, isPlaying: true }));
       console.log('✅ Hook: Audio resumed successfully');
       setError(null);
@@ -143,13 +151,13 @@ export const useAudio = () => {
     }
   };
 
-  const setOnAyahEnd = (callback: (surah: number, ayah: number) => void) => {
+  const setOnAyahEnd = useCallback((callback: (surah: number, ayah: number) => void) => {
     try {
       audioService.setOnAyahEndCallback(callback);
     } catch (error) {
       console.error('Error setting ayah end callback:', error);
     }
-  };
+  }, []);
 
   return {
     audioState,

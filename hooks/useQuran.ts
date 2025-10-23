@@ -10,7 +10,9 @@ export const useQuran = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadQuranData();
+    loadQuranData().catch(error => {
+      console.error('Error in useQuran effect:', error);
+    });
   }, []);
 
   const loadQuranData = async () => {
@@ -21,8 +23,14 @@ export const useQuran = () => {
       console.log('Starting to load Quran data...');
       
       const [fullQuran, surahsList] = await Promise.all([
-        quranService.getFullQuran(),
-        quranService.getSurahs()
+        quranService.getFullQuran().catch(error => {
+          console.error('Error loading full Quran:', error);
+          throw error;
+        }),
+        quranService.getSurahs().catch(error => {
+          console.error('Error loading surahs list:', error);
+          throw error;
+        })
       ]);
       
       if (!fullQuran) {
@@ -46,32 +54,42 @@ export const useQuran = () => {
   };
 
   const getSurah = (surahNumber: number) => {
-    if (!quranData || !quranData.surahs) {
-      console.log('No Quran data available');
+    try {
+      if (!quranData || !quranData.surahs) {
+        console.log('No Quran data available');
+        return null;
+      }
+      
+      if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
+        console.log('Invalid surah number:', surahNumber);
+        return null;
+      }
+      
+      return quranData.surahs.find(surah => surah.number === surahNumber);
+    } catch (error) {
+      console.error('Error in getSurah:', error);
       return null;
     }
-    
-    if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
-      console.log('Invalid surah number:', surahNumber);
-      return null;
-    }
-    
-    return quranData.surahs.find(surah => surah.number === surahNumber);
   };
 
   const getAyah = (surahNumber: number, ayahNumber: number) => {
-    const surah = getSurah(surahNumber);
-    if (!surah || !surah.ayahs) {
-      console.log('Surah not found or has no ayahs:', surahNumber);
+    try {
+      const surah = getSurah(surahNumber);
+      if (!surah || !surah.ayahs) {
+        console.log('Surah not found or has no ayahs:', surahNumber);
+        return null;
+      }
+      
+      if (!ayahNumber || ayahNumber < 1) {
+        console.log('Invalid ayah number:', ayahNumber);
+        return null;
+      }
+      
+      return surah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+    } catch (error) {
+      console.error('Error in getAyah:', error);
       return null;
     }
-    
-    if (!ayahNumber || ayahNumber < 1) {
-      console.log('Invalid ayah number:', ayahNumber);
-      return null;
-    }
-    
-    return surah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
   };
 
   return {
