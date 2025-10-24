@@ -34,20 +34,20 @@ const VerseMedallion = ({ number }: { number: number }) => {
   
   const styles = StyleSheet.create({
     container: {
-      width: 20,
-      height: 20,
+      width: 24,
+      height: 24,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
       marginHorizontal: 6,
     },
     image: {
-      width: 20,
-      height: 20,
+      width: 24,
+      height: 24,
       position: 'absolute',
     },
     text: {
-      fontSize: 11,
+      fontSize: 13,
       color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
@@ -253,75 +253,26 @@ export default function MushafPageView({
     pageContent: {
       minHeight: Dimensions.get('window').height - 200,
     },
-    ayahBlock: {
-      marginBottom: 15,
-    },
-    ayahRow: {
-      flexDirection: 'row-reverse',
-      alignItems: 'flex-start',
-      gap: 8,
-    },
-    rubMarkerColumn: {
-      width: 60,
-      alignItems: 'flex-end',
-      paddingTop: 4,
-    },
-    rubBadge: {
-      backgroundColor: colors.surfaceVariant,
-      borderColor: colors.outline,
-      borderWidth: 1,
-      borderRadius: 6,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-    },
-    rubBadgeText: {
-      fontSize: 9,
-      color: colors.onSurfaceVariant,
-      fontFamily: 'Amiri_400Regular',
-    },
-    ayahContentColumn: {
-      flex: 1,
-      minWidth: 0,
-    },
-    highlightOverlay: {
-      position: 'absolute',
-      left: -4,
-      right: -4,
-      top: -4,
-      bottom: -4,
-      backgroundColor: `${colors.primary}1F`,
-      borderRadius: 8,
-      zIndex: -1,
-    },
-    playingOverlay: {
-      position: 'absolute',
-      left: -4,
-      right: -4,
-      top: -4,
-      bottom: -4,
-      backgroundColor: `${colors.success}1F`,
-      borderRadius: 8,
-      zIndex: -1,
-    },
-    ayahTextContainer: {
-      position: 'relative',
-    },
-    ayahTextLine: {
-      fontSize: textSizes.ayah,
-      lineHeight: textSizes.ayah * 1.95,
-      textAlign: 'justify',
-      color: colors.text,
-      fontFamily: 'ScheherazadeNew_400Regular',
-      writingDirection: 'rtl',
+    continuousTextContainer: {
       flexDirection: 'row-reverse',
       flexWrap: 'wrap',
       alignItems: 'baseline',
+      textAlign: 'justify',
+      lineHeight: textSizes.ayah * 1.95,
     },
     ayahTextSegment: {
       fontSize: textSizes.ayah,
       lineHeight: textSizes.ayah * 1.95,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
+    },
+    highlightedText: {
+      backgroundColor: `${colors.primary}1F`,
+      borderRadius: 4,
+    },
+    playingText: {
+      backgroundColor: `${colors.success}1F`,
+      borderRadius: 4,
     },
     sajdahIcon: {
       fontSize: 14,
@@ -336,6 +287,99 @@ export default function MushafPageView({
       paddingVertical: 1,
     },
   });
+
+  // Render continuous text with inline verse numbers
+  const renderContinuousText = () => {
+    const elements: JSX.Element[] = [];
+    
+    ayahs.forEach((ayah, index) => {
+      const isHighlighted = highlightedAyah === ayah.numberInSurah;
+      const isPlaying = currentPlayingAyah === ayah.numberInSurah;
+      const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
+      const prevAyah = index > 0 ? ayahs[index - 1] : previousAyah;
+      
+      // Check for boundary markers
+      const boundaryMarkers = shouldShowBoundaryMarkers(ayah, prevAyah);
+      const rubMarker = shouldShowRubMarker(ayah, prevAyah);
+      const showSajdah = hasSajdah(ayah);
+
+      // Add boundary markers if needed
+      if (boundaryMarkers.juz || boundaryMarkers.hizb) {
+        elements.push(
+          <View key={`boundary-${ayah.numberInSurah}`} style={{ width: '100%' }}>
+            <View style={styles.boundaryMarkerContainer}>
+              <View style={styles.boundaryDivider} />
+              <View style={styles.boundaryBadges}>
+                {boundaryMarkers.juz && (
+                  <View style={styles.boundaryBadge}>
+                    <Text style={styles.boundaryBadgeText}>
+                      الجزء {toArabicIndic(boundaryMarkers.juz)}
+                    </Text>
+                  </View>
+                )}
+                {boundaryMarkers.hizb && (
+                  <View style={styles.boundaryBadge}>
+                    <Text style={styles.boundaryBadgeText}>
+                      الحزب {toArabicIndic(boundaryMarkers.hizb)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        );
+      }
+
+      // Add ayah text
+      elements.push(
+        <TouchableOpacity
+          key={`ayah-${ayah.numberInSurah}`}
+          activeOpacity={0.7}
+          onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
+        >
+          <Text
+            ref={(ref) => {
+              if (ref) {
+                ayahRefs.current.set(ayah.numberInSurah, ref as any);
+              }
+            }}
+            style={[
+              styles.ayahTextSegment,
+              isHighlighted && styles.highlightedText,
+              isPlaying && styles.playingText,
+            ]}
+          >
+            {processedText}
+          </Text>
+        </TouchableOpacity>
+      );
+
+      // Add verse number (medallion)
+      elements.push(
+        <View key={`medallion-${ayah.numberInSurah}`}>
+          <VerseMedallion number={ayah.numberInSurah} />
+        </View>
+      );
+
+      // Add sajdah icon if needed
+      if (showSajdah) {
+        elements.push(
+          <Text key={`sajdah-${ayah.numberInSurah}`} style={styles.sajdahIcon}>
+            سجدة
+          </Text>
+        );
+      }
+
+      // Add space between verses
+      elements.push(
+        <Text key={`space-${ayah.numberInSurah}`} style={styles.ayahTextSegment}>
+          {' '}
+        </Text>
+      );
+    });
+
+    return elements;
+  };
 
   return (
     <View style={styles.container}>
@@ -354,97 +398,10 @@ export default function MushafPageView({
         )}
 
         <View style={styles.pageContent}>
-          {ayahs.map((ayah, index) => {
-            const isHighlighted = highlightedAyah === ayah.numberInSurah;
-            const isPlaying = currentPlayingAyah === ayah.numberInSurah;
-            const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
-            const prevAyah = index > 0 ? ayahs[index - 1] : previousAyah;
-            
-            // Check for boundary markers
-            const boundaryMarkers = shouldShowBoundaryMarkers(ayah, prevAyah);
-            const rubMarker = shouldShowRubMarker(ayah, prevAyah);
-            const showSajdah = hasSajdah(ayah);
-
-            return (
-              <View key={`${surahNumber}-${ayah.numberInSurah}`}>
-                {/* Juz/Hizb boundary markers - centered with divider */}
-                {(boundaryMarkers.juz || boundaryMarkers.hizb) && (
-                  <View style={styles.boundaryMarkerContainer}>
-                    <View style={styles.boundaryDivider} />
-                    <View style={styles.boundaryBadges}>
-                      {boundaryMarkers.juz && (
-                        <View style={styles.boundaryBadge}>
-                          <Text style={styles.boundaryBadgeText}>
-                            الجزء {toArabicIndic(boundaryMarkers.juz)}
-                          </Text>
-                        </View>
-                      )}
-                      {boundaryMarkers.hizb && (
-                        <View style={styles.boundaryBadge}>
-                          <Text style={styles.boundaryBadgeText}>
-                            الحزب {toArabicIndic(boundaryMarkers.hizb)}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                )}
-
-                {/* Ayah block */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
-                >
-                  <View
-                    ref={(ref) => {
-                      if (ref) {
-                        ayahRefs.current.set(ayah.numberInSurah, ref);
-                      }
-                    }}
-                    style={styles.ayahBlock}
-                  >
-                    <View style={styles.ayahRow}>
-                      {/* Rub' marker in outer margin */}
-                      {rubMarker && (
-                        <View style={styles.rubMarkerColumn}>
-                          <View style={styles.rubBadge}>
-                            <Text style={styles.rubBadgeText}>
-                              {rubMarker === 1 && '¼'}
-                              {rubMarker === 2 && '½'}
-                              {rubMarker === 3 && '¾'}
-                              {rubMarker === 4 && '●'}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-
-                      {/* Ayah content */}
-                      <View style={styles.ayahContentColumn}>
-                        {/* Highlight overlay */}
-                        {isHighlighted && <View style={styles.highlightOverlay} />}
-                        {isPlaying && <View style={styles.playingOverlay} />}
-
-                        {/* Ayah text with inline verse number */}
-                        <View style={styles.ayahTextContainer}>
-                          <Text style={styles.ayahTextLine}>
-                            <Text style={styles.ayahTextSegment}>
-                              {processedText}
-                            </Text>
-                            {/* Inline verse medallion - exact match from scrolling mode */}
-                            <VerseMedallion number={ayah.numberInSurah} />
-                            {/* Sajdah icon right after verse number */}
-                            {showSajdah && (
-                              <Text style={styles.sajdahIcon}>سجدة</Text>
-                            )}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
+          {/* Continuous text with inline verse numbers */}
+          <View style={styles.continuousTextContainer}>
+            {renderContinuousText()}
+          </View>
         </View>
       </ScrollView>
 
