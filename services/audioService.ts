@@ -26,7 +26,9 @@ class AudioService {
   
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
-  private readonly AUDIO_DIR = `${FileSystem.documentDirectory}audio/`;
+  private getAudioDir(): string {
+    return `${FileSystem.documentDirectory ?? ''}audio/`;
+  }
 
   constructor() {
     // Start loading cache but don't await it
@@ -38,9 +40,10 @@ class AudioService {
 
   private async ensureAudioDirectory() {
     try {
-      const dirInfo = await FileSystem.getInfoAsync(this.AUDIO_DIR);
+      const audioDir = this.getAudioDir();
+      const dirInfo = await FileSystem.getInfoAsync(audioDir);
       if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(this.AUDIO_DIR, { intermediates: true });
+        await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true });
         console.log('📁 Created audio directory');
       }
     } catch (error) {
@@ -356,7 +359,8 @@ class AudioService {
       
       // Download file
       const fileName = `${surahNumber}_${ayahNumber}.mp3`;
-      const localPath = `${this.AUDIO_DIR}${fileName}`;
+      const audioDir = this.getAudioDir();
+      const localPath = `${audioDir}${fileName}`;
       
       const downloadResult = await FileSystem.downloadAsync(audioUrl, localPath);
       
