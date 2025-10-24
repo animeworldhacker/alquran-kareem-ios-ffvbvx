@@ -55,7 +55,7 @@ export default function AyahActionPopover({
       scaleAnim.setValue(0);
       opacityAnim.setValue(0);
     }
-  }, [visible]);
+  }, [visible, scaleAnim, opacityAnim]);
 
   const handlePlay = () => {
     onAction('play', ayahNumber);
