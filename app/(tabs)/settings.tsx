@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { AppSettings } from '../../types';
@@ -161,16 +161,16 @@ export default function SettingsTab() {
     );
   };
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.background,
     },
     scrollView: {
       flex: 1,
     },
     ornateHeader: {
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
       marginHorizontal: 16,
       marginTop: 16,
       marginBottom: 12,
@@ -178,7 +178,7 @@ export default function SettingsTab() {
       paddingHorizontal: 20,
       borderRadius: 20,
       borderWidth: 3,
-      borderColor: '#D4AF37',
+      borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
@@ -187,24 +187,24 @@ export default function SettingsTab() {
     headerTitle: {
       fontSize: 22,
       fontWeight: 'bold',
-      color: '#D4AF37',
+      color: colors.gold,
       fontFamily: 'Amiri_700Bold',
     },
     settingCard: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.surface,
       marginVertical: 8,
       marginHorizontal: 16,
       borderRadius: 12,
       padding: 16,
       borderWidth: 1.5,
-      borderColor: '#D4AF37',
+      borderColor: colors.border,
       boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
       elevation: 2,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: '#1E5B4C',
+      color: colors.primary,
       marginBottom: 12,
       fontFamily: 'Amiri_700Bold',
       textAlign: 'right',
@@ -215,21 +215,21 @@ export default function SettingsTab() {
       alignItems: 'center',
       paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(212, 175, 55, 0.3)',
+      borderBottomColor: colors.outline + '4D',
     },
     settingRowLast: {
       borderBottomWidth: 0,
     },
     settingLabel: {
       fontSize: 16,
-      color: '#2C2416',
+      color: colors.text,
       fontFamily: 'Amiri_400Regular',
       flex: 1,
       textAlign: 'right',
     },
     settingDescription: {
       fontSize: 13,
-      color: '#6D6558',
+      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
       marginTop: 4,
       textAlign: 'right',
@@ -244,66 +244,66 @@ export default function SettingsTab() {
       paddingVertical: 8,
       borderRadius: 20,
       borderWidth: 2,
-      borderColor: '#D4AF37',
-      backgroundColor: '#F5EEE3',
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
     },
     textSizeButtonActive: {
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
     },
     textSizeButtonText: {
       fontSize: 13,
-      color: '#2C2416',
+      color: colors.text,
       fontFamily: 'Amiri_400Regular',
     },
     textSizeButtonTextActive: {
-      color: '#D4AF37',
+      color: colors.gold,
     },
     button: {
-      backgroundColor: '#1E5B4C',
+      backgroundColor: colors.primary,
       paddingVertical: 12,
       paddingHorizontal: 20,
       borderRadius: 20,
       marginTop: 8,
       alignItems: 'center',
       borderWidth: 2,
-      borderColor: '#D4AF37',
+      borderColor: colors.border,
     },
     buttonSecondary: {
-      backgroundColor: '#F5EEE3',
+      backgroundColor: colors.surface,
     },
     buttonDanger: {
-      backgroundColor: '#C62828',
-      borderColor: '#C62828',
+      backgroundColor: colors.error,
+      borderColor: colors.error,
     },
     buttonSuccess: {
-      backgroundColor: '#2E7D32',
-      borderColor: '#2E7D32',
+      backgroundColor: colors.success,
+      borderColor: colors.success,
     },
     buttonDisabled: {
       opacity: 0.5,
     },
     buttonText: {
-      color: '#D4AF37',
+      color: colors.gold,
       fontSize: 15,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
     },
     buttonTextSecondary: {
-      color: '#1E5B4C',
+      color: colors.primary,
     },
     buttonTextWhite: {
       color: '#fff',
     },
     infoText: {
       fontSize: 13,
-      color: '#6D6558',
+      color: colors.textSecondary,
       fontFamily: 'Amiri_400Regular',
       marginTop: 8,
       fontStyle: 'italic',
       textAlign: 'right',
       lineHeight: 20,
     },
-  });
+  }), [colors]);
 
   return (
     <View style={styles.container}>
@@ -319,7 +319,7 @@ export default function SettingsTab() {
             <Switch
               value={settings.theme === 'dark'}
               onValueChange={(value) => handleUpdateSetting('theme', value ? 'dark' : 'light')}
-              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#fff"
             />
             <Text style={styles.settingLabel}>الوضع الداكن</Text>
@@ -360,7 +360,7 @@ export default function SettingsTab() {
             <Switch
               value={settings.showTajweed}
               onValueChange={(value) => handleUpdateSetting('showTajweed', value)}
-              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#fff"
             />
             <Text style={styles.settingLabel}>إظهار التجويد</Text>
@@ -370,7 +370,7 @@ export default function SettingsTab() {
             <Switch
               value={settings.autoExpandTafsir}
               onValueChange={(value) => handleUpdateSetting('autoExpandTafsir', value)}
-              trackColor={{ false: '#D4AF37', true: '#1E5B4C' }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#fff"
             />
             <View style={{ flex: 1 }}>
