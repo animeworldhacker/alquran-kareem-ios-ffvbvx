@@ -17,7 +17,7 @@ export interface Ayah {
   page: number;
   ruku: number;
   hizbQuarter: number;
-  sajda: boolean;
+  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
 }
 
 export interface QuranData {
@@ -30,6 +30,13 @@ export interface QuranData {
     revelationType: string;
     ayahs: Ayah[];
   }[];
+}
+
+export interface VerseMetadata {
+  juz_number: number;
+  hizb_number: number;
+  rub_el_hizb_number: number;
+  sajdah: boolean | { id: number; recommended: boolean; obligatory: boolean };
 }
 
 export interface TafsirVerse {

@@ -10,11 +10,14 @@ interface ThemeContextType {
     background: string;
     backgroundAlt: string;
     surface: string;
+    surfaceVariant: string;
     primary: string;
     secondary: string;
     text: string;
     textSecondary: string;
+    onSurfaceVariant: string;
     border: string;
+    outline: string;
     accent: string;
     error: string;
     success: string;
@@ -102,11 +105,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       background: isDark ? '#1a1a1a' : '#F5EEE3',
       backgroundAlt: isDark ? '#2d2d2d' : '#F5EEE3',
       surface: isDark ? '#2d2d2d' : '#F5EEE3',
+      surfaceVariant: isDark ? '#3a3a3a' : '#E8DCC8',
       primary: isDark ? '#1E5B4C' : '#1E5B4C',
       secondary: isDark ? '#8B7355' : '#6D6558',
       text: isDark ? '#F5EEE3' : '#2C2416',
       textSecondary: isDark ? '#B8B8B8' : '#6D6558',
+      onSurfaceVariant: isDark ? '#B8B8B8' : '#6D6558',
       border: isDark ? '#D4AF37' : '#D4AF37',
+      outline: isDark ? '#8B7355' : '#C4A574',
       accent: isDark ? '#FF8A65' : '#FF6B6B',
       error: isDark ? '#EF5350' : '#C62828',
       success: isDark ? '#66BB6A' : '#2E7D32',

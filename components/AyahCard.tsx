@@ -8,9 +8,11 @@ import { tafsirService } from '../services/tafsirService';
 import { router } from 'expo-router';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 import Icon from './Icon';
+import VerseMarkers from './VerseMarkers';
 
 interface AyahCardProps {
   ayah: Ayah;
+  previousAyah?: Ayah;
   surahNumber: number;
   surahName: string;
   surahEnglishName: string;
@@ -28,6 +30,7 @@ const toArabicNumerals = (num: number): string => {
 
 export default function AyahCard({
   ayah,
+  previousAyah,
   surahNumber,
   surahName,
   surahEnglishName,
@@ -213,6 +216,10 @@ export default function AyahCard({
       alignItems: 'center',
       marginBottom: 12,
     },
+    verseNumberRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
     verseNumberContainer: {
       width: 48,
       height: 48,
@@ -382,15 +389,18 @@ export default function AyahCard({
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.verseNumberContainer}>
-          <Image 
-            source={require('../assets/images/8683a5b3-d596-4d40-b189-82163cc3e43a.png')}
-            style={styles.verseNumberImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.verseNumberText}>
-            {toArabicNumerals(ayah.numberInSurah)}
-          </Text>
+        <View style={styles.verseNumberRow}>
+          <View style={styles.verseNumberContainer}>
+            <Image 
+              source={require('../assets/images/8683a5b3-d596-4d40-b189-82163cc3e43a.png')}
+              style={styles.verseNumberImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.verseNumberText}>
+              {toArabicNumerals(ayah.numberInSurah)}
+            </Text>
+          </View>
+          <VerseMarkers ayah={ayah} previousAyah={previousAyah} />
         </View>
         <View style={styles.actions}>
           <TouchableOpacity

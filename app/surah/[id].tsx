@@ -453,10 +453,11 @@ export default function SurahScreen() {
           </View>
         )}
         
-        {validAyahs.map((ayah: any) => (
+        {validAyahs.map((ayah: any, index: number) => (
           <AyahCard
             key={`${surahNumber}-${ayah.numberInSurah}`}
             ayah={ayah}
+            previousAyah={index > 0 ? validAyahs[index - 1] : undefined}
             surahNumber={surahNumber}
             surahName={surah.name || 'السورة'}
             surahEnglishName={surah.englishName || ''}

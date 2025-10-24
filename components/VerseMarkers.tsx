@@ -1,146 +1,124 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { VerseMetadata } from '../types';
-import { toArabicIndic, getRubElHizbLabel, getRubElHizbSymbol } from '../utils/tajweedColors';
+import { Ayah } from '../types';
+import { toArabicIndic, getRubElHizbLabel } from '../utils/tajweedColors';
+import { useTheme } from '../contexts/ThemeContext';
 import Icon from './Icon';
 
 interface VerseMarkersProps {
-  metadata?: VerseMetadata;
-  previousMetadata?: VerseMetadata;
+  ayah: Ayah;
+  previousAyah?: Ayah;
 }
 
-export default function VerseMarkers({ metadata, previousMetadata }: VerseMarkersProps) {
-  if (!metadata) {
-    return null;
-  }
+const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
+  const { colors } = useTheme();
 
-  const showJuzMarker = !previousMetadata || metadata.juz_number !== previousMetadata.juz_number;
-  const showHizbMarker = !previousMetadata || metadata.hizb_number !== previousMetadata.hizb_number;
-  const showRubMarker = metadata.rub_el_hizb_number > 0 && (
-    !previousMetadata || metadata.rub_el_hizb_number !== previousMetadata.rub_el_hizb_number
-  );
+  // Determine which markers to show based on changes from previous ayah
+  const shouldShowJuz = !previousAyah || ayah.juz !== previousAyah.juz;
+  const shouldShowHizb = !previousAyah || Math.floor((ayah.hizbQuarter - 1) / 4) !== Math.floor((previousAyah.hizbQuarter - 1) / 4);
+  const shouldShowRub = ayah.hizbQuarter && ayah.hizbQuarter > 0 && (!previousAyah || ayah.hizbQuarter !== previousAyah.hizbQuarter);
   
   // Check for sajdah - handle both boolean and object types
-  const hasSajdah = metadata.sajdah && (
-    typeof metadata.sajdah === 'boolean' ? metadata.sajdah : metadata.sajdah.id > 0
+  const hasSajdah = ayah.sajda && (
+    typeof ayah.sajda === 'boolean' ? ayah.sajda : true
   );
 
-  if (!showJuzMarker && !showHizbMarker && !showRubMarker && !hasSajdah) {
+  // If no markers to show, return null
+  if (!shouldShowJuz && !shouldShowHizb && !shouldShowRub && !hasSajdah) {
     return null;
   }
+
+  // Calculate hizb number from hizbQuarter (4 quarters per hizb)
+  const hizbNumber = ayah.hizbQuarter ? Math.ceil(ayah.hizbQuarter / 4) : 0;
+  
+  // Calculate rub number (1-4 within current hizb)
+  const rubNumber = ayah.hizbQuarter ? ((ayah.hizbQuarter - 1) % 4) + 1 : 0;
+
+  const styles = StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 4,
+      marginLeft: 6,
+    },
+    badge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceVariant,
+      borderColor: colors.outline,
+      borderWidth: 1,
+      borderRadius: 8,
+      height: 20,
+      paddingHorizontal: 6,
+      gap: 4,
+    },
+    badgeText: {
+      fontSize: 11,
+      color: colors.onSurfaceVariant,
+      fontFamily: 'Amiri_400Regular',
+    },
+    sajdahIcon: {
+      color: colors.onSurfaceVariant,
+    },
+  });
 
   return (
     <View style={styles.container}>
-      {showJuzMarker && (
-        <View style={[styles.marker, styles.juzMarker]}>
-          <Text style={styles.markerText}>
-            الجزء {toArabicIndic(metadata.juz_number)}
+      {/* Rub' badge - shown when hizbQuarter changes */}
+      {shouldShowRub && rubNumber > 0 && (
+        <View 
+          style={styles.badge}
+          accessibilityLabel={getRubElHizbLabel(rubNumber)}
+        >
+          <Text style={styles.badgeText}>
+            {getRubElHizbLabel(rubNumber)}
           </Text>
-          <Icon name="bookmark" size={16} style={styles.juzIcon} />
         </View>
       )}
 
-      {showHizbMarker && (
-        <View style={[styles.marker, styles.hizbMarker]}>
-          <Text style={styles.markerText}>
-            الحزب {toArabicIndic(metadata.hizb_number)}
+      {/* Hizb badge - shown when hizb changes */}
+      {shouldShowHizb && hizbNumber > 0 && (
+        <View 
+          style={styles.badge}
+          accessibilityLabel={`الحزب رقم ${toArabicIndic(hizbNumber)}`}
+        >
+          <Text style={styles.badgeText}>
+            الحزب {toArabicIndic(hizbNumber)}
           </Text>
-          <Icon name="star" size={14} style={styles.hizbIcon} />
         </View>
       )}
 
-      {showRubMarker && (
-        <View style={[styles.marker, styles.rubMarker]}>
-          <Text style={styles.markerText}>
-            {getRubElHizbLabel(metadata.rub_el_hizb_number)}
+      {/* Juz badge - shown when juz changes */}
+      {shouldShowJuz && ayah.juz > 0 && (
+        <View 
+          style={styles.badge}
+          accessibilityLabel={`الجزء رقم ${toArabicIndic(ayah.juz)}`}
+        >
+          <Text style={styles.badgeText}>
+            الجزء {toArabicIndic(ayah.juz)}
           </Text>
-          <View style={styles.rubIcon}>
-            <Text style={styles.rubIconText}>
-              {getRubElHizbSymbol(metadata.rub_el_hizb_number)}
-            </Text>
-          </View>
         </View>
       )}
 
+      {/* Sajdah badge - shown when sajdah is present */}
       {hasSajdah && (
-        <View style={[styles.marker, styles.sajdahMarker]}>
-          <Text style={styles.sajdahText}>سجدة التلاوة</Text>
-          <Icon name="arrow-down-circle" size={16} style={styles.sajdahIcon} />
+        <View 
+          style={styles.badge}
+          accessibilityLabel="سجدة التلاوة"
+        >
+          <Icon 
+            name="arrow-down-circle" 
+            size={12} 
+            style={styles.sajdahIcon}
+          />
         </View>
       )}
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-    justifyContent: 'flex-start',
-  },
-  marker: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 24,
-    gap: 6,
-    boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.12)',
-    elevation: 2,
-  },
-  juzMarker: {
-    backgroundColor: '#FFD700',
-    borderWidth: 2,
-    borderColor: '#D4AF37',
-  },
-  hizbMarker: {
-    backgroundColor: '#FFA500',
-    borderWidth: 2,
-    borderColor: '#FF8C00',
-  },
-  rubMarker: {
-    backgroundColor: '#87CEEB',
-    borderWidth: 2,
-    borderColor: '#4682B4',
-  },
-  sajdahMarker: {
-    backgroundColor: '#98FB98',
-    borderWidth: 2,
-    borderColor: '#2E7D32',
-  },
-  markerText: {
-    fontSize: 14,
-    fontFamily: 'Amiri_700Bold',
-    color: '#2C2416',
-  },
-  sajdahText: {
-    fontSize: 14,
-    fontFamily: 'Amiri_700Bold',
-    color: '#1E5B4C',
-  },
-  juzIcon: {
-    color: '#2C2416',
-  },
-  hizbIcon: {
-    color: '#2C2416',
-  },
-  sajdahIcon: {
-    color: '#1E5B4C',
-  },
-  rubIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#4682B4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rubIconText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
 });
+
+VerseMarkers.displayName = 'VerseMarkers';
+
+export default VerseMarkers;
