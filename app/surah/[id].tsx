@@ -9,11 +9,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AyahCard from '../../components/AyahCard';
 import AudioPlayer from '../../components/AudioPlayer';
 import FloatingTabBar from '../../components/FloatingTabBar';
+import MushafPageView from '../../components/MushafPageView';
 import Icon from '../../components/Icon';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TAB_BAR_HEIGHT = 60;
 const SCROLL_THRESHOLD = 6;
 const HIDE_TIMEOUT = 3000;
+const READING_MODE_KEY = 'reading_mode_preference';
 
 export default function SurahScreen() {
   const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
@@ -37,11 +40,39 @@ export default function SurahScreen() {
   const [surah, setSurah] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [tabVisible, setTabVisible] = useState(true);
+  const [readingMode, setReadingMode] = useState<'scroll' | 'page'>('scroll');
   
   const scrollViewRef = useRef<ScrollView>(null);
   const lastScrollY = useRef(0);
   const tabTranslateY = useRef(new Animated.Value(0)).current;
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load saved reading mode preference
+  useEffect(() => {
+    loadReadingMode();
+  }, []);
+
+  const loadReadingMode = async () => {
+    try {
+      const savedMode = await AsyncStorage.getItem(READING_MODE_KEY);
+      if (savedMode === 'page' || savedMode === 'scroll') {
+        setReadingMode(savedMode);
+      }
+    } catch (error) {
+      console.error('Error loading reading mode:', error);
+    }
+  };
+
+  const toggleReadingMode = async () => {
+    const newMode = readingMode === 'scroll' ? 'page' : 'scroll';
+    setReadingMode(newMode);
+    
+    try {
+      await AsyncStorage.setItem(READING_MODE_KEY, newMode);
+    } catch (error) {
+      console.error('Error saving reading mode:', error);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -257,6 +288,14 @@ export default function SurahScreen() {
       color: colors.gold,
       fontFamily: 'Amiri_400Regular',
     },
+    modeToggleButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(212, 175, 55, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     scrollView: {
       flex: 1,
     },
@@ -423,56 +462,80 @@ export default function SurahScreen() {
     <View style={styles.container}>
       <View style={styles.ornateHeader}>
         <TouchableOpacity 
+          style={styles.modeToggleButton} 
+          onPress={toggleReadingMode}
+        >
+          <Icon 
+            name={readingMode === 'page' ? 'list' : 'book'} 
+            size={24} 
+            style={{ color: colors.gold }} 
+          />
+        </TouchableOpacity>
+        
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{surah.name || 'السورة'}</Text>
+          <Text style={styles.headerSubtitle}>
+            {readingMode === 'page' ? 'وضع الصفحة' : surah.englishName || ''}
+          </Text>
+        </View>
+        
+        <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleBackPress}
         >
           <Icon name="arrow-back" size={24} style={{ color: colors.gold }} />
         </TouchableOpacity>
-        
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{surah.name || 'السورة'}</Text>
-          <Text style={styles.headerSubtitle}>{surah.englishName || ''}</Text>
-        </View>
-        
-        <View style={styles.headerInfo}>
-          <Text style={styles.ayahCount}>{validAyahs.length}</Text>
-        </View>
       </View>
       
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {surahNumber !== 1 && surahNumber !== 9 && (
-          <View style={styles.bismillahContainer}>
-            <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+      {readingMode === 'scroll' ? (
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {surahNumber !== 1 && surahNumber !== 9 && (
+            <View style={styles.bismillahContainer}>
+              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+            </View>
+          )}
+          
+          {validAyahs.map((ayah: any, index: number) => (
+            <AyahCard
+              key={`${surahNumber}-${ayah.numberInSurah}`}
+              ayah={ayah}
+              previousAyah={index > 0 ? validAyahs[index - 1] : undefined}
+              surahNumber={surahNumber}
+              surahName={surah.name || 'السورة'}
+              surahEnglishName={surah.englishName || ''}
+              onPlayAudio={handlePlayAyah}
+              onStopAudio={handleStopAudio}
+              onPlayFromHere={handlePlayFromHere}
+              isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
+              isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
+            />
+          ))}
+          
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>صدق الله العظيم</Text>
           </View>
-        )}
-        
-        {validAyahs.map((ayah: any, index: number) => (
-          <AyahCard
-            key={`${surahNumber}-${ayah.numberInSurah}`}
-            ayah={ayah}
-            previousAyah={index > 0 ? validAyahs[index - 1] : undefined}
-            surahNumber={surahNumber}
-            surahName={surah.name || 'السورة'}
-            surahEnglishName={surah.englishName || ''}
-            onPlayAudio={handlePlayAyah}
-            onStopAudio={handleStopAudio}
-            onPlayFromHere={handlePlayFromHere}
-            isPlaying={isCurrentAyahPlaying(ayah.numberInSurah)}
-            isContinuousPlaying={continuousPlayback && isCurrentAyahPlaying(ayah.numberInSurah)}
-          />
-        ))}
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>صدق الله العظيم</Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <MushafPageView
+          ayahs={validAyahs}
+          surahNumber={surahNumber}
+          surahName={surah.name || 'السورة'}
+          surahEnglishName={surah.englishName || ''}
+          showBismillah={surahNumber !== 1 && surahNumber !== 9}
+          onPlayAudio={handlePlayAyah}
+          onStopAudio={handleStopAudio}
+          onPlayFromHere={handlePlayFromHere}
+          currentPlayingAyah={audioState.currentAyah}
+          isContinuousPlaying={continuousPlayback}
+        />
+      )}
       
       <AudioPlayer
         audioState={audioState}
@@ -481,7 +544,9 @@ export default function SurahScreen() {
         onStop={stopAudio}
       />
 
-      <FloatingTabBar visible={tabVisible} translateY={tabTranslateY} />
+      {readingMode === 'scroll' && (
+        <FloatingTabBar visible={tabVisible} translateY={tabTranslateY} />
+      )}
     </View>
   );
 }
