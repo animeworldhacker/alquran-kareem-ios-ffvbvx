@@ -34,20 +34,20 @@ const VerseMedallion = ({ number }: { number: number }) => {
   
   const styles = StyleSheet.create({
     container: {
-      width: 28,
-      height: 28,
+      width: 26,
+      height: 26,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      marginHorizontal: 6,
+      marginHorizontal: 4,
     },
     image: {
-      width: 28,
-      height: 28,
+      width: 26,
+      height: 26,
       position: 'absolute',
     },
     text: {
-      fontSize: 15,
+      fontSize: 14,
       color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
@@ -187,19 +187,23 @@ export default function MushafPageView({
     return ayah.sajda && (typeof ayah.sajda === 'boolean' ? ayah.sajda : true);
   };
 
+  const screenWidth = Dimensions.get('window').width;
+  const responsiveFontSize = Math.min(textSizes.ayah, screenWidth * 0.065);
+  const responsivePadding = Math.max(12, screenWidth * 0.04);
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.surface,
     },
     scrollContent: {
-      paddingHorizontal: 20,
-      paddingTop: 18,
+      paddingHorizontal: responsivePadding,
+      paddingTop: 16,
       paddingBottom: 40,
     },
     bismillahContainer: {
-      paddingVertical: 16,
-      paddingHorizontal: 20,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
       alignItems: 'center',
       backgroundColor: colors.card,
       marginBottom: 12,
@@ -208,7 +212,7 @@ export default function MushafPageView({
       borderColor: colors.outline,
     },
     bismillah: {
-      fontSize: textSizes.heading,
+      fontSize: Math.min(textSizes.heading, screenWidth * 0.07),
       fontFamily: 'ScheherazadeNew_400Regular',
       color: colors.text,
       textAlign: 'center',
@@ -222,8 +226,9 @@ export default function MushafPageView({
     },
     boundaryMarkerContainer: {
       alignItems: 'center',
-      marginVertical: 12,
-      marginBottom: 16,
+      marginVertical: 10,
+      marginBottom: 14,
+      width: '100%',
     },
     boundaryDivider: {
       height: 1,
@@ -235,36 +240,45 @@ export default function MushafPageView({
       flexDirection: 'row',
       gap: 6,
       alignItems: 'center',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
     },
     boundaryBadge: {
       backgroundColor: colors.surfaceVariant,
       borderColor: colors.outline,
       borderWidth: 1,
       borderRadius: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      transform: [{ scale: 0.85 }],
+      paddingHorizontal: 8,
+      paddingVertical: 3,
     },
     boundaryBadgeText: {
-      fontSize: 11,
+      fontSize: 10,
       color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_700Bold',
     },
     pageContent: {
       minHeight: Dimensions.get('window').height - 200,
+      width: '100%',
     },
     continuousTextContainer: {
       flexDirection: 'row-reverse',
       flexWrap: 'wrap',
       alignItems: 'baseline',
-      textAlign: 'justify',
+      width: '100%',
+    },
+    ayahWrapper: {
+      flexDirection: 'row-reverse',
+      alignItems: 'baseline',
+      flexWrap: 'wrap',
+      maxWidth: '100%',
     },
     ayahTextSegment: {
-      fontSize: textSizes.ayah,
-      lineHeight: textSizes.ayah * 1.95,
+      fontSize: responsiveFontSize,
+      lineHeight: responsiveFontSize * 1.9,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       textAlign: 'justify',
+      flexShrink: 1,
     },
     highlightedText: {
       backgroundColor: `${colors.primary}1F`,
@@ -277,16 +291,19 @@ export default function MushafPageView({
       paddingHorizontal: 2,
     },
     sajdahIcon: {
-      fontSize: 14,
+      fontSize: 12,
       color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_700Bold',
-      marginLeft: 6,
+      marginLeft: 4,
       backgroundColor: colors.surfaceVariant,
       borderColor: colors.outline,
       borderWidth: 1,
       borderRadius: 4,
-      paddingHorizontal: 4,
+      paddingHorizontal: 3,
       paddingVertical: 1,
+    },
+    spacer: {
+      width: 4,
     },
   });
 
@@ -338,7 +355,7 @@ export default function MushafPageView({
           key={`ayah-${ayah.numberInSurah}`}
           activeOpacity={0.7}
           onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
-          style={{ flexDirection: 'row-reverse', alignItems: 'baseline', flexWrap: 'wrap' }}
+          style={styles.ayahWrapper}
         >
           <Text
             ref={(ref) => {
@@ -358,7 +375,7 @@ export default function MushafPageView({
           {showSajdah && (
             <Text style={styles.sajdahIcon}>سجدة</Text>
           )}
-          <Text style={styles.ayahTextSegment}> </Text>
+          <View style={styles.spacer} />
         </TouchableOpacity>
       );
     });
