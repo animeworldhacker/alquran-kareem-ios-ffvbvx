@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Share, Clipboard, Image, Dimensions } from 'react-native';
 import { Ayah } from '../types';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useTheme } from '../contexts/ThemeContext';
@@ -50,6 +50,7 @@ export default function AyahCard({
   const { settings, colors, textSizes } = useTheme();
 
   const bookmarked = isBookmarked(surahNumber, ayah.numberInSurah);
+  const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
     if (settings.autoExpandTafsir && !tafsirText && !tafsirLoading && !tafsirError) {
@@ -209,16 +210,18 @@ export default function AyahCard({
       borderColor: isPlaying ? colors.primary : colors.gold,
       boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
       elevation: 3,
+      minHeight: 80,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       alignItems: 'center',
       marginBottom: 12,
+      gap: 12,
     },
-    verseNumberRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    numberColumn: {
+      flexShrink: 0,
+      flexBasis: 48,
+      width: 48,
     },
     verseNumberContainer: {
       width: 48,
@@ -239,9 +242,23 @@ export default function AyahCard({
       fontFamily: 'Amiri_700Bold',
       zIndex: 1,
     },
+    metaColumn: {
+      flexShrink: 1,
+      flexGrow: 0,
+      flexBasis: 'auto',
+      maxWidth: screenWidth <= 360 ? '35%' : '45%',
+      overflow: 'hidden',
+    },
+    actionsColumn: {
+      flexShrink: 0,
+      flexGrow: 0,
+      flexBasis: 'auto',
+      marginLeft: 'auto',
+    },
     actions: {
       flexDirection: 'row',
       gap: 8,
+      flexWrap: 'nowrap',
     },
     actionButton: {
       width: 36,
@@ -272,6 +289,8 @@ export default function AyahCard({
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       marginBottom: 12,
+      flexShrink: 1,
+      minWidth: 0,
     },
     tafsirContainer: {
       marginTop: 12,
@@ -389,7 +408,82 @@ export default function AyahCard({
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.verseNumberRow}>
+        {/* Actions Column - Fixed width, no wrap */}
+        <View style={styles.actionsColumn}>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.actionButton, bookmarked && styles.activeButton]}
+              onPress={handleBookmarkToggle}
+            >
+              <Icon
+                name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                style={bookmarked ? styles.activeIcon : styles.icon}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, showTafsir && styles.activeButton]}
+              onPress={handleTafsirToggle}
+              disabled={tafsirLoading}
+            >
+              {tafsirLoading ? (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+              ) : (
+                <Icon
+                  name="book-outline"
+                  size={18}
+                  style={showTafsir ? styles.activeIcon : styles.icon}
+                />
+              )}
+            </TouchableOpacity>
+
+            {onPlayFromHere && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  isContinuousPlaying && styles.playingButton,
+                ]}
+                onPress={handlePlayFromHere}
+                disabled={audioLoading}
+              >
+                {audioLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Icon
+                    name="play-skip-forward"
+                    size={18}
+                    style={isContinuousPlaying ? styles.activeIcon : styles.icon}
+                  />
+                )}
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.actionButton, isPlaying && styles.playingButton]}
+              onPress={handlePlayAudio}
+              disabled={audioLoading}
+            >
+              {audioLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon
+                  name={isPlaying ? 'stop' : 'play'}
+                  size={18}
+                  style={isPlaying ? styles.activeIcon : styles.icon}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Meta Column - Badges with max width constraint */}
+        <View style={styles.metaColumn}>
+          <VerseMarkers ayah={ayah} previousAyah={previousAyah} compact={screenWidth <= 360} />
+        </View>
+
+        {/* Number Column - Fixed width */}
+        <View style={styles.numberColumn}>
           <View style={styles.verseNumberContainer}>
             <Image 
               source={require('../assets/images/8683a5b3-d596-4d40-b189-82163cc3e43a.png')}
@@ -400,72 +494,6 @@ export default function AyahCard({
               {toArabicNumerals(ayah.numberInSurah)}
             </Text>
           </View>
-          <VerseMarkers ayah={ayah} previousAyah={previousAyah} />
-        </View>
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionButton, bookmarked && styles.activeButton]}
-            onPress={handleBookmarkToggle}
-          >
-            <Icon
-              name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={18}
-              style={bookmarked ? styles.activeIcon : styles.icon}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, showTafsir && styles.activeButton]}
-            onPress={handleTafsirToggle}
-            disabled={tafsirLoading}
-          >
-            {tafsirLoading ? (
-              <ActivityIndicator size="small" color={colors.textSecondary} />
-            ) : (
-              <Icon
-                name="book-outline"
-                size={18}
-                style={showTafsir ? styles.activeIcon : styles.icon}
-              />
-            )}
-          </TouchableOpacity>
-
-          {onPlayFromHere && (
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                isContinuousPlaying && styles.playingButton,
-              ]}
-              onPress={handlePlayFromHere}
-              disabled={audioLoading}
-            >
-              {audioLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Icon
-                  name="play-skip-forward"
-                  size={18}
-                  style={isContinuousPlaying ? styles.activeIcon : styles.icon}
-                />
-              )}
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[styles.actionButton, isPlaying && styles.playingButton]}
-            onPress={handlePlayAudio}
-            disabled={audioLoading}
-          >
-            {audioLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Icon
-                name={isPlaying ? 'stop' : 'play'}
-                size={18}
-                style={isPlaying ? styles.activeIcon : styles.icon}
-              />
-            )}
-          </TouchableOpacity>
         </View>
       </View>
 

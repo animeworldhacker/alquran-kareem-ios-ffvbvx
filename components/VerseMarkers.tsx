@@ -9,9 +9,10 @@ import Icon from './Icon';
 interface VerseMarkersProps {
   ayah: Ayah;
   previousAyah?: Ayah;
+  compact?: boolean;
 }
 
-const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
+const VerseMarkers = React.memo(({ ayah, previousAyah, compact = false }: VerseMarkersProps) => {
   const { colors } = useTheme();
 
   // Determine which markers to show based on changes from previous ayah
@@ -35,13 +36,24 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
   // Calculate rub number (1-4 within current hizb)
   const rubNumber = ayah.hizbQuarter ? ((ayah.hizbQuarter - 1) % 4) + 1 : 0;
 
+  // Get compact labels for small screens
+  const getCompactRubLabel = (num: number): string => {
+    const labels: { [key: number]: string } = {
+      1: '¼ حزب',
+      2: '½ حزب',
+      3: '¾ حزب',
+      4: 'حزب',
+    };
+    return labels[num] || '¼ حزب';
+  };
+
   const styles = StyleSheet.create({
     container: {
       flexDirection: 'row',
       alignItems: 'center',
       flexWrap: 'wrap',
       gap: 4,
-      marginLeft: 6,
+      rowGap: 6,
     },
     badge: {
       flexDirection: 'row',
@@ -50,14 +62,16 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
       borderColor: colors.outline,
       borderWidth: 1,
       borderRadius: 8,
-      height: 20,
-      paddingHorizontal: 6,
+      height: compact ? 18 : 20,
+      paddingHorizontal: compact ? 4 : 6,
       gap: 4,
+      flexShrink: 1,
     },
     badgeText: {
-      fontSize: 11,
+      fontSize: compact ? 10 : 11,
       color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_400Regular',
+      flexShrink: 1,
     },
     sajdahIcon: {
       color: colors.onSurfaceVariant,
@@ -72,8 +86,8 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
           style={styles.badge}
           accessibilityLabel={getRubElHizbLabel(rubNumber)}
         >
-          <Text style={styles.badgeText}>
-            {getRubElHizbLabel(rubNumber)}
+          <Text style={styles.badgeText} numberOfLines={1}>
+            {compact ? getCompactRubLabel(rubNumber) : getRubElHizbLabel(rubNumber)}
           </Text>
         </View>
       )}
@@ -84,8 +98,8 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
           style={styles.badge}
           accessibilityLabel={`الحزب رقم ${toArabicIndic(hizbNumber)}`}
         >
-          <Text style={styles.badgeText}>
-            الحزب {toArabicIndic(hizbNumber)}
+          <Text style={styles.badgeText} numberOfLines={1}>
+            {compact ? `حزب ${toArabicIndic(hizbNumber)}` : `الحزب ${toArabicIndic(hizbNumber)}`}
           </Text>
         </View>
       )}
@@ -96,8 +110,8 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
           style={styles.badge}
           accessibilityLabel={`الجزء رقم ${toArabicIndic(ayah.juz)}`}
         >
-          <Text style={styles.badgeText}>
-            الجزء {toArabicIndic(ayah.juz)}
+          <Text style={styles.badgeText} numberOfLines={1}>
+            {compact ? `جزء ${toArabicIndic(ayah.juz)}` : `الجزء ${toArabicIndic(ayah.juz)}`}
           </Text>
         </View>
       )}
@@ -110,7 +124,7 @@ const VerseMarkers = React.memo(({ ayah, previousAyah }: VerseMarkersProps) => {
         >
           <Icon 
             name="arrow-down-circle" 
-            size={12} 
+            size={compact ? 10 : 12} 
             style={styles.sajdahIcon}
           />
         </View>
