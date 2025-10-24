@@ -30,6 +30,7 @@ export default function AyahActionPopover({
   const { colors, textSizes } = useTheme();
   const { isBookmarked, addBookmark, removeBookmarkByAyah } = useBookmarks();
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
@@ -37,14 +38,22 @@ export default function AyahActionPopover({
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
       scaleAnim.setValue(0);
+      opacityAnim.setValue(0);
     }
   }, [visible]);
 
@@ -128,6 +137,11 @@ export default function AyahActionPopover({
   }
 
   const styles = StyleSheet.create({
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'transparent',
+      zIndex: 999,
+    },
     container: {
       position: 'absolute',
       left,
@@ -177,47 +191,58 @@ export default function AyahActionPopover({
   if (!visible) return null;
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ scale: scaleAnim }],
-        },
-      ]}
-    >
-      <TouchableOpacity style={styles.actionButton} onPress={handlePlay}>
-        <Text style={styles.actionText}>تشغيل</Text>
-        <Icon name="play" size={20} style={styles.icon} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={handleTafsir}>
-        <Text style={styles.actionText}>تفسير</Text>
-        <Icon name="book-outline" size={20} style={styles.icon} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={handleCopy}>
-        <Text style={styles.actionText}>نسخ</Text>
-        <Icon name="copy-outline" size={20} style={styles.icon} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-        <Text style={styles.actionText}>مشاركة</Text>
-        <Icon name="share-outline" size={20} style={styles.icon} />
-      </TouchableOpacity>
-
+    <>
+      {/* Backdrop to capture outside taps */}
       <TouchableOpacity
-        style={[styles.actionButton, bookmarked && styles.actionButtonActive]}
-        onPress={handleBookmark}
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      />
+      
+      {/* Popover content */}
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            transform: [{ scale: scaleAnim }],
+            opacity: opacityAnim,
+          },
+        ]}
       >
-        <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
-          {bookmarked ? 'إزالة الإشارة' : 'إشارة مرجعية'}
-        </Text>
-        <Icon
-          name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-          size={20}
-          style={bookmarked ? styles.iconActive : styles.icon}
-        />
-      </TouchableOpacity>
-    </Animated.View>
+        <TouchableOpacity style={styles.actionButton} onPress={handlePlay}>
+          <Text style={styles.actionText}>تشغيل</Text>
+          <Icon name="play" size={20} style={styles.icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleTafsir}>
+          <Text style={styles.actionText}>تفسير</Text>
+          <Icon name="book-outline" size={20} style={styles.icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleCopy}>
+          <Text style={styles.actionText}>نسخ</Text>
+          <Icon name="copy-outline" size={20} style={styles.icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <Text style={styles.actionText}>مشاركة</Text>
+          <Icon name="share-outline" size={20} style={styles.icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, bookmarked && styles.actionButtonActive]}
+          onPress={handleBookmark}
+        >
+          <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
+            {bookmarked ? 'إزالة الإشارة' : 'إشارة'}
+          </Text>
+          <Icon
+            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+            size={20}
+            style={bookmarked ? styles.iconActive : styles.icon}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    </>
   );
 }

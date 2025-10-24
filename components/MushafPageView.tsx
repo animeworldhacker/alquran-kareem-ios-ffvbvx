@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image } from 'react-native';
 import { Ayah } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { processAyahText } from '../utils/textProcessor';
@@ -22,11 +22,52 @@ interface MushafPageViewProps {
   isContinuousPlaying?: boolean;
 }
 
-interface AyahPosition {
+interface AyahBoundary {
   ayahNumber: number;
-  startIndex: number;
-  endIndex: number;
+  startY: number;
+  endY: number;
 }
+
+// Reusable verse medallion component matching scrolling mode exactly
+const VerseMedallion = ({ number }: { number: number }) => {
+  const { colors, textSizes, settings } = useTheme();
+  
+  const styles = StyleSheet.create({
+    container: {
+      width: 20,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      marginHorizontal: 6,
+    },
+    image: {
+      width: 20,
+      height: 20,
+      position: 'absolute',
+    },
+    text: {
+      fontSize: 11,
+      color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
+      zIndex: 1,
+    },
+  });
+
+  return (
+    <View style={styles.container}>
+      <Image 
+        source={require('../assets/images/8683a5b3-d596-4d40-b189-82163cc3e43a.png')}
+        style={styles.image}
+        resizeMode="contain"
+      />
+      <Text style={styles.text}>
+        {toArabicIndic(number)}
+      </Text>
+    </View>
+  );
+};
 
 export default function MushafPageView({
   ayahs,
@@ -48,52 +89,6 @@ export default function MushafPageView({
   const popoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const ayahRefs = useRef<Map<number, View>>(new Map());
-
-  // Build continuous text with inline verse numbers
-  const buildContinuousText = (): { text: string; positions: AyahPosition[] } => {
-    let fullText = '';
-    const positions: AyahPosition[] = [];
-
-    ayahs.forEach((ayah, index) => {
-      const startIndex = fullText.length;
-      const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
-      
-      // Add ayah text
-      fullText += processedText;
-      
-      // Add verse number in circle (using Unicode circled numbers or custom format)
-      const verseNumber = ` ﴿${toArabicIndic(ayah.numberInSurah)}﴾ `;
-      fullText += verseNumber;
-      
-      const endIndex = fullText.length;
-      
-      positions.push({
-        ayahNumber: ayah.numberInSurah,
-        startIndex,
-        endIndex,
-      });
-    });
-
-    return { text: fullText, positions };
-  };
-
-  const { text: continuousText, positions: ayahPositions } = buildContinuousText();
-
-  // Find which ayah was tapped based on text position
-  const findAyahAtPosition = (charIndex: number): number | null => {
-    for (const pos of ayahPositions) {
-      if (charIndex >= pos.startIndex && charIndex < pos.endIndex) {
-        return pos.ayahNumber;
-      }
-    }
-    return null;
-  };
-
-  const handleTextPress = (event: any) => {
-    // This is a simplified approach - in production, you'd need more sophisticated
-    // text measurement to determine exact character position
-    // For now, we'll use a different approach with individual ayah rendering
-  };
 
   const handleAyahPress = (ayahNumber: number, event: any) => {
     setHighlightedAyah(ayahNumber);
@@ -128,16 +123,16 @@ export default function MushafPageView({
         onPlayAudio(ayahNumber);
         break;
       case 'tafsir':
-        // Navigate to tafsir screen
+        // Handled by popover component
         break;
       case 'copy':
-        // Copy ayah text
+        // Handled by popover component
         break;
       case 'share':
-        // Share ayah
+        // Handled by popover component
         break;
       case 'bookmark':
-        // Toggle bookmark
+        // Handled by popover component
         break;
     }
   };
@@ -161,25 +156,56 @@ export default function MushafPageView({
     }
   }, [currentPlayingAyah]);
 
+  // Check if we should show boundary markers (Juz/Hizb)
+  const shouldShowBoundaryMarkers = (ayah: Ayah, prevAyah?: Ayah): { juz?: number; hizb?: number } => {
+    const markers: { juz?: number; hizb?: number } = {};
+    
+    if (!prevAyah || ayah.juz !== prevAyah.juz) {
+      markers.juz = ayah.juz;
+    }
+    
+    const currentHizb = Math.floor((ayah.hizbQuarter - 1) / 4) + 1;
+    const prevHizb = prevAyah ? Math.floor((prevAyah.hizbQuarter - 1) / 4) + 1 : 0;
+    
+    if (!prevAyah || currentHizb !== prevHizb) {
+      markers.hizb = currentHizb;
+    }
+    
+    return markers;
+  };
+
+  // Check if we should show Rub' marker
+  const shouldShowRubMarker = (ayah: Ayah, prevAyah?: Ayah): number | null => {
+    if (ayah.hizbQuarter && ayah.hizbQuarter > 0 && (!prevAyah || ayah.hizbQuarter !== prevAyah.hizbQuarter)) {
+      return ((ayah.hizbQuarter - 1) % 4) + 1;
+    }
+    return null;
+  };
+
+  // Check for Sajdah
+  const hasSajdah = (ayah: Ayah): boolean => {
+    return ayah.sajda && (typeof ayah.sajda === 'boolean' ? ayah.sajda : true);
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.surface,
     },
     scrollContent: {
-      paddingHorizontal: 18,
-      paddingTop: 24,
+      paddingHorizontal: 20,
+      paddingTop: 18,
       paddingBottom: 40,
     },
     bismillahContainer: {
-      paddingVertical: 24,
+      paddingVertical: 16,
       paddingHorizontal: 20,
       alignItems: 'center',
       backgroundColor: colors.card,
-      marginBottom: 16,
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: colors.gold,
+      marginBottom: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.outline,
     },
     bismillah: {
       fontSize: textSizes.heading,
@@ -188,65 +214,126 @@ export default function MushafPageView({
       textAlign: 'center',
       fontWeight: 'bold',
     },
-    surahTitlePanel: {
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      alignItems: 'center',
-      backgroundColor: colors.primary,
-      marginBottom: 20,
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: colors.gold,
+    divider: {
+      height: 1,
+      backgroundColor: colors.outline,
+      marginTop: 8,
+      opacity: 0.3,
     },
-    surahTitle: {
-      fontSize: textSizes.heading,
+    boundaryMarkerContainer: {
+      alignItems: 'center',
+      marginVertical: 12,
+      marginBottom: 16,
+    },
+    boundaryDivider: {
+      height: 1,
+      backgroundColor: colors.outline,
+      width: '100%',
+      marginBottom: 8,
+    },
+    boundaryBadges: {
+      flexDirection: 'row',
+      gap: 6,
+      alignItems: 'center',
+    },
+    boundaryBadge: {
+      backgroundColor: colors.surfaceVariant,
+      borderColor: colors.outline,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      transform: [{ scale: 0.85 }],
+    },
+    boundaryBadgeText: {
+      fontSize: 11,
+      color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_700Bold',
-      color: colors.gold,
-      textAlign: 'center',
     },
     pageContent: {
       minHeight: Dimensions.get('window').height - 200,
     },
-    ayahContainer: {
-      marginBottom: 8,
+    ayahBlock: {
+      marginBottom: 15,
     },
     ayahRow: {
       flexDirection: 'row-reverse',
       alignItems: 'flex-start',
       gap: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 12,
     },
-    highlighted: {
-      backgroundColor: `${colors.primary}20`,
-      borderRadius: 12,
+    rubMarkerColumn: {
+      width: 60,
+      alignItems: 'flex-end',
+      paddingTop: 4,
     },
-    playing: {
-      backgroundColor: `${colors.success}20`,
-      borderRadius: 12,
+    rubBadge: {
+      backgroundColor: colors.surfaceVariant,
+      borderColor: colors.outline,
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
     },
-    ayahTextContainer: {
+    rubBadgeText: {
+      fontSize: 9,
+      color: colors.onSurfaceVariant,
+      fontFamily: 'Amiri_400Regular',
+    },
+    ayahContentColumn: {
       flex: 1,
       minWidth: 0,
     },
-    ayahText: {
+    highlightOverlay: {
+      position: 'absolute',
+      left: -4,
+      right: -4,
+      top: -4,
+      bottom: -4,
+      backgroundColor: `${colors.primary}1F`,
+      borderRadius: 8,
+      zIndex: -1,
+    },
+    playingOverlay: {
+      position: 'absolute',
+      left: -4,
+      right: -4,
+      top: -4,
+      bottom: -4,
+      backgroundColor: `${colors.success}1F`,
+      borderRadius: 8,
+      zIndex: -1,
+    },
+    ayahTextContainer: {
+      position: 'relative',
+    },
+    ayahTextLine: {
       fontSize: textSizes.ayah,
-      lineHeight: textSizes.ayah * 1.9,
+      lineHeight: textSizes.ayah * 1.95,
       textAlign: 'justify',
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       writingDirection: 'rtl',
+      flexDirection: 'row-reverse',
+      flexWrap: 'wrap',
+      alignItems: 'baseline',
     },
-    verseNumber: {
-      fontSize: textSizes.body,
-      color: colors.primary,
+    ayahTextSegment: {
+      fontSize: textSizes.ayah,
+      lineHeight: textSizes.ayah * 1.95,
+      color: colors.text,
+      fontFamily: 'ScheherazadeNew_400Regular',
+    },
+    sajdahIcon: {
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_700Bold',
-      marginLeft: 4,
-    },
-    markersContainer: {
-      marginTop: 4,
-      marginBottom: 4,
+      marginLeft: 6,
+      backgroundColor: colors.surfaceVariant,
+      borderColor: colors.outline,
+      borderWidth: 1,
+      borderRadius: 4,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
     },
   });
 
@@ -258,9 +345,11 @@ export default function MushafPageView({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Bismillah with divider */}
         {showBismillah && (
           <View style={styles.bismillahContainer}>
             <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+            <View style={styles.divider} />
           </View>
         )}
 
@@ -270,55 +359,104 @@ export default function MushafPageView({
             const isPlaying = currentPlayingAyah === ayah.numberInSurah;
             const processedText = processAyahText(ayah.text, surahNumber, ayah.numberInSurah);
             const prevAyah = index > 0 ? ayahs[index - 1] : previousAyah;
+            
+            // Check for boundary markers
+            const boundaryMarkers = shouldShowBoundaryMarkers(ayah, prevAyah);
+            const rubMarker = shouldShowRubMarker(ayah, prevAyah);
+            const showSajdah = hasSajdah(ayah);
 
             return (
-              <TouchableOpacity
-                key={`${surahNumber}-${ayah.numberInSurah}`}
-                activeOpacity={0.7}
-                onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
-              >
-                <View
-                  ref={(ref) => {
-                    if (ref) {
-                      ayahRefs.current.set(ayah.numberInSurah, ref);
-                    }
-                  }}
-                  style={[
-                    styles.ayahContainer,
-                    isHighlighted && styles.highlighted,
-                    isPlaying && styles.playing,
-                  ]}
-                >
-                  <View style={styles.ayahRow}>
-                    <View style={styles.ayahTextContainer}>
-                      {/* Show markers if any */}
-                      <View style={styles.markersContainer}>
-                        <VerseMarkers ayah={ayah} previousAyah={prevAyah} compact={false} />
-                      </View>
-                      
-                      <Text style={styles.ayahText}>
-                        {processedText}
-                        <Text style={styles.verseNumber}>
-                          {' '}﴿{toArabicIndic(ayah.numberInSurah)}﴾
-                        </Text>
-                      </Text>
+              <View key={`${surahNumber}-${ayah.numberInSurah}`}>
+                {/* Juz/Hizb boundary markers - centered with divider */}
+                {(boundaryMarkers.juz || boundaryMarkers.hizb) && (
+                  <View style={styles.boundaryMarkerContainer}>
+                    <View style={styles.boundaryDivider} />
+                    <View style={styles.boundaryBadges}>
+                      {boundaryMarkers.juz && (
+                        <View style={styles.boundaryBadge}>
+                          <Text style={styles.boundaryBadgeText}>
+                            الجزء {toArabicIndic(boundaryMarkers.juz)}
+                          </Text>
+                        </View>
+                      )}
+                      {boundaryMarkers.hizb && (
+                        <View style={styles.boundaryBadge}>
+                          <Text style={styles.boundaryBadgeText}>
+                            الحزب {toArabicIndic(boundaryMarkers.hizb)}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
-                </View>
-              </TouchableOpacity>
+                )}
+
+                {/* Ayah block */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
+                >
+                  <View
+                    ref={(ref) => {
+                      if (ref) {
+                        ayahRefs.current.set(ayah.numberInSurah, ref);
+                      }
+                    }}
+                    style={styles.ayahBlock}
+                  >
+                    <View style={styles.ayahRow}>
+                      {/* Rub' marker in outer margin */}
+                      {rubMarker && (
+                        <View style={styles.rubMarkerColumn}>
+                          <View style={styles.rubBadge}>
+                            <Text style={styles.rubBadgeText}>
+                              {rubMarker === 1 && '¼'}
+                              {rubMarker === 2 && '½'}
+                              {rubMarker === 3 && '¾'}
+                              {rubMarker === 4 && '●'}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Ayah content */}
+                      <View style={styles.ayahContentColumn}>
+                        {/* Highlight overlay */}
+                        {isHighlighted && <View style={styles.highlightOverlay} />}
+                        {isPlaying && <View style={styles.playingOverlay} />}
+
+                        {/* Ayah text with inline verse number */}
+                        <View style={styles.ayahTextContainer}>
+                          <Text style={styles.ayahTextLine}>
+                            <Text style={styles.ayahTextSegment}>
+                              {processedText}
+                            </Text>
+                            {/* Inline verse medallion - exact match from scrolling mode */}
+                            <VerseMedallion number={ayah.numberInSurah} />
+                            {/* Sajdah icon right after verse number */}
+                            {showSajdah && (
+                              <Text style={styles.sajdahIcon}>سجدة</Text>
+                            )}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
       </ScrollView>
 
       {/* Tap outside to clear highlight */}
-      {highlightedAyah && (
+      {highlightedAyah && !popoverVisible && (
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
           activeOpacity={1}
           onPress={handleOutsideTap}
+          pointerEvents="box-none"
         >
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1 }} pointerEvents="none" />
         </TouchableOpacity>
       )}
 
@@ -332,7 +470,10 @@ export default function MushafPageView({
           surahName={surahName}
           ayahText={ayahs.find(a => a.numberInSurah === highlightedAyah)?.text || ''}
           onAction={handlePopoverAction}
-          onClose={() => setPopoverVisible(false)}
+          onClose={() => {
+            setPopoverVisible(false);
+            setHighlightedAyah(null);
+          }}
         />
       )}
     </View>
