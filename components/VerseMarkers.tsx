@@ -4,7 +4,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ayah } from '../types';
 import { toArabicIndic, getRubElHizbLabel } from '../utils/tajweedColors';
 import { useTheme } from '../contexts/ThemeContext';
-import Icon from './Icon';
 
 interface VerseMarkersProps {
   ayah: Ayah;
@@ -73,9 +72,6 @@ const VerseMarkers = React.memo(({ ayah, previousAyah, compact = false }: VerseM
       fontFamily: 'Amiri_400Regular',
       flexShrink: 1,
     },
-    sajdahIcon: {
-      color: colors.onSurfaceVariant,
-    },
   });
 
   return (
@@ -122,11 +118,9 @@ const VerseMarkers = React.memo(({ ayah, previousAyah, compact = false }: VerseM
           style={styles.badge}
           accessibilityLabel="سجدة التلاوة"
         >
-          <Icon 
-            name="arrow-down-circle" 
-            size={compact ? 10 : 12} 
-            style={styles.sajdahIcon}
-          />
+          <Text style={styles.badgeText} numberOfLines={1}>
+            سجدة
+          </Text>
         </View>
       )}
     </View>
