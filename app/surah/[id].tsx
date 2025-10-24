@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
@@ -116,7 +116,7 @@ export default function SurahScreen() {
       duration: 250,
       useNativeDriver: true,
     }).start();
-  }, [tabVisible, insets.bottom]);
+  }, [tabVisible, insets.bottom, tabTranslateY]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentY = event.nativeEvent.contentOffset.y;
