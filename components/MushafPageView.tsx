@@ -34,20 +34,20 @@ const VerseMedallion = ({ number }: { number: number }) => {
   
   const styles = StyleSheet.create({
     container: {
-      width: 24,
-      height: 24,
+      width: 28,
+      height: 28,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
       marginHorizontal: 6,
     },
     image: {
-      width: 24,
-      height: 24,
+      width: 28,
+      height: 28,
       position: 'absolute',
     },
     text: {
-      fontSize: 13,
+      fontSize: 15,
       color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
@@ -258,21 +258,23 @@ export default function MushafPageView({
       flexWrap: 'wrap',
       alignItems: 'baseline',
       textAlign: 'justify',
-      lineHeight: textSizes.ayah * 1.95,
     },
     ayahTextSegment: {
       fontSize: textSizes.ayah,
       lineHeight: textSizes.ayah * 1.95,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
+      textAlign: 'justify',
     },
     highlightedText: {
       backgroundColor: `${colors.primary}1F`,
       borderRadius: 4,
+      paddingHorizontal: 2,
     },
     playingText: {
       backgroundColor: `${colors.success}1F`,
       borderRadius: 4,
+      paddingHorizontal: 2,
     },
     sajdahIcon: {
       fontSize: 14,
@@ -330,12 +332,13 @@ export default function MushafPageView({
         );
       }
 
-      // Add ayah text
+      // Add ayah text with inline verse number
       elements.push(
         <TouchableOpacity
           key={`ayah-${ayah.numberInSurah}`}
           activeOpacity={0.7}
           onPress={(event) => handleAyahPress(ayah.numberInSurah, event)}
+          style={{ flexDirection: 'row-reverse', alignItems: 'baseline', flexWrap: 'wrap' }}
         >
           <Text
             ref={(ref) => {
@@ -351,30 +354,12 @@ export default function MushafPageView({
           >
             {processedText}
           </Text>
-        </TouchableOpacity>
-      );
-
-      // Add verse number (medallion)
-      elements.push(
-        <View key={`medallion-${ayah.numberInSurah}`}>
           <VerseMedallion number={ayah.numberInSurah} />
-        </View>
-      );
-
-      // Add sajdah icon if needed
-      if (showSajdah) {
-        elements.push(
-          <Text key={`sajdah-${ayah.numberInSurah}`} style={styles.sajdahIcon}>
-            سجدة
-          </Text>
-        );
-      }
-
-      // Add space between verses
-      elements.push(
-        <Text key={`space-${ayah.numberInSurah}`} style={styles.ayahTextSegment}>
-          {' '}
-        </Text>
+          {showSajdah && (
+            <Text style={styles.sajdahIcon}>سجدة</Text>
+          )}
+          <Text style={styles.ayahTextSegment}> </Text>
+        </TouchableOpacity>
       );
     });
 
