@@ -1,15 +1,21 @@
 
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 interface AudioCache {
   [key: string]: string;
+}
+
+interface DownloadedAudio {
+  [key: string]: string; // key: "surah:ayah", value: local file path
 }
 
 class AudioService {
   private sound: Audio.Sound | null = null;
   private isInitialized = false;
   private audioCache: AudioCache = {};
+  private downloadedAudio: DownloadedAudio = {};
   private currentlyPlayingKey: string | null = null;
   private continuousPlayback = false;
   private currentSurah: number | null = null;
@@ -20,12 +26,26 @@ class AudioService {
   
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
+  private readonly AUDIO_DIR = `${FileSystem.documentDirectory}audio/`;
 
   constructor() {
     // Start loading cache but don't await it
     this.initializationPromise = this.loadAudioCache().catch(error => {
       console.error('Error loading audio cache in constructor:', error);
     });
+    this.ensureAudioDirectory();
+  }
+
+  private async ensureAudioDirectory() {
+    try {
+      const dirInfo = await FileSystem.getInfoAsync(this.AUDIO_DIR);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(this.AUDIO_DIR, { intermediates: true });
+        console.log('📁 Created audio directory');
+      }
+    } catch (error) {
+      console.error('Error creating audio directory:', error);
+    }
   }
 
   async initializeAudio() {
@@ -49,6 +69,9 @@ class AudioService {
       if (this.initializationPromise) {
         await this.initializationPromise;
       }
+
+      // Load downloaded audio list
+      await this.loadDownloadedAudio();
       
       this.isInitialized = true;
       console.log('✅ Audio initialized successfully');
@@ -77,6 +100,28 @@ class AudioService {
       console.log('💾 Saved audio URL cache');
     } catch (error) {
       console.error('⚠️ Error saving audio cache:', error);
+    }
+  }
+
+  private async loadDownloadedAudio() {
+    try {
+      const downloaded = await AsyncStorage.getItem('downloadedAudio');
+      if (downloaded) {
+        this.downloadedAudio = JSON.parse(downloaded);
+        console.log('📦 Loaded downloaded audio:', Object.keys(this.downloadedAudio).length, 'files');
+      }
+    } catch (error) {
+      console.error('⚠️ Error loading downloaded audio:', error);
+      this.downloadedAudio = {};
+    }
+  }
+
+  private async saveDownloadedAudio() {
+    try {
+      await AsyncStorage.setItem('downloadedAudio', JSON.stringify(this.downloadedAudio));
+      console.log('💾 Saved downloaded audio list');
+    } catch (error) {
+      console.error('⚠️ Error saving downloaded audio:', error);
     }
   }
 
@@ -221,8 +266,23 @@ class AudioService {
     ayahNumber: number
   ): Promise<string> {
     const cacheKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
+    const downloadKey = `${surahNumber}:${ayahNumber}`;
     
-    // Check cache first
+    // Check if audio is downloaded locally first
+    if (this.downloadedAudio[downloadKey]) {
+      const localPath = this.downloadedAudio[downloadKey];
+      const fileInfo = await FileSystem.getInfoAsync(localPath);
+      if (fileInfo.exists) {
+        console.log('📦 Using downloaded audio file:', localPath);
+        return localPath;
+      } else {
+        // File was deleted, remove from list
+        delete this.downloadedAudio[downloadKey];
+        await this.saveDownloadedAudio();
+      }
+    }
+    
+    // Check cache
     if (this.audioCache[cacheKey]) {
       console.log('📦 Using cached audio URL:', cacheKey);
       
@@ -276,6 +336,92 @@ class AudioService {
     throw new Error('تعذّر تشغيل الآية. الملف الصوتي غير متوفر حالياً.');
   }
 
+  async downloadAyah(surahNumber: number, ayahNumber: number): Promise<void> {
+    try {
+      console.log(`📥 Downloading audio for ${surahNumber}:${ayahNumber}`);
+      
+      const downloadKey = `${surahNumber}:${ayahNumber}`;
+      
+      // Check if already downloaded
+      if (this.downloadedAudio[downloadKey]) {
+        const fileInfo = await FileSystem.getInfoAsync(this.downloadedAudio[downloadKey]);
+        if (fileInfo.exists) {
+          console.log('✅ Audio already downloaded');
+          return;
+        }
+      }
+      
+      // Get audio URL
+      const audioUrl = this.buildQuranCdnUrl(surahNumber, ayahNumber);
+      
+      // Download file
+      const fileName = `${surahNumber}_${ayahNumber}.mp3`;
+      const localPath = `${this.AUDIO_DIR}${fileName}`;
+      
+      const downloadResult = await FileSystem.downloadAsync(audioUrl, localPath);
+      
+      if (downloadResult.status === 200) {
+        this.downloadedAudio[downloadKey] = localPath;
+        await this.saveDownloadedAudio();
+        console.log('✅ Audio downloaded successfully:', localPath);
+      } else {
+        throw new Error(`Download failed with status ${downloadResult.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Error downloading audio:', error);
+      throw error;
+    }
+  }
+
+  async clearDownloadedAudio(): Promise<void> {
+    try {
+      // Delete all downloaded files
+      for (const key in this.downloadedAudio) {
+        const filePath = this.downloadedAudio[key];
+        try {
+          await FileSystem.deleteAsync(filePath, { idempotent: true });
+        } catch (error) {
+          console.error(`Error deleting file ${filePath}:`, error);
+        }
+      }
+      
+      this.downloadedAudio = {};
+      await AsyncStorage.removeItem('downloadedAudio');
+      console.log('🗑️ Downloaded audio cleared');
+    } catch (error) {
+      console.error('Error clearing downloaded audio:', error);
+    }
+  }
+
+  async getDownloadStats(): Promise<{ totalAyahs: number; totalSize: string; surahs: number[] }> {
+    try {
+      let totalSize = 0;
+      const surahs = new Set<number>();
+      
+      for (const key in this.downloadedAudio) {
+        const filePath = this.downloadedAudio[key];
+        const fileInfo = await FileSystem.getInfoAsync(filePath);
+        if (fileInfo.exists && 'size' in fileInfo) {
+          totalSize += fileInfo.size || 0;
+        }
+        
+        const [surahNumber] = key.split(':');
+        surahs.add(parseInt(surahNumber));
+      }
+      
+      const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+      
+      return {
+        totalAyahs: Object.keys(this.downloadedAudio).length,
+        totalSize: `${totalSizeMB} MB`,
+        surahs: Array.from(surahs).sort((a, b) => a - b),
+      };
+    } catch (error) {
+      console.error('Error getting download stats:', error);
+      return { totalAyahs: 0, totalSize: '0 MB', surahs: [] };
+    }
+  }
+
   async playAyah(
     surahNumber: number, 
     ayahNumber: number, 
@@ -316,7 +462,7 @@ class AudioService {
       this.totalAyahs = totalAyahsInSurah;
       this.currentlyPlayingKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
 
-      // Get audio URL with fallback chain
+      // Get audio URL with fallback chain (checks local files first)
       console.log('🔍 Resolving audio URL...');
       const audioUrl = await this.getAudioUrlWithFallback(surahNumber, ayahNumber);
       console.log(`📥 Loading audio from: ${audioUrl}`);

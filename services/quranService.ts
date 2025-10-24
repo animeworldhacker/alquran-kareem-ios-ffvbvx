@@ -377,6 +377,47 @@ class QuranService {
     await this.clearCache();
     await this.getFullQuran();
   }
+
+  async getAyahsByJuz(juzNumber: number): Promise<Ayah[]> {
+    try {
+      console.log(`Getting ayahs for Juz ${juzNumber}...`);
+      const quranData = await this.getFullQuran();
+      
+      const ayahs: Ayah[] = [];
+      for (const surah of quranData.surahs) {
+        for (const ayah of surah.ayahs) {
+          if (ayah.juz === juzNumber) {
+            ayahs.push(ayah);
+          }
+        }
+      }
+      
+      console.log(`Found ${ayahs.length} ayahs in Juz ${juzNumber}`);
+      return ayahs;
+    } catch (error) {
+      console.error(`Error getting ayahs for Juz ${juzNumber}:`, error);
+      throw error;
+    }
+  }
+
+  async getSurahNumberForAyah(ayahNumber: number): Promise<number> {
+    try {
+      const quranData = await this.getFullQuran();
+      
+      for (const surah of quranData.surahs) {
+        for (const ayah of surah.ayahs) {
+          if (ayah.number === ayahNumber) {
+            return surah.number;
+          }
+        }
+      }
+      
+      throw new Error(`Ayah ${ayahNumber} not found`);
+    } catch (error) {
+      console.error(`Error getting surah number for ayah ${ayahNumber}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const quranService = new QuranService();
