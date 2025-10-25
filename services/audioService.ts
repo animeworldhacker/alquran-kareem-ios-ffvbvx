@@ -2,6 +2,7 @@
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { documentDirectory } from 'expo-file-system';
 
 interface AudioCache {
   [key: string]: string;
@@ -27,7 +28,7 @@ class AudioService {
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
   private getAudioDir(): string {
-    const docDir = FileSystem.documentDirectory ?? '';
+    const docDir = documentDirectory ?? '';
     return `${docDir}audio/`;
   }
 
