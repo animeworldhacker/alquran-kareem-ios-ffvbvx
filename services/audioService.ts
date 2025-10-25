@@ -27,8 +27,8 @@ class AudioService {
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
   private getAudioDir(): string {
-    const docDir = FileSystem.documentDirectory;
-    return `${docDir || ''}audio/`;
+    const docDir = FileSystem.documentDirectory ?? '';
+    return `${docDir}audio/`;
   }
 
   constructor() {
