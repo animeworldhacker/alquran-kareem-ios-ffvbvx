@@ -32,7 +32,9 @@ export default function SurahScreen() {
     resumeAudio,
     continuousPlayback,
     setOnAyahEnd,
-    loading: audioLoading 
+    loading: audioLoading,
+    reciters,
+    selectedReciter
   } = useAudio();
   const { settings, colors, textSizes } = useTheme();
   const insets = useSafeAreaInsets();
@@ -542,6 +544,8 @@ export default function SurahScreen() {
         onPlay={resumeAudio}
         onPause={pauseAudio}
         onStop={stopAudio}
+        selectedReciter={selectedReciter}
+        reciters={reciters}
       />
 
       {readingMode === 'scroll' && (

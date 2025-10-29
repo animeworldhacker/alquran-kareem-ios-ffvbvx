@@ -1,8 +1,11 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { AudioState } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { AudioState, Reciter } from '../types';
 import { audioService } from '../services/audioService';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SELECTED_RECITER_KEY = 'selectedReciter';
 
 export const useAudio = () => {
   const [audioState, setAudioState] = useState<AudioState>({
@@ -15,10 +18,19 @@ export const useAudio = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
+  const [reciters, setReciters] = useState<Reciter[]>([]);
+  const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
+  const [loadingReciters, setLoadingReciters] = useState(false);
 
   useEffect(() => {
     initializeAudio().catch(error => {
       console.error('Error in audio initialization effect:', error);
+    });
+    loadReciters().catch(error => {
+      console.error('Error loading reciters:', error);
+    });
+    loadSelectedReciter().catch(error => {
+      console.error('Error loading selected reciter:', error);
     });
   }, []);
 
@@ -34,6 +46,132 @@ export const useAudio = () => {
       Alert.alert(
         'خطأ في الصوت',
         'فشل في تهيئة نظام الصوت. يرجى التحقق من اتصالك بالإنترنت وإعادة تشغيل التطبيق.',
+        [{ text: 'حسناً' }]
+      );
+    }
+  };
+
+  const loadReciters = async () => {
+    try {
+      setLoadingReciters(true);
+      console.log('📥 Loading reciters from API...');
+      
+      const response = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
+      
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.reciters && Array.isArray(data.reciters)) {
+        // Map the reciters to include recitation IDs
+        const mappedReciters: Reciter[] = data.reciters.map((reciter: any) => {
+          // Get the first moshaf (recitation) for each reciter
+          const firstMoshaf = reciter.moshaf && reciter.moshaf.length > 0 ? reciter.moshaf[0] : null;
+          
+          return {
+            id: reciter.id,
+            name: reciter.name,
+            letter: reciter.letter || '',
+            rewaya: firstMoshaf ? firstMoshaf.name : 'حفص عن عاصم',
+            count: firstMoshaf ? firstMoshaf.surah_total : 114,
+            server: firstMoshaf ? firstMoshaf.server : '',
+            recitationId: firstMoshaf ? firstMoshaf.id : reciter.id,
+          };
+        });
+        
+        // Filter to only include popular reciters with complete Quran
+        const popularReciters = mappedReciters.filter(r => 
+          r.count === 114 && r.server && r.server.length > 0
+        );
+        
+        setReciters(popularReciters);
+        console.log('✅ Loaded reciters:', popularReciters.length);
+      } else {
+        console.warn('⚠️ Invalid reciters data format');
+        // Set default reciters if API fails
+        setDefaultReciters();
+      }
+    } catch (error) {
+      console.error('❌ Error loading reciters:', error);
+      // Set default reciters on error
+      setDefaultReciters();
+    } finally {
+      setLoadingReciters(false);
+    }
+  };
+
+  const setDefaultReciters = () => {
+    // Fallback to default reciters if API fails
+    const defaultReciters: Reciter[] = [
+      {
+        id: 2,
+        name: 'عبد الباسط عبد الصمد',
+        letter: 'ع',
+        rewaya: 'حفص عن عاصم - مرتل',
+        count: 114,
+        server: 'https://server8.mp3quran.net/afs/',
+        recitationId: 2,
+      },
+      {
+        id: 7,
+        name: 'مشاري بن راشد العفاسي',
+        letter: 'م',
+        rewaya: 'حفص عن عاصم',
+        count: 114,
+        server: 'https://server8.mp3quran.net/afs/',
+        recitationId: 7,
+      },
+      {
+        id: 5,
+        name: 'محمد صديق المنشاوي',
+        letter: 'م',
+        rewaya: 'حفص عن عاصم - مجود',
+        count: 114,
+        server: 'https://server10.mp3quran.net/minsh/',
+        recitationId: 5,
+      },
+    ];
+    setReciters(defaultReciters);
+    console.log('✅ Set default reciters');
+  };
+
+  const loadSelectedReciter = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(SELECTED_RECITER_KEY);
+      if (saved) {
+        const reciterId = parseInt(saved);
+        setSelectedReciterState(reciterId);
+        audioService.setRecitationId(reciterId);
+        console.log('✅ Loaded selected reciter:', reciterId);
+      }
+    } catch (error) {
+      console.error('Error loading selected reciter:', error);
+    }
+  };
+
+  const setSelectedReciter = async (reciterId: number) => {
+    try {
+      setSelectedReciterState(reciterId);
+      audioService.setRecitationId(reciterId);
+      await AsyncStorage.setItem(SELECTED_RECITER_KEY, reciterId.toString());
+      console.log('✅ Selected reciter:', reciterId);
+      
+      // Show confirmation
+      const reciter = reciters.find(r => r.id === reciterId);
+      if (reciter) {
+        Alert.alert(
+          'تم اختيار القارئ',
+          `تم اختيار ${reciter.name} بنجاح`,
+          [{ text: 'حسناً' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error setting selected reciter:', error);
+      Alert.alert(
+        'خطأ',
+        'فشل في حفظ اختيار القارئ',
         [{ text: 'حسناً' }]
       );
     }
@@ -154,6 +292,10 @@ export const useAudio = () => {
     loading,
     error,
     continuousPlayback,
+    reciters,
+    selectedReciter,
+    loadingReciters,
+    setSelectedReciter,
     playAyah,
     stopAudio,
     pauseAudio,

@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { AudioState } from '../types';
+import { AudioState, Reciter } from '../types';
 import Icon from './Icon';
 
 interface AudioPlayerProps {
@@ -11,6 +11,8 @@ interface AudioPlayerProps {
   onPause: () => void;
   onStop: () => void;
   onNext?: () => void;
+  selectedReciter?: number;
+  reciters?: Reciter[];
 }
 
 const toArabicNumerals = (num: number): string => {
@@ -23,9 +25,21 @@ export default function AudioPlayer({
   onPlay, 
   onPause, 
   onStop,
-  onNext
+  onNext,
+  selectedReciter,
+  reciters = []
 }: AudioPlayerProps) {
-  const { colors, textSizes } = useTheme();
+  const { colors } = useTheme();
+  const [reciterName, setReciterName] = useState('عبد الباسط عبد الصمد');
+
+  useEffect(() => {
+    if (selectedReciter && reciters.length > 0) {
+      const reciter = reciters.find(r => r.id === selectedReciter);
+      if (reciter) {
+        setReciterName(reciter.name);
+      }
+    }
+  }, [selectedReciter, reciters]);
 
   if (!audioState || (!audioState.currentSurah && !audioState.currentAyah)) {
     return null;
@@ -137,7 +151,7 @@ export default function AudioPlayer({
       <View style={styles.progressBar} />
       
       <View style={styles.info}>
-        <Text style={styles.reciterText}>عبد الباسط عبد الصمد</Text>
+        <Text style={styles.reciterText}>{reciterName}</Text>
         <Text style={styles.currentText}>
           سورة {toArabicNumerals(audioState.currentSurah || 0)} - آية {toArabicNumerals(audioState.currentAyah || 0)}
         </Text>

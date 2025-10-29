@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAudio } from '../../hooks/useAudio';
 import { reciterService } from '../../services/reciterService';
@@ -9,7 +9,7 @@ import Icon from '../../components/Icon';
 
 export default function RecitersTab() {
   const { colors, textSizes } = useTheme();
-  const { reciters, selectedReciter, setSelectedReciter } = useAudio();
+  const { reciters, selectedReciter, setSelectedReciter, loadingReciters } = useAudio();
   const [recitersWithImages, setRecitersWithImages] = useState<ReciterWithImage[]>([]);
 
   useEffect(() => {
@@ -20,9 +20,18 @@ export default function RecitersTab() {
     }
   }, [reciters]);
 
-  const handleSelectReciter = (reciterId: number) => {
-    setSelectedReciter(reciterId);
-    console.log('Selected reciter:', reciterId);
+  const handleSelectReciter = async (reciterId: number) => {
+    try {
+      await setSelectedReciter(reciterId);
+      console.log('Selected reciter:', reciterId);
+    } catch (error) {
+      console.error('Error selecting reciter:', error);
+      Alert.alert(
+        'خطأ',
+        'فشل في اختيار القارئ. يرجى المحاولة مرة أخرى.',
+        [{ text: 'حسناً' }]
+      );
+    }
   };
 
   const styles = StyleSheet.create({
@@ -42,6 +51,13 @@ export default function RecitersTab() {
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
       textAlign: 'right',
+    },
+    headerSubtitle: {
+      fontSize: textSizes.caption,
+      fontFamily: 'Amiri_400Regular',
+      color: colors.textSecondary,
+      textAlign: 'right',
+      marginTop: 4,
     },
     content: {
       padding: 16,
@@ -91,7 +107,7 @@ export default function RecitersTab() {
       color: colors.textSecondary,
       textAlign: 'right',
     },
-    playButton: {
+    selectButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
@@ -100,7 +116,7 @@ export default function RecitersTab() {
       justifyContent: 'center',
       marginRight: 12,
     },
-    playButtonActive: {
+    selectButtonActive: {
       backgroundColor: colors.secondary,
     },
     selectedBadge: {
@@ -128,17 +144,44 @@ export default function RecitersTab() {
       color: colors.textSecondary,
       textAlign: 'center',
       fontFamily: 'Amiri_400Regular',
+      marginTop: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 40,
     },
   });
+
+  if (loadingReciters) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>القراء</Text>
+          <Text style={styles.headerSubtitle}>اختر القارئ المفضل لديك</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.emptyText}>جاري تحميل قائمة القراء...</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (recitersWithImages.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>القراء</Text>
+          <Text style={styles.headerSubtitle}>اختر القارئ المفضل لديك</Text>
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>جاري تحميل قائمة القراء...</Text>
+          <Icon name="musical-notes" size={48} style={{ color: colors.textSecondary }} />
+          <Text style={styles.emptyText}>
+            لا توجد قائمة قراء متاحة حالياً{'\n'}
+            يرجى التحقق من اتصالك بالإنترنت
+          </Text>
         </View>
       </View>
     );
@@ -148,6 +191,9 @@ export default function RecitersTab() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>القراء</Text>
+        <Text style={styles.headerSubtitle}>
+          {recitersWithImages.length} قارئ متاح • اضغط لاختيار القارئ
+        </Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -159,6 +205,7 @@ export default function RecitersTab() {
               selectedReciter === reciter.id && styles.reciterCardActive,
             ]}
             onPress={() => handleSelectReciter(reciter.id)}
+            activeOpacity={0.7}
           >
             {selectedReciter === reciter.id && (
               <View style={styles.selectedBadge}>
@@ -168,12 +215,13 @@ export default function RecitersTab() {
             
             <TouchableOpacity
               style={[
-                styles.playButton,
-                selectedReciter === reciter.id && styles.playButtonActive,
+                styles.selectButton,
+                selectedReciter === reciter.id && styles.selectButtonActive,
               ]}
+              onPress={() => handleSelectReciter(reciter.id)}
             >
               <Icon
-                name="play"
+                name={selectedReciter === reciter.id ? "checkmark" : "person"}
                 size={20}
                 style={{ color: colors.backgroundAlt }}
               />

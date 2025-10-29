@@ -25,8 +25,8 @@ class AudioService {
   private onAyahEndCallback: ((surah: number, ayah: number) => void) | null = null;
   private initializationPromise: Promise<void> | null = null;
   
-  // Using Abdulbasit (recitation ID 2) as the single working reciter
-  private readonly RECITATION_ID = 2;
+  // Default to Abdulbasit (recitation ID 2), can be changed
+  private recitationId = 2;
   
   private getAudioDir(): string {
     // eslint-disable-next-line import/namespace
@@ -40,6 +40,15 @@ class AudioService {
       console.error('Error loading audio cache in constructor:', error);
     });
     this.ensureAudioDirectory();
+  }
+
+  setRecitationId(id: number) {
+    this.recitationId = id;
+    console.log('✅ Recitation ID set to:', id);
+  }
+
+  getRecitationId(): number {
+    return this.recitationId;
   }
 
   private async ensureAudioDirectory() {
@@ -142,8 +151,9 @@ class AudioService {
       // Zero-pad to 3 digits as per Quran.com CDN format
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
-      const url = `https://verses.quran.com/${this.RECITATION_ID}/${paddedSurah}${paddedAyah}.mp3`;
+      const url = `https://verses.quran.com/${this.recitationId}/${paddedSurah}${paddedAyah}.mp3`;
       
+      console.log('🔗 Built CDN URL:', url);
       return url;
     } catch (error) {
       console.error('❌ Error building audio URL:', error);
@@ -240,7 +250,7 @@ class AudioService {
     try {
       console.log(`🌐 Fetching audio URL from API for ${surahNumber}:${ayahNumber}...`);
       
-      const apiUrl = `https://api.quran.com/api/v4/verses/by_key/${surahNumber}:${ayahNumber}?audio=${this.RECITATION_ID}`;
+      const apiUrl = `https://api.quran.com/api/v4/verses/by_key/${surahNumber}:${ayahNumber}?audio=${this.recitationId}`;
       
       const response = await this.fetchWithTimeout(apiUrl, { timeout: 10000 });
       
@@ -285,7 +295,7 @@ class AudioService {
     surahNumber: number, 
     ayahNumber: number
   ): Promise<string> {
-    const cacheKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
+    const cacheKey = `${this.recitationId}:${surahNumber}:${ayahNumber}`;
     const downloadKey = `${surahNumber}:${ayahNumber}`;
     
     // Check if audio is downloaded locally first
@@ -475,6 +485,7 @@ class AudioService {
 
       console.log(`\n🎵 ===== PLAYING AYAH =====`);
       console.log(`📖 Surah: ${surahNumber}, Ayah: ${ayahNumber}`);
+      console.log(`🎙️ Recitation ID: ${this.recitationId}`);
       console.log(`🎙️ Continuous: ${continuousPlay}`);
 
       // Ensure audio is initialized
@@ -499,7 +510,7 @@ class AudioService {
       this.currentSurah = surahNumber;
       this.currentAyah = ayahNumber;
       this.totalAyahs = totalAyahsInSurah;
-      this.currentlyPlayingKey = `${this.RECITATION_ID}:${surahNumber}:${ayahNumber}`;
+      this.currentlyPlayingKey = `${this.recitationId}:${surahNumber}:${ayahNumber}`;
 
       // Get audio URL with fallback chain (checks local files first)
       console.log('🔍 Resolving audio URL...');
