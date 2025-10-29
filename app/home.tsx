@@ -231,7 +231,7 @@ export default function HomeScreen() {
       fontFamily: 'Amiri_400Regular',
       color: colors.text,
       fontSize: textSizes.body,
-      textAlign: 'left',
+      textAlign: 'right',
       textAlignVertical: 'center',
       paddingVertical: 0,
       includeFontPadding: false,
@@ -415,7 +415,7 @@ export default function HomeScreen() {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="...Search chapters"
+          placeholder="البحث في السور..."
           placeholderTextColor={colors.textSecondary}
           style={styles.searchInput}
         />
