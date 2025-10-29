@@ -1,5 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { networkUtils } from '../utils/networkUtils';
 
 interface TafsirCacheEntry {
   text: string;
@@ -24,7 +25,6 @@ class TafsirService {
 
   constructor() {
     // Start initialization but don't await it
-    // Store the promise so we can await it later when needed
     this.initializationPromise = this.initialize().catch(error => {
       console.error('Error during tafsir service initialization:', error);
     });
@@ -65,6 +65,14 @@ class TafsirService {
       if (storedId) {
         this.tafsirId = parseInt(storedId, 10);
         console.log(`Loaded cached Tafsir Ibn Kathir ID: ${this.tafsirId}`);
+        return;
+      }
+
+      // Check network connectivity
+      const isConnected = await networkUtils.isConnected();
+      if (!isConnected) {
+        console.log('No network connection, using default tafsir ID: 14');
+        this.tafsirId = 14;
         return;
       }
 
@@ -162,6 +170,12 @@ class TafsirService {
   ): Promise<Response> {
     let lastError: Error | null = null;
 
+    // Check network connectivity first
+    const isConnected = await networkUtils.isConnected();
+    if (!isConnected) {
+      throw new Error('لا يوجد اتصال بالإنترنت');
+    }
+
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const controller = new AbortController();
@@ -198,7 +212,7 @@ class TafsirService {
         }
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`خطأ في الخادم: ${response.status}`);
         }
 
         return response;
@@ -207,6 +221,7 @@ class TafsirService {
         
         if (error instanceof Error && error.name === 'AbortError') {
           console.log(`Request timeout (attempt ${attempt + 1}/${retries})`);
+          lastError = new Error('انتهت مهلة الطلب');
         } else {
           console.log(`Request failed (attempt ${attempt + 1}/${retries}):`, error);
         }
@@ -218,7 +233,7 @@ class TafsirService {
       }
     }
 
-    throw lastError || new Error('Request failed after all retries');
+    throw lastError || new Error('فشل الطلب بعد عدة محاولات');
   }
 
   /**
@@ -287,7 +302,7 @@ class TafsirService {
     try {
       // Validate input
       if (!surah || !ayah || surah < 1 || surah > 114 || ayah < 1) {
-        throw new Error(`Invalid parameters: surah ${surah}, ayah ${ayah}`);
+        throw new Error(`معاملات غير صحيحة: سورة ${surah}, آية ${ayah}`);
       }
 
       // Ensure service is initialized
@@ -337,7 +352,7 @@ class TafsirService {
         console.log(`Successfully fetched and cached tafsir for ${surah}:${ayah}`);
         return tafsirText;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        const errorMsg = error instanceof Error ? error.message : 'خطأ غير معروف';
         this.errorTafsirKeys.set(cacheKey, errorMsg);
         console.error(`Error fetching tafsir for ${surah}:${ayah}:`, error);
         throw error;
@@ -347,7 +362,10 @@ class TafsirService {
       }
     } catch (error) {
       console.error('Error in getTafsir:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('تعذّر تحميل التفسير');
     }
   }
 
@@ -367,15 +385,18 @@ class TafsirService {
         const cleanedText = this.cleanTafsirText(data.tafsir.text);
         
         if (!cleanedText || cleanedText.length < 10) {
-          throw new Error('Tafsir text is too short or empty');
+          throw new Error('نص التفسير قصير جداً أو فارغ');
         }
 
         return cleanedText;
       } else {
-        throw new Error('Invalid tafsir response format');
+        throw new Error('تنسيق استجابة التفسير غير صحيح');
       }
     } catch (error) {
       console.error(`Failed to fetch tafsir from API for ${surah}:${ayah}:`, error);
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error('تعذّر تحميل التفسير');
     }
   }
@@ -467,6 +488,7 @@ class TafsirService {
       console.log('Tafsir cache cleared');
     } catch (error) {
       console.error('Error clearing cache:', error);
+      throw new Error('فشل في مسح ذاكرة التخزين المؤقت');
     }
   }
 
@@ -502,7 +524,10 @@ class TafsirService {
       return this.getTafsir(surah, ayah);
     } catch (error) {
       console.error('Error in refreshTafsir:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('فشل في تحديث التفسير');
     }
   }
 }

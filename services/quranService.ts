@@ -2,6 +2,7 @@
 import { QuranData, Surah, Ayah } from '../types';
 import { processAyahText, validateTextProcessing } from '../utils/textProcessor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { networkUtils } from '../utils/networkUtils';
 
 class QuranService {
   private baseUrl = 'https://api.alquran.cloud/v1';
@@ -33,12 +34,18 @@ class QuranService {
         return this.cachedQuran;
       }
 
+      // Check network connectivity before fetching
+      const isConnected = await networkUtils.isConnected();
+      if (!isConnected) {
+        throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال والمحاولة مرة أخرى.');
+      }
+
       // If not in storage, fetch from API
       console.log('Fetching Quran data from API...');
-      const response = await fetch(`${this.baseUrl}/quran/quran-uthmani`);
+      const response = await this.fetchWithTimeout(`${this.baseUrl}/quran/quran-uthmani`, 30000);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`فشل في تحميل البيانات. رمز الخطأ: ${response.status}`);
       }
       
       const data = await response.json();
@@ -55,7 +62,7 @@ class QuranService {
         
         return this.cachedQuran;
       } else {
-        throw new Error(`API error: ${data.status || 'Unknown error'}`);
+        throw new Error(`خطأ في البيانات المستلمة: ${data.status || 'خطأ غير معروف'}`);
       }
     } catch (error) {
       console.error('Error fetching Quran:', error);
@@ -68,7 +75,27 @@ class QuranService {
         return this.cachedQuran;
       }
       
-      throw new Error(`Failed to fetch Quran data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('فشل في تحميل بيانات القرآن الكريم');
+    }
+  }
+
+  private async fetchWithTimeout(url: string, timeout: number = 10000): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.');
+      }
+      throw error;
     }
   }
 
@@ -112,7 +139,7 @@ class QuranService {
       console.log(`Fetching individual Surah ${surahNumber}...`);
       
       if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
-        throw new Error(`Invalid surah number: ${surahNumber}`);
+        throw new Error(`رقم سورة غير صحيح: ${surahNumber}`);
       }
       
       // Try to get from cached data first
@@ -150,11 +177,17 @@ class QuranService {
         }
       }
       
+      // Check network connectivity before fetching
+      const isConnected = await networkUtils.isConnected();
+      if (!isConnected) {
+        throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال والمحاولة مرة أخرى.');
+      }
+      
       // Fetch individual surah if not in cache or storage
-      const response = await fetch(`${this.baseUrl}/surah/${surahNumber}/ar.asad`);
+      const response = await this.fetchWithTimeout(`${this.baseUrl}/surah/${surahNumber}/ar.asad`, 15000);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`فشل في تحميل السورة. رمز الخطأ: ${response.status}`);
       }
       
       const data = await response.json();
@@ -164,11 +197,14 @@ class QuranService {
         console.log(`Surah ${surahNumber} fetched and processed successfully`);
         return processedSurah;
       } else {
-        throw new Error(`API error: ${data.status || 'Unknown error'}`);
+        throw new Error(`خطأ في البيانات المستلمة: ${data.status || 'خطأ غير معروف'}`);
       }
     } catch (error) {
       console.error(`Error fetching Surah ${surahNumber}:`, error);
-      throw new Error(`Failed to fetch Surah ${surahNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`فشل في تحميل السورة ${surahNumber}`);
     }
   }
 
@@ -177,7 +213,7 @@ class QuranService {
       const quranData = await this.getFullQuran();
       
       if (!quranData || !quranData.surahs || !Array.isArray(quranData.surahs)) {
-        throw new Error('Invalid Quran data structure');
+        throw new Error('بيانات القرآن غير صحيحة');
       }
       
       return quranData.surahs.map(surah => ({
@@ -190,7 +226,10 @@ class QuranService {
       }));
     } catch (error) {
       console.error('Error getting surahs:', error);
-      throw new Error(`Failed to get surahs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('فشل في تحميل قائمة السور');
     }
   }
 
@@ -338,20 +377,21 @@ class QuranService {
   }
 
   async clearCache(): Promise<void> {
-    console.log('Clearing Quran cache');
-    this.cachedQuran = null;
-    this.processingStats = {
-      totalSurahs: 0,
-      processedSurahs: 0,
-      bismillahRemoved: 0,
-      processingErrors: 0
-    };
-    
     try {
+      console.log('Clearing Quran cache');
+      this.cachedQuran = null;
+      this.processingStats = {
+        totalSurahs: 0,
+        processedSurahs: 0,
+        bismillahRemoved: 0,
+        processingErrors: 0
+      };
+      
       await AsyncStorage.multiRemove([this.QURAN_STORAGE_KEY, this.QURAN_VERSION_KEY]);
       console.log('✅ Cleared Quran data from storage');
     } catch (error) {
       console.error('Error clearing storage:', error);
+      throw new Error('فشل في مسح ذاكرة التخزين المؤقت');
     }
   }
 
@@ -396,7 +436,10 @@ class QuranService {
       return ayahs;
     } catch (error) {
       console.error(`Error getting ayahs for Juz ${juzNumber}:`, error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`فشل في تحميل الجزء ${juzNumber}`);
     }
   }
 
@@ -412,10 +455,13 @@ class QuranService {
         }
       }
       
-      throw new Error(`Ayah ${ayahNumber} not found`);
+      throw new Error(`الآية ${ayahNumber} غير موجودة`);
     } catch (error) {
       console.error(`Error getting surah number for ayah ${ayahNumber}:`, error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`فشل في العثور على الآية ${ayahNumber}`);
     }
   }
 }

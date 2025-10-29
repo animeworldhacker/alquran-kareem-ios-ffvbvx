@@ -2,7 +2,7 @@
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { documentDirectory } from 'expo-file-system';
+import { networkUtils } from '../utils/networkUtils';
 
 interface AudioCache {
   [key: string]: string;
@@ -27,8 +27,9 @@ class AudioService {
   
   // Using Abdulbasit (recitation ID 2) as the single working reciter
   private readonly RECITATION_ID = 2;
+  
   private getAudioDir(): string {
-    const docDir = documentDirectory ?? '';
+    const docDir = FileSystem.documentDirectory ?? '';
     return `${docDir}audio/`;
   }
 
@@ -50,6 +51,7 @@ class AudioService {
       }
     } catch (error) {
       console.error('Error creating audio directory:', error);
+      throw new Error('فشل في إنشاء مجلد الصوتيات');
     }
   }
 
@@ -82,7 +84,7 @@ class AudioService {
       console.log('✅ Audio initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing audio:', error);
-      throw new Error(`Failed to initialize audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`فشل في تهيئة نظام الصوت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   }
 
@@ -144,7 +146,7 @@ class AudioService {
       return url;
     } catch (error) {
       console.error('❌ Error building audio URL:', error);
-      throw error;
+      throw new Error('فشل في بناء رابط الصوت');
     }
   }
 
@@ -166,6 +168,12 @@ class AudioService {
   private async fetchWithTimeout(url: string, options: { timeout?: number; method?: string } = {}): Promise<Response> {
     const { timeout = 10000, method = 'GET' } = options;
     
+    // Check network connectivity first
+    const isConnected = await networkUtils.isConnected();
+    if (!isConnected) {
+      throw new Error('لا يوجد اتصال بالإنترنت');
+    }
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
@@ -179,7 +187,7 @@ class AudioService {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timed out');
+        throw new Error('انتهت مهلة الطلب');
       }
       throw error;
     }
@@ -209,6 +217,10 @@ class AudioService {
         }
       } catch (error) {
         console.error(`⚠️ Attempt ${attempt} failed:`, error instanceof Error ? error.message : error);
+        
+        if (error instanceof Error && error.message === 'لا يوجد اتصال بالإنترنت') {
+          throw error; // Don't retry on network errors
+        }
         
         if (attempt < retries) {
           // Exponential backoff: 1s, 2s, 4s
@@ -257,11 +269,13 @@ class AudioService {
         return normalizedUrl;
       } else {
         console.warn('⚠️ No audio URL in API response');
-        console.log('API response structure:', JSON.stringify(data, null, 2));
         return null;
       }
     } catch (error) {
       console.error('❌ Error fetching from API:', error);
+      if (error instanceof Error && error.message === 'لا يوجد اتصال بالإنترنت') {
+        throw error;
+      }
       return null;
     }
   }
@@ -276,14 +290,18 @@ class AudioService {
     // Check if audio is downloaded locally first
     if (this.downloadedAudio[downloadKey]) {
       const localPath = this.downloadedAudio[downloadKey];
-      const fileInfo = await FileSystem.getInfoAsync(localPath);
-      if (fileInfo.exists) {
-        console.log('📦 Using downloaded audio file:', localPath);
-        return localPath;
-      } else {
-        // File was deleted, remove from list
-        delete this.downloadedAudio[downloadKey];
-        await this.saveDownloadedAudio();
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(localPath);
+        if (fileInfo.exists) {
+          console.log('📦 Using downloaded audio file:', localPath);
+          return localPath;
+        } else {
+          // File was deleted, remove from list
+          delete this.downloadedAudio[downloadKey];
+          await this.saveDownloadedAudio();
+        }
+      } catch (error) {
+        console.error('Error checking local file:', error);
       }
     }
     
@@ -292,15 +310,19 @@ class AudioService {
       console.log('📦 Using cached audio URL:', cacheKey);
       
       // Verify cached URL is still valid
-      const isValid = await this.checkAudioUrlWithRetry(this.audioCache[cacheKey], 1);
-      if (isValid) {
-        return this.audioCache[cacheKey];
-      } else {
-        console.log('⚠️ Cached URL is no longer valid, removing from cache');
-        delete this.audioCache[cacheKey];
-        await this.saveAudioCache().catch(error => {
-          console.error('Error saving cache after deletion:', error);
-        });
+      try {
+        const isValid = await this.checkAudioUrlWithRetry(this.audioCache[cacheKey], 1);
+        if (isValid) {
+          return this.audioCache[cacheKey];
+        } else {
+          console.log('⚠️ Cached URL is no longer valid, removing from cache');
+          delete this.audioCache[cacheKey];
+          await this.saveAudioCache();
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message === 'لا يوجد اتصال بالإنترنت') {
+          throw error;
+        }
       }
     }
     
@@ -314,9 +336,7 @@ class AudioService {
     if (isAvailable) {
       console.log('✅ CDN URL works!');
       this.audioCache[cacheKey] = audioUrl;
-      await this.saveAudioCache().catch(error => {
-        console.error('Error saving cache:', error);
-      });
+      await this.saveAudioCache();
       return audioUrl;
     }
     
@@ -329,9 +349,7 @@ class AudioService {
       if (apiUrlValid) {
         console.log('✅ API URL works!');
         this.audioCache[cacheKey] = apiUrl;
-        await this.saveAudioCache().catch(error => {
-          console.error('Error saving cache:', error);
-        });
+        await this.saveAudioCache();
         return apiUrl;
       }
     }
@@ -343,6 +361,12 @@ class AudioService {
 
   async downloadAyah(surahNumber: number, ayahNumber: number): Promise<void> {
     try {
+      // Check network connectivity
+      const isConnected = await networkUtils.isConnected();
+      if (!isConnected) {
+        throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال والمحاولة مرة أخرى.');
+      }
+
       console.log(`📥 Downloading audio for ${surahNumber}:${ayahNumber}`);
       
       const downloadKey = `${surahNumber}:${ayahNumber}`;
@@ -371,11 +395,14 @@ class AudioService {
         await this.saveDownloadedAudio();
         console.log('✅ Audio downloaded successfully:', localPath);
       } else {
-        throw new Error(`Download failed with status ${downloadResult.status}`);
+        throw new Error(`فشل التنزيل بحالة ${downloadResult.status}`);
       }
     } catch (error) {
       console.error('❌ Error downloading audio:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('فشل في تنزيل الملف الصوتي');
     }
   }
 
@@ -396,6 +423,7 @@ class AudioService {
       console.log('🗑️ Downloaded audio cleared');
     } catch (error) {
       console.error('Error clearing downloaded audio:', error);
+      throw new Error('فشل في مسح الملفات الصوتية المحملة');
     }
   }
 
@@ -406,9 +434,13 @@ class AudioService {
       
       for (const key in this.downloadedAudio) {
         const filePath = this.downloadedAudio[key];
-        const fileInfo = await FileSystem.getInfoAsync(filePath);
-        if (fileInfo.exists && 'size' in fileInfo) {
-          totalSize += fileInfo.size || 0;
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(filePath);
+          if (fileInfo.exists && 'size' in fileInfo) {
+            totalSize += fileInfo.size || 0;
+          }
+        } catch (error) {
+          console.error(`Error getting file info for ${filePath}:`, error);
         }
         
         const [surahNumber] = key.split(':');
@@ -490,8 +522,10 @@ class AudioService {
       this.currentlyPlayingKey = null;
       this.continuousPlayback = false;
       
-      const errorMessage = error instanceof Error ? error.message : 'تعذّر تشغيل الآية';
-      throw new Error(errorMessage);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('تعذّر تشغيل الآية');
     }
   }
 
@@ -617,6 +651,7 @@ class AudioService {
       console.log('🗑️ Audio cache cleared');
     } catch (error) {
       console.error('Error clearing audio cache:', error);
+      throw new Error('فشل في مسح ذاكرة التخزين المؤقت');
     }
   }
 }
