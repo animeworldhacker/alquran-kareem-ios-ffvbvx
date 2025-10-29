@@ -172,7 +172,7 @@ export default function ChaptersTab() {
       marginHorizontal: 16,
       marginBottom: 12,
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 14,
       borderRadius: 24,
       borderWidth: 2,
       borderColor: colors.gold,
@@ -181,6 +181,7 @@ export default function ChaptersTab() {
       alignItems: 'center',
       gap: 12,
       boxShadow: 'inset 0px 2px 4px rgba(0, 0, 0, 0.1)',
+      minHeight: 50,
     },
     searchInput: {
       flex: 1,
@@ -188,6 +189,9 @@ export default function ChaptersTab() {
       color: colors.text,
       fontSize: textSizes.body,
       textAlign: 'right',
+      textAlignVertical: 'center',
+      paddingVertical: 0,
+      includeFontPadding: false,
     },
     clearButton: {
       padding: 4,
