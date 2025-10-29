@@ -29,6 +29,7 @@ class AudioService {
   private readonly RECITATION_ID = 2;
   
   private getAudioDir(): string {
+    // eslint-disable-next-line import/namespace
     const docDir = FileSystem.documentDirectory ?? '';
     return `${docDir}audio/`;
   }
