@@ -26,18 +26,18 @@ export const useQuran = () => {
       ]);
       
       if (!fullQuran) {
-        throw new Error('Failed to load Quran data');
+        throw new Error('فشل في تحميل بيانات القرآن الكريم');
       }
       
       if (!surahsList || surahsList.length === 0) {
-        throw new Error('Failed to load Surahs list');
+        throw new Error('فشل في تحميل قائمة السور');
       }
       
       setQuranData(fullQuran);
       setSurahs(surahsList);
       console.log('Quran data loaded successfully:', surahsList.length, 'surahs');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load Quran data';
+      const errorMessage = err instanceof Error ? err.message : 'فشل في تحميل بيانات القرآن الكريم';
       setError(errorMessage);
       console.error('Error loading Quran data:', err);
     } finally {

@@ -70,6 +70,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const loadSettings = async () => {
     try {
       setIsLoading(true);
+      console.log('Loading settings...');
+      
       const savedSettings = await settingsService.getSettings();
       const defaultSettings = settingsService.getDefaultSettings();
       
@@ -78,7 +80,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       console.log('Settings loaded successfully:', mergedSettings);
     } catch (error) {
       console.error('Error loading settings:', error);
-      setSettings(settingsService.getDefaultSettings());
+      // Use default settings on error
+      const defaultSettings = settingsService.getDefaultSettings();
+      setSettings(defaultSettings);
+      console.log('Using default settings due to error');
     } finally {
       setIsLoading(false);
     }

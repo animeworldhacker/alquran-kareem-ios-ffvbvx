@@ -1,159 +1,166 @@
 
 import NetInfo from '@react-native-community/netinfo';
-import { Alert } from 'react-native';
-
-export interface NetworkState {
-  isConnected: boolean;
-  isInternetReachable: boolean | null;
-  type: string;
-}
 
 class NetworkUtils {
-  private currentState: NetworkState = {
-    isConnected: false,
-    isInternetReachable: null,
-    type: 'unknown',
-  };
-
-  private listeners: ((state: NetworkState) => void)[] = [];
+  private isOnline: boolean = true;
+  private listeners: Set<(isOnline: boolean) => void> = new Set();
 
   constructor() {
     this.initialize();
   }
 
-  private async initialize() {
+  private initialize() {
     try {
-      // Subscribe to network state updates
+      // Subscribe to network state changes
       NetInfo.addEventListener(state => {
-        this.currentState = {
-          isConnected: state.isConnected ?? false,
-          isInternetReachable: state.isInternetReachable,
+        const wasOnline = this.isOnline;
+        this.isOnline = state.isConnected ?? true;
+        
+        console.log('Network state changed:', {
+          isConnected: state.isConnected,
           type: state.type,
-        };
+          isInternetReachable: state.isInternetReachable,
+        });
 
-        // Notify all listeners
-        this.listeners.forEach(listener => listener(this.currentState));
-
-        console.log('Network state changed:', this.currentState);
+        // Notify listeners if status changed
+        if (wasOnline !== this.isOnline) {
+          this.notifyListeners();
+        }
       });
 
-      // Get initial state
-      const state = await NetInfo.fetch();
-      this.currentState = {
-        isConnected: state.isConnected ?? false,
-        isInternetReachable: state.isInternetReachable,
-        type: state.type,
-      };
-
-      console.log('Initial network state:', this.currentState);
+      console.log('✅ Network monitoring initialized');
     } catch (error) {
-      console.error('Error initializing network utils:', error);
+      console.error('❌ Failed to initialize network monitoring:', error);
+      // Assume online if we can't check
+      this.isOnline = true;
     }
   }
 
-  /**
-   * Check if device is connected to the internet
-   */
   async isConnected(): Promise<boolean> {
     try {
       const state = await NetInfo.fetch();
-      return state.isConnected ?? false;
+      const isConnected = state.isConnected ?? true;
+      
+      console.log('Network check:', {
+        isConnected,
+        type: state.type,
+        isInternetReachable: state.isInternetReachable,
+      });
+      
+      return isConnected;
     } catch (error) {
       console.error('Error checking network connection:', error);
-      return false;
+      // Return true as fallback to allow app to try network requests
+      return true;
     }
   }
 
-  /**
-   * Check if internet is reachable (can actually access the internet)
-   */
   async isInternetReachable(): Promise<boolean> {
     try {
       const state = await NetInfo.fetch();
-      return state.isInternetReachable ?? false;
+      return state.isInternetReachable ?? true;
     } catch (error) {
       console.error('Error checking internet reachability:', error);
-      return false;
+      return true;
     }
   }
 
-  /**
-   * Get current network state
-   */
-  async getNetworkState(): Promise<NetworkState> {
-    try {
-      const state = await NetInfo.fetch();
-      return {
-        isConnected: state.isConnected ?? false,
-        isInternetReachable: state.isInternetReachable,
-        type: state.type,
-      };
-    } catch (error) {
-      console.error('Error getting network state:', error);
-      return this.currentState;
-    }
+  getConnectionType(): Promise<string> {
+    return NetInfo.fetch().then(state => state.type || 'unknown');
   }
 
-  /**
-   * Subscribe to network state changes
-   */
-  subscribe(listener: (state: NetworkState) => void): () => void {
-    this.listeners.push(listener);
+  addListener(callback: (isOnline: boolean) => void) {
+    this.listeners.add(callback);
+    // Immediately call with current status
+    callback(this.isOnline);
+  }
 
-    // Return unsubscribe function
-    return () => {
-      const index = this.listeners.indexOf(listener);
-      if (index > -1) {
-        this.listeners.splice(index, 1);
+  removeListener(callback: (isOnline: boolean) => void) {
+    this.listeners.delete(callback);
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(callback => {
+      try {
+        callback(this.isOnline);
+      } catch (error) {
+        console.error('Error in network listener:', error);
       }
-    };
+    });
+  }
+
+  getCurrentStatus(): boolean {
+    return this.isOnline;
   }
 
   /**
-   * Show offline alert
+   * Retry a network request with exponential backoff
    */
-  showOfflineAlert() {
-    Alert.alert(
-      'لا يوجد اتصال بالإنترنت',
-      'يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.',
-      [{ text: 'حسناً', style: 'default' }]
-    );
-  }
-
-  /**
-   * Show error alert with retry option
-   */
-  showErrorAlert(message: string, onRetry?: () => void) {
-    const buttons = onRetry
-      ? [
-          { text: 'إلغاء', style: 'cancel' },
-          { text: 'إعادة المحاولة', onPress: onRetry },
-        ]
-      : [{ text: 'حسناً', style: 'default' }];
-
-    Alert.alert('خطأ', message, buttons);
-  }
-
-  /**
-   * Execute a function with network check
-   */
-  async executeWithNetworkCheck<T>(
+  async retryWithBackoff<T>(
     fn: () => Promise<T>,
-    errorMessage?: string
+    maxRetries: number = 3,
+    initialDelay: number = 1000
   ): Promise<T> {
-    const isConnected = await this.isConnected();
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Check if we're online before attempting
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+          throw new Error('لا يوجد اتصال بالإنترنت');
+        }
 
-    if (!isConnected) {
-      this.showOfflineAlert();
-      throw new Error('لا يوجد اتصال بالإنترنت');
+        return await fn();
+      } catch (error) {
+        lastError = error as Error;
+        console.log(`Attempt ${attempt + 1} failed:`, error);
+
+        // Don't retry if it's the last attempt
+        if (attempt === maxRetries - 1) {
+          break;
+        }
+
+        // Calculate delay with exponential backoff
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`Retrying in ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
 
+    throw lastError || new Error('فشل الطلب بعد عدة محاولات');
+  }
+
+  /**
+   * Fetch with timeout
+   */
+  async fetchWithTimeout(
+    url: string,
+    options: RequestInit = {},
+    timeout: number = 10000
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     try {
-      return await fn();
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
     } catch (error) {
-      console.error('Error executing function:', error);
-      const message = errorMessage || 'حدث خطأ أثناء تنفيذ العملية';
-      throw new Error(message);
+      clearTimeout(timeoutId);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.');
+        }
+        throw error;
+      }
+      
+      throw new Error('فشل الاتصال بالخادم');
     }
   }
 }
