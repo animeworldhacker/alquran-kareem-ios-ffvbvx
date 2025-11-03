@@ -6,7 +6,9 @@ import { Platform } from 'react-native';
 // Simple debouncing to prevent duplicate errors
 const recentErrors: { [key: string]: boolean } = {};
 const clearErrorAfterDelay = (errorKey: string): void => {
-  setTimeout(() => delete recentErrors[errorKey], 100);
+  setTimeout(() => {
+    delete recentErrors[errorKey];
+  }, 100);
 };
 
 // Function to send errors to parent window (React frontend)
@@ -45,7 +47,9 @@ const sendErrorToParent = (level: string, message: string, data: any): void => {
 
 // Function to extract meaningful source location from stack trace
 const extractSourceLocation = (stack: string): string => {
-  if (!stack) return '';
+  if (!stack) {
+    return '';
+  }
 
   // Look for various patterns in the stack trace
   const patterns = [
@@ -78,39 +82,50 @@ const extractSourceLocation = (stack: string): string => {
 };
 
 export const setupErrorLogging = (): void => {
-  // Capture unhandled errors in web environment
-  if (typeof window !== 'undefined') {
-    // Override window.onerror to catch JavaScript errors
-    window.onerror = (message, source, lineno, colno, error): boolean => {
-      const sourceFile = source ? source.split('/').pop() : 'unknown';
-      const errorData = {
-        message: message,
-        source: `${sourceFile}:${lineno}:${colno}`,
-        line: lineno,
-        column: colno,
-        error: error?.stack || error,
-        timestamp: new Date().toISOString()
-      };
-
-      console.error('🚨 RUNTIME ERROR:', errorData);
-      sendErrorToParent('error', 'JavaScript Runtime Error', errorData);
-      return false; // Don't prevent default error handling
-    };
-    
-    // check if platform is web
-    if (Platform.OS === 'web') {
-      // Capture unhandled promise rejections
-      window.addEventListener('unhandledrejection', (event) => {
+  try {
+    // Capture unhandled errors in web environment
+    if (typeof window !== 'undefined') {
+      // Override window.onerror to catch JavaScript errors
+      const originalOnError = window.onerror;
+      window.onerror = (message, source, lineno, colno, error): boolean => {
+        const sourceFile = source ? source.split('/').pop() : 'unknown';
         const errorData = {
-          reason: event.reason,
+          message: message,
+          source: `${sourceFile}:${lineno}:${colno}`,
+          line: lineno,
+          column: colno,
+          error: error?.stack || error,
           timestamp: new Date().toISOString()
         };
 
-        console.error('🚨 UNHANDLED PROMISE REJECTION:', errorData);
-        sendErrorToParent('error', 'Unhandled Promise Rejection', errorData);
-      });
-    }
-  }
+        console.error('🚨 RUNTIME ERROR:', errorData);
+        sendErrorToParent('error', 'JavaScript Runtime Error', errorData);
+        
+        // Call original handler if it exists
+        if (originalOnError) {
+          return originalOnError(message, source, lineno, colno, error);
+        }
+        
+        return false; // Don't prevent default error handling
+      };
+      
+      // Check if platform is web
+      if (Platform.OS === 'web') {
+        // Capture unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+          const errorData = {
+            reason: event.reason,
+            timestamp: new Date().toISOString()
+          };
 
-  console.log('✅ Error logging initialized');
+          console.error('🚨 UNHANDLED PROMISE REJECTION:', errorData);
+          sendErrorToParent('error', 'Unhandled Promise Rejection', errorData);
+        });
+      }
+    }
+
+    console.log('✅ Error logging initialized');
+  } catch (error) {
+    console.error('❌ Failed to setup error logging:', error);
+  }
 };

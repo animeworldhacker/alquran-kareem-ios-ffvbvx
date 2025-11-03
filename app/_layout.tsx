@@ -34,18 +34,26 @@ function RootLayoutContent() {
   useEffect(() => {
     async function prepare() {
       try {
-        console.log('Preparing app...');
+        console.log('🚀 Preparing app...');
         
-        // Wait for fonts to load
+        // Wait for fonts to load or error
         if (fontsLoaded || fontError) {
-          console.log('Fonts status - loaded:', fontsLoaded, 'error:', fontError);
+          if (fontError) {
+            console.error('❌ Font loading error:', fontError);
+          } else {
+            console.log('✅ Fonts loaded successfully');
+          }
           
           // Small delay to ensure everything is ready
           await new Promise(resolve => setTimeout(resolve, 100));
           
           // Hide splash screen
-          await SplashScreen.hideAsync();
-          console.log('✅ Splash screen hidden');
+          try {
+            await SplashScreen.hideAsync();
+            console.log('✅ Splash screen hidden');
+          } catch (error) {
+            console.error('❌ Error hiding splash screen:', error);
+          }
           
           // Mark app as ready
           setAppReady(true);
@@ -71,16 +79,9 @@ function RootLayoutContent() {
     );
   }
 
-  // Show error if fonts failed to load
+  // Show error if fonts failed to load (but still allow app to continue)
   if (fontError) {
-    console.error('Font loading error:', fontError);
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorText}>فشل في تحميل الخطوط</Text>
-        <Text style={styles.errorSubtext}>يرجى إعادة تشغيل التطبيق</Text>
-      </View>
-    );
+    console.warn('⚠️ Continuing without custom fonts due to error:', fontError);
   }
 
   return (
@@ -128,29 +129,5 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     color: '#2C2416',
-    fontFamily: 'Amiri_400Regular',
-  },
-  errorContainer: {
-    flex: 1,
-    backgroundColor: '#F5EEE3',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#C62828',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 16,
-    color: '#6D6558',
-    textAlign: 'center',
   },
 });

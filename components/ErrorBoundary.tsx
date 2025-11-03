@@ -43,11 +43,13 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   handleReload = async () => {
     try {
+      console.log('Attempting to reload app...');
       // Try to reload the app using Expo Updates
       if (Updates.isEnabled) {
         await Updates.reloadAsync();
       } else {
         // Fallback: reset error state
+        console.log('Updates not enabled, resetting error state');
         this.setState({ hasError: false, error: null, errorInfo: null });
       }
     } catch (error) {
@@ -158,14 +160,12 @@ const styles = StyleSheet.create({
     color: '#2C2416',
     textAlign: 'center',
     marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
   },
   errorSubtitle: {
     fontSize: 16,
     color: '#6D6558',
     textAlign: 'center',
     marginBottom: 24,
-    fontFamily: 'Amiri_400Regular',
   },
   errorMessageContainer: {
     backgroundColor: '#FFF3E0',
@@ -180,13 +180,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6D6558',
     marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
   },
   errorMessage: {
     fontSize: 14,
     color: '#2C2416',
     lineHeight: 20,
-    fontFamily: 'Amiri_400Regular',
   },
   debugContainer: {
     backgroundColor: '#f5f5f5',
@@ -227,13 +225,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'Amiri_700Bold',
   },
   helpText: {
     fontSize: 14,
     color: '#6D6558',
     textAlign: 'center',
-    fontFamily: 'Amiri_400Regular',
     lineHeight: 20,
   },
 });

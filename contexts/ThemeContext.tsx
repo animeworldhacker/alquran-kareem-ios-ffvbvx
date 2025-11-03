@@ -70,35 +70,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const loadSettings = async () => {
     try {
       setIsLoading(true);
-      console.log('Loading settings...');
+      console.log('📱 Loading settings...');
       
       const savedSettings = await settingsService.getSettings();
       const defaultSettings = settingsService.getDefaultSettings();
       
       const mergedSettings = { ...defaultSettings, ...savedSettings };
       setSettings(mergedSettings);
-      console.log('Settings loaded successfully:', mergedSettings);
+      console.log('✅ Settings loaded successfully:', mergedSettings);
     } catch (error) {
-      console.error('Error loading settings:', error);
+      console.error('❌ Error loading settings:', error);
       // Use default settings on error
       const defaultSettings = settingsService.getDefaultSettings();
       setSettings(defaultSettings);
-      console.log('Using default settings due to error');
+      console.log('⚠️ Using default settings due to error');
     } finally {
       setIsLoading(false);
+      console.log('✅ Theme initialization complete');
     }
   };
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
-      console.log('Updating settings:', newSettings);
+      console.log('📝 Updating settings:', newSettings);
       const updatedSettings = { ...settings, ...newSettings };
       
       await settingsService.saveSettings(updatedSettings);
       setSettings(updatedSettings);
-      console.log('Settings updated successfully:', updatedSettings);
+      console.log('✅ Settings updated successfully:', updatedSettings);
     } catch (error) {
-      console.error('Error updating settings:', error);
+      console.error('❌ Error updating settings:', error);
       throw error;
     }
   };
