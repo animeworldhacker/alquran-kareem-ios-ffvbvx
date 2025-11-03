@@ -232,9 +232,9 @@ export default function HomeScreen() {
       color: colors.text,
       fontSize: textSizes.body,
       textAlign: 'right',
-      textAlignVertical: 'center',
-      paddingVertical: 0,
-      includeFontPadding: false,
+      writingDirection: 'rtl',
+      paddingVertical: 4,
+      paddingHorizontal: 0,
     },
     clearButton: {
       padding: 4,
@@ -461,7 +461,7 @@ export default function HomeScreen() {
           <View style={styles.noResultsContainer}>
             <Icon name="search" size={48} style={{ color: colors.textSecondary, opacity: 0.5 }} />
             <Text style={styles.noResultsText}>
-              No results found for &quot;{search}&quot;
+              لا توجد نتائج للبحث &quot;{search}&quot;
             </Text>
             <TouchableOpacity 
               onPress={handleClearSearch}
@@ -480,7 +480,7 @@ export default function HomeScreen() {
                 fontSize: textSizes.body,
                 color: colors.text,
               }}>
-                Clear Search
+                مسح البحث
               </Text>
             </TouchableOpacity>
           </View>

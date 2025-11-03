@@ -189,9 +189,9 @@ export default function ChaptersTab() {
       color: colors.text,
       fontSize: textSizes.body,
       textAlign: 'right',
-      textAlignVertical: 'center',
-      paddingVertical: 0,
-      includeFontPadding: false,
+      writingDirection: 'rtl',
+      paddingVertical: 4,
+      paddingHorizontal: 0,
     },
     clearButton: {
       padding: 4,

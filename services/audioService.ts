@@ -29,8 +29,12 @@ class AudioService {
   private recitationId = 2;
   
   private getAudioDir(): string {
-    // eslint-disable-next-line import/namespace
-    const docDir = FileSystem.documentDirectory ?? '';
+    // Use FileSystem.documentDirectory with proper null handling
+    const docDir = FileSystem.documentDirectory;
+    if (!docDir) {
+      console.warn('⚠️ documentDirectory is null, using fallback');
+      return 'file:///audio/';
+    }
     return `${docDir}audio/`;
   }
 
