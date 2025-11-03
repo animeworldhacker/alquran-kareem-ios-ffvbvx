@@ -29,9 +29,6 @@ module.exports = {
       version: 'detect',
     },
     'import/resolver': {
-      'babel-module': {
-        extensions: ['.js', '.jsx', '.ts', '.tsx']
-      },
       node: {
         extensions: ['.js', '.jsx', '.ts', '.tsx']
       }
@@ -47,6 +44,9 @@ module.exports = {
     '@typescript-eslint/no-wrapper-object-types': 'off',
     'react/no-unescaped-entities': 'off',
     'import/no-unresolved': 'off',
+    'import/namespace': 'off',
+    'import/default': 'off',
+    'import/named': 'off',
     'prefer-const': 'off',
     'react/prop-types': 'off',
     'no-case-declarations': 'off',

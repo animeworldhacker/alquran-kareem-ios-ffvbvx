@@ -10,15 +10,8 @@ export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const [isReady, setIsReady] = useState(false);
   
-  let themeContext;
-  let themeError = null;
-  
-  try {
-    themeContext = useTheme();
-  } catch (error) {
-    console.error('Error loading theme context:', error);
-    themeError = error;
-  }
+  // Always call hooks at the top level
+  const themeContext = useTheme();
 
   useEffect(() => {
     async function initialize() {
@@ -46,16 +39,6 @@ export default function Index() {
     console.log('Splash screen finished');
     setShowSplash(false);
   };
-
-  // Show error if theme context failed
-  if (themeError) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>فشل في تحميل إعدادات التطبيق</Text>
-        <Text style={styles.errorSubtext}>يرجى إعادة تشغيل التطبيق</Text>
-      </View>
-    );
-  }
 
   // Show loading while initializing
   if (!isReady || !themeContext || themeContext.isLoading) {

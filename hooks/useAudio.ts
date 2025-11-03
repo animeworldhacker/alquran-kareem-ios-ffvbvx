@@ -38,19 +38,7 @@ export const useAudio = (): UseAudioReturn => {
   const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
   const [loadingReciters, setLoadingReciters] = useState(false);
 
-  useEffect(() => {
-    initializeAudio().catch(error => {
-      console.error('Error in audio initialization effect:', error);
-    });
-    loadReciters().catch(error => {
-      console.error('Error loading reciters:', error);
-    });
-    loadSelectedReciter().catch(error => {
-      console.error('Error loading selected reciter:', error);
-    });
-  }, []);
-
-  const initializeAudio = async (): Promise<void> => {
+  const initializeAudio = useCallback(async (): Promise<void> => {
     try {
       console.log('🎵 Initializing audio in hook...');
       await audioService.initializeAudio();
@@ -65,9 +53,44 @@ export const useAudio = (): UseAudioReturn => {
         [{ text: 'حسناً' }]
       );
     }
-  };
+  }, []);
 
-  const loadReciters = async (): Promise<void> => {
+  const setDefaultReciters = useCallback((): void => {
+    // Fallback to default reciters if API fails
+    const defaultReciters: Reciter[] = [
+      {
+        id: 2,
+        name: 'عبد الباسط عبد الصمد',
+        letter: 'ع',
+        rewaya: 'حفص عن عاصم - مرتل',
+        count: 114,
+        server: 'https://server8.mp3quran.net/afs/',
+        recitationId: 2,
+      },
+      {
+        id: 7,
+        name: 'مشاري بن راشد العفاسي',
+        letter: 'م',
+        rewaya: 'حفص عن عاصم',
+        count: 114,
+        server: 'https://server8.mp3quran.net/afs/',
+        recitationId: 7,
+      },
+      {
+        id: 5,
+        name: 'محمد صديق المنشاوي',
+        letter: 'م',
+        rewaya: 'حفص عن عاصم - مجود',
+        count: 114,
+        server: 'https://server10.mp3quran.net/minsh/',
+        recitationId: 5,
+      },
+    ];
+    setReciters(defaultReciters);
+    console.log('✅ Set default reciters');
+  }, []);
+
+  const loadReciters = useCallback(async (): Promise<void> => {
     try {
       setLoadingReciters(true);
       console.log('📥 Loading reciters from API...');
@@ -116,44 +139,9 @@ export const useAudio = (): UseAudioReturn => {
     } finally {
       setLoadingReciters(false);
     }
-  };
+  }, [setDefaultReciters]);
 
-  const setDefaultReciters = (): void => {
-    // Fallback to default reciters if API fails
-    const defaultReciters: Reciter[] = [
-      {
-        id: 2,
-        name: 'عبد الباسط عبد الصمد',
-        letter: 'ع',
-        rewaya: 'حفص عن عاصم - مرتل',
-        count: 114,
-        server: 'https://server8.mp3quran.net/afs/',
-        recitationId: 2,
-      },
-      {
-        id: 7,
-        name: 'مشاري بن راشد العفاسي',
-        letter: 'م',
-        rewaya: 'حفص عن عاصم',
-        count: 114,
-        server: 'https://server8.mp3quran.net/afs/',
-        recitationId: 7,
-      },
-      {
-        id: 5,
-        name: 'محمد صديق المنشاوي',
-        letter: 'م',
-        rewaya: 'حفص عن عاصم - مجود',
-        count: 114,
-        server: 'https://server10.mp3quran.net/minsh/',
-        recitationId: 5,
-      },
-    ];
-    setReciters(defaultReciters);
-    console.log('✅ Set default reciters');
-  };
-
-  const loadSelectedReciter = async (): Promise<void> => {
+  const loadSelectedReciter = useCallback(async (): Promise<void> => {
     try {
       const saved = await AsyncStorage.getItem(SELECTED_RECITER_KEY);
       if (saved) {
@@ -165,7 +153,19 @@ export const useAudio = (): UseAudioReturn => {
     } catch (error) {
       console.error('Error loading selected reciter:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    initializeAudio().catch(error => {
+      console.error('Error in audio initialization effect:', error);
+    });
+    loadReciters().catch(error => {
+      console.error('Error loading reciters:', error);
+    });
+    loadSelectedReciter().catch(error => {
+      console.error('Error loading selected reciter:', error);
+    });
+  }, [initializeAudio, loadReciters, loadSelectedReciter]);
 
   const setSelectedReciter = async (reciterId: number): Promise<void> => {
     try {
