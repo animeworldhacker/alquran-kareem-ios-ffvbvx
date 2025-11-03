@@ -10,7 +10,7 @@ export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const [isReady, setIsReady] = useState(false);
   
-  // Always call hooks at the top level
+  // Always call hooks at the top level - FIXED
   const themeContext = useTheme();
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Index() {
     setShowSplash(false);
   };
 
-  // Show loading while initializing
+  // Show loading while initializing or theme is loading
   if (!isReady || !themeContext || themeContext.isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -70,24 +70,5 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     color: '#2C2416',
-  },
-  errorContainer: {
-    flex: 1,
-    backgroundColor: '#F5EEE3',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#C62828',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 16,
-    color: '#6D6558',
-    textAlign: 'center',
   },
 });

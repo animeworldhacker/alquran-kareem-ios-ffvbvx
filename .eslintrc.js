@@ -9,7 +9,7 @@ module.exports = {
     'plugin:react/jsx-runtime'
   ],
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'react', 'import'],
+  plugins: ['@typescript-eslint', 'react'],
   root: true,
   parserOptions: {
     ecmaVersion: 'latest',
@@ -28,11 +28,6 @@ module.exports = {
     react: {
       version: 'detect',
     },
-    'import/resolver': {
-      node: {
-        extensions: ['.js', '.jsx', '.ts', '.tsx']
-      }
-    }
   },
   rules: {
     '@typescript-eslint/no-unused-vars': 'off',
@@ -43,15 +38,13 @@ module.exports = {
     '@typescript-eslint/no-empty-object-type': 'off',
     '@typescript-eslint/no-wrapper-object-types': 'off',
     'react/no-unescaped-entities': 'off',
-    'import/no-unresolved': 'off',
-    'import/namespace': 'off',
-    'import/default': 'off',
-    'import/named': 'off',
     'prefer-const': 'off',
     'react/prop-types': 'off',
     'no-case-declarations': 'off',
     'no-empty': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
   },
   overrides: [
     {

@@ -155,6 +155,7 @@ export const useAudio = (): UseAudioReturn => {
     }
   }, []);
 
+  // FIXED: Added all dependencies to useEffect
   useEffect(() => {
     initializeAudio().catch(error => {
       console.error('Error in audio initialization effect:', error);

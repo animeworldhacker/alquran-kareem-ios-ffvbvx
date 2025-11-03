@@ -23,7 +23,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.quranapp.alkareem",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -56,7 +57,9 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
         "projectId": "your-project-id-here"
       }
