@@ -43,10 +43,12 @@ class AudioService {
     this.initializationPromise = this.loadAudioCache().catch(error => {
       console.error('Error loading audio cache in constructor:', error);
     });
-    this.ensureAudioDirectory();
+    this.ensureAudioDirectory().catch(error => {
+      console.error('Error ensuring audio directory:', error);
+    });
   }
 
-  setRecitationId(id: number) {
+  setRecitationId(id: number): void {
     this.recitationId = id;
     console.log('✅ Recitation ID set to:', id);
   }
@@ -55,7 +57,7 @@ class AudioService {
     return this.recitationId;
   }
 
-  private async ensureAudioDirectory() {
+  private async ensureAudioDirectory(): Promise<void> {
     try {
       const audioDir = this.getAudioDir();
       const dirInfo = await FileSystem.getInfoAsync(audioDir);
@@ -69,7 +71,7 @@ class AudioService {
     }
   }
 
-  async initializeAudio() {
+  async initializeAudio(): Promise<void> {
     try {
       if (this.isInitialized) {
         console.log('Audio already initialized');
@@ -102,7 +104,7 @@ class AudioService {
     }
   }
 
-  private async loadAudioCache() {
+  private async loadAudioCache(): Promise<void> {
     try {
       const cached = await AsyncStorage.getItem('audioUrlCache');
       if (cached) {
@@ -115,7 +117,7 @@ class AudioService {
     }
   }
 
-  private async saveAudioCache() {
+  private async saveAudioCache(): Promise<void> {
     try {
       await AsyncStorage.setItem('audioUrlCache', JSON.stringify(this.audioCache));
       console.log('💾 Saved audio URL cache');
@@ -124,7 +126,7 @@ class AudioService {
     }
   }
 
-  private async loadDownloadedAudio() {
+  private async loadDownloadedAudio(): Promise<void> {
     try {
       const downloaded = await AsyncStorage.getItem('downloadedAudio');
       if (downloaded) {
@@ -137,7 +139,7 @@ class AudioService {
     }
   }
 
-  private async saveDownloadedAudio() {
+  private async saveDownloadedAudio(): Promise<void> {
     try {
       await AsyncStorage.setItem('downloadedAudio', JSON.stringify(this.downloadedAudio));
       console.log('💾 Saved downloaded audio list');
@@ -545,7 +547,7 @@ class AudioService {
     }
   }
 
-  private async onPlaybackStatusUpdate(status: any) {
+  private async onPlaybackStatusUpdate(status: any): Promise<void> {
     try {
       if (status.didJustFinish && !status.isLooping) {
         console.log('✅ Ayah playback finished');
@@ -592,7 +594,7 @@ class AudioService {
     }
   }
 
-  setOnAyahEndCallback(callback: (surah: number, ayah: number) => void) {
+  setOnAyahEndCallback(callback: (surah: number, ayah: number) => void): void {
     this.onAyahEndCallback = callback;
     console.log('✅ Ayah end callback set');
   }
@@ -640,7 +642,7 @@ class AudioService {
     }
   }
 
-  async getAudioStatus() {
+  async getAudioStatus(): Promise<any> {
     try {
       if (this.sound) {
         return await this.sound.getStatusAsync();

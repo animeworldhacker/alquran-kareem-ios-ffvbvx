@@ -1,19 +1,31 @@
 
 import { useState, useEffect } from 'react';
-import { QuranData, Surah } from '../types';
+import { QuranData, Surah, Ayah } from '../types';
 import { quranService } from '../services/quranService';
 
-export const useQuran = () => {
+interface UseQuranReturn {
+  quranData: QuranData | null;
+  surahs: Surah[];
+  loading: boolean;
+  error: string | null;
+  getSurah: (surahNumber: number) => Surah | null;
+  getAyah: (surahNumber: number, ayahNumber: number) => Ayah | null;
+  reload: () => Promise<void>;
+}
+
+export const useQuran = (): UseQuranReturn => {
   const [quranData, setQuranData] = useState<QuranData | null>(null);
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadQuranData();
+    loadQuranData().catch(err => {
+      console.error('Error in useQuran effect:', err);
+    });
   }, []);
 
-  const loadQuranData = async () => {
+  const loadQuranData = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +57,7 @@ export const useQuran = () => {
     }
   };
 
-  const getSurah = (surahNumber: number) => {
+  const getSurah = (surahNumber: number): Surah | null => {
     if (!quranData || !quranData.surahs) {
       console.log('No Quran data available');
       return null;
@@ -56,10 +68,10 @@ export const useQuran = () => {
       return null;
     }
     
-    return quranData.surahs.find(surah => surah.number === surahNumber);
+    return quranData.surahs.find(surah => surah.number === surahNumber) || null;
   };
 
-  const getAyah = (surahNumber: number, ayahNumber: number) => {
+  const getAyah = (surahNumber: number, ayahNumber: number): Ayah | null => {
     const surah = getSurah(surahNumber);
     if (!surah || !surah.ayahs) {
       console.log('Surah not found or has no ayahs:', surahNumber);
@@ -71,7 +83,7 @@ export const useQuran = () => {
       return null;
     }
     
-    return surah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+    return surah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber) || null;
   };
 
   return {

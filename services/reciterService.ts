@@ -1,9 +1,17 @@
 
 import { ReciterWithImage } from '../types';
 
+interface ReciterImages {
+  [key: number]: string;
+}
+
+interface ReciterDescriptions {
+  [key: number]: string;
+}
+
 // Service to get reciter information with images
 class ReciterService {
-  private reciterImages: { [key: number]: string } = {
+  private reciterImages: ReciterImages = {
     7: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     5: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     2: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
@@ -11,7 +19,7 @@ class ReciterService {
     12: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face',
   };
 
-  private reciterDescriptions: { [key: number]: string } = {
+  private reciterDescriptions: ReciterDescriptions = {
     7: 'قارئ كويتي مشهور بصوته العذب والمؤثر',
     5: 'قارئ مصري أسطوري بتلاوة مجودة رائعة',
     2: 'قارئ مصري أسطوري بتلاوة مرتلة هادئة',

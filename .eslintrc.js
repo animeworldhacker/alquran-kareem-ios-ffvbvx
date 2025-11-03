@@ -22,9 +22,12 @@ module.exports = {
   env: {
     browser: true,
     node: true,
-    'react-native/react-native': true
+    es2021: true,
   },
   settings: {
+    react: {
+      version: 'detect',
+    },
     'import/resolver': {
       'babel-module': {
         extensions: ['.js', '.jsx', '.ts', '.tsx']
@@ -46,7 +49,9 @@ module.exports = {
     'import/no-unresolved': 'off',
     'prefer-const': 'off',
     'react/prop-types': 'off',
-    'no-case-declarations': 'off'
+    'no-case-declarations': 'off',
+    'no-empty': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
   },
   overrides: [
     {

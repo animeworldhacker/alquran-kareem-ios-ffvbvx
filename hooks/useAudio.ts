@@ -7,7 +7,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SELECTED_RECITER_KEY = 'selectedReciter';
 
-export const useAudio = () => {
+interface UseAudioReturn {
+  audioState: AudioState;
+  loading: boolean;
+  error: string | null;
+  continuousPlayback: boolean;
+  reciters: Reciter[];
+  selectedReciter: number;
+  loadingReciters: boolean;
+  setSelectedReciter: (reciterId: number) => Promise<void>;
+  playAyah: (surahNumber: number, ayahNumber: number, continuousPlay?: boolean, totalAyahs?: number) => Promise<void>;
+  stopAudio: () => Promise<void>;
+  pauseAudio: () => Promise<void>;
+  resumeAudio: () => Promise<void>;
+  setOnAyahEnd: (callback: (surah: number, ayah: number) => void) => void;
+}
+
+export const useAudio = (): UseAudioReturn => {
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
     currentAyah: null,
@@ -34,7 +50,7 @@ export const useAudio = () => {
     });
   }, []);
 
-  const initializeAudio = async () => {
+  const initializeAudio = async (): Promise<void> => {
     try {
       console.log('🎵 Initializing audio in hook...');
       await audioService.initializeAudio();
@@ -51,7 +67,7 @@ export const useAudio = () => {
     }
   };
 
-  const loadReciters = async () => {
+  const loadReciters = async (): Promise<void> => {
     try {
       setLoadingReciters(true);
       console.log('📥 Loading reciters from API...');
@@ -102,7 +118,7 @@ export const useAudio = () => {
     }
   };
 
-  const setDefaultReciters = () => {
+  const setDefaultReciters = (): void => {
     // Fallback to default reciters if API fails
     const defaultReciters: Reciter[] = [
       {
@@ -137,7 +153,7 @@ export const useAudio = () => {
     console.log('✅ Set default reciters');
   };
 
-  const loadSelectedReciter = async () => {
+  const loadSelectedReciter = async (): Promise<void> => {
     try {
       const saved = await AsyncStorage.getItem(SELECTED_RECITER_KEY);
       if (saved) {
@@ -151,7 +167,7 @@ export const useAudio = () => {
     }
   };
 
-  const setSelectedReciter = async (reciterId: number) => {
+  const setSelectedReciter = async (reciterId: number): Promise<void> => {
     try {
       setSelectedReciterState(reciterId);
       audioService.setRecitationId(reciterId);
@@ -182,7 +198,7 @@ export const useAudio = () => {
     ayahNumber: number, 
     continuousPlay: boolean = false,
     totalAyahs: number = 0
-  ) => {
+  ): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -234,7 +250,7 @@ export const useAudio = () => {
     }
   };
 
-  const stopAudio = async () => {
+  const stopAudio = async (): Promise<void> => {
     try {
       console.log('⏹️ Hook: Stopping audio...');
       await audioService.stopAudio();
@@ -253,7 +269,7 @@ export const useAudio = () => {
     }
   };
 
-  const pauseAudio = async () => {
+  const pauseAudio = async (): Promise<void> => {
     try {
       console.log('⏸️ Hook: Pausing audio...');
       await audioService.pauseAudio();
@@ -266,7 +282,7 @@ export const useAudio = () => {
     }
   };
 
-  const resumeAudio = async () => {
+  const resumeAudio = async (): Promise<void> => {
     try {
       console.log('▶️ Hook: Resuming audio...');
       await audioService.resumeAudio();
@@ -279,13 +295,13 @@ export const useAudio = () => {
     }
   };
 
-  const setOnAyahEnd = (callback: (surah: number, ayah: number) => void) => {
+  const setOnAyahEnd = useCallback((callback: (surah: number, ayah: number) => void): void => {
     try {
       audioService.setOnAyahEndCallback(callback);
     } catch (error) {
       console.error('Error setting ayah end callback:', error);
     }
-  };
+  }, []);
 
   return {
     audioState,

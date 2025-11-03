@@ -13,136 +13,97 @@ interface State {
   errorInfo: string | null;
 }
 
-/**
- * Top-level error handler that catches all errors in the app
- * This is a fallback for errors that escape other error boundaries
- */
-export default class AppErrorHandler extends Component<Props, State> {
+class AppErrorHandler extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
+    this.state = { 
+      hasError: false, 
       error: null,
-      errorInfo: null,
+      errorInfo: null 
     };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    console.error('🚨 AppErrorHandler caught error:', error);
-    return {
-      hasError: true,
-      error,
-    };
+    console.error('AppErrorHandler caught an error:', error);
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('🚨 AppErrorHandler componentDidCatch:', {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    console.error('AppErrorHandler componentDidCatch:', {
       error: error.toString(),
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
+      errorInfo: errorInfo.componentStack,
+      stack: error.stack
     });
-
+    
     this.setState({
-      errorInfo: errorInfo.componentStack || null,
+      error,
+      errorInfo: errorInfo.componentStack || null
     });
   }
 
-  handleReload = async () => {
+  reloadApp = async (): Promise<void> => {
     try {
-      console.log('Attempting to reload app...');
-      
-      // Reset state first
-      this.setState({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-      });
-
-      // Try to reload using Expo Updates
+      // Try to reload the app using Expo Updates
       if (Updates.isEnabled) {
         await Updates.reloadAsync();
+      } else {
+        // Fallback: reset error state
+        this.setState({ hasError: false, error: null, errorInfo: null });
       }
     } catch (error) {
-      console.error('Error during reload:', error);
-      // If reload fails, just reset the error state
-      this.setState({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-      });
+      console.error('Error reloading app:', error);
+      // Reset error state as fallback
+      this.setState({ hasError: false, error: null, errorInfo: null });
     }
   };
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
-      const errorMessage = this.state.error?.message || 'حدث خطأ غير متوقع';
-      const errorName = this.state.error?.name || 'Error';
+      const errorMessage = this.state.error?.message || 'خطأ غير معروف';
+      const errorStack = this.state.error?.stack || '';
 
       return (
         <View style={styles.container}>
-          <ScrollView
+          <ScrollView 
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.errorCard}>
-              {/* Icon */}
-              <View style={styles.iconContainer}>
-                <Text style={styles.icon}>⚠️</Text>
-              </View>
-
-              {/* Title */}
-              <Text style={styles.title}>عذراً، حدث خطأ</Text>
-
-              {/* Subtitle */}
-              <Text style={styles.subtitle}>
-                نعتذر عن هذا الإزعاج. يرجى المحاولة مرة أخرى.
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorIcon}>⚠️</Text>
+              
+              <Text style={styles.errorTitle}>حدث خطأ غير متوقع</Text>
+              
+              <Text style={styles.errorSubtitle}>
+                نعتذر عن هذا الإزعاج
               </Text>
-
-              {/* Error Details */}
-              <View style={styles.errorBox}>
+              
+              <View style={styles.errorMessageContainer}>
                 <Text style={styles.errorLabel}>تفاصيل الخطأ:</Text>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-                {errorName !== 'Error' && (
-                  <Text style={styles.errorType}>النوع: {errorName}</Text>
-                )}
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
               </View>
 
-              {/* Debug Info (Development Only) */}
-              {__DEV__ && this.state.error?.stack && (
-                <View style={styles.debugBox}>
-                  <Text style={styles.debugLabel}>معلومات المطور:</Text>
-                  <ScrollView
+              {__DEV__ && errorStack && (
+                <View style={styles.debugContainer}>
+                  <Text style={styles.debugLabel}>Stack Trace (Dev Only):</Text>
+                  <ScrollView 
                     style={styles.debugScroll}
                     nestedScrollEnabled
-                    showsVerticalScrollIndicator
                   >
-                    <Text style={styles.debugText}>
-                      {this.state.error.stack}
-                    </Text>
-                    {this.state.errorInfo && (
-                      <>
-                        <Text style={styles.debugLabel}>Component Stack:</Text>
-                        <Text style={styles.debugText}>
-                          {this.state.errorInfo}
-                        </Text>
-                      </>
-                    )}
+                    <Text style={styles.debugText}>{errorStack}</Text>
                   </ScrollView>
                 </View>
               )}
 
-              {/* Reload Button */}
-              <TouchableOpacity
-                style={styles.button}
-                onPress={this.handleReload}
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={this.reloadApp}
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>إعادة المحاولة</Text>
+                <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
               </TouchableOpacity>
 
-              {/* Help Text */}
               <Text style={styles.helpText}>
-                إذا استمرت المشكلة، يرجى إغلاق التطبيق وإعادة فتحه
+                إذا استمرت المشكلة، يرجى إعادة تشغيل التطبيق
               </Text>
             </View>
           </ScrollView>
@@ -162,49 +123,47 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  errorCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    borderLeftWidth: 6,
+  errorContainer: {
+    backgroundColor: '#fff',
+    padding: 30,
+    borderRadius: 16,
+    borderLeftWidth: 4,
     borderLeftColor: '#D4AF37',
+    maxWidth: 500,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  iconContainer: {
-    alignItems: 'center',
+  errorIcon: {
+    fontSize: 48,
+    textAlign: 'center',
     marginBottom: 16,
   },
-  icon: {
-    fontSize: 64,
-  },
-  title: {
-    fontSize: 28,
+  errorTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2C2416',
     textAlign: 'center',
     marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
   },
-  subtitle: {
+  errorSubtitle: {
     fontSize: 16,
     color: '#6D6558',
     textAlign: 'center',
     marginBottom: 24,
-    lineHeight: 24,
-    fontFamily: 'Amiri_400Regular',
   },
-  errorBox: {
+  errorMessageContainer: {
     backgroundColor: '#FFF3E0',
-    borderRadius: 12,
     padding: 16,
+    borderRadius: 8,
     marginBottom: 20,
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: '#FF6B6B',
   },
   errorLabel: {
@@ -212,24 +171,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6D6558',
     marginBottom: 8,
-    fontFamily: 'Amiri_700Bold',
   },
-  errorText: {
+  errorMessage: {
     fontSize: 14,
     color: '#2C2416',
-    lineHeight: 22,
-    fontFamily: 'Amiri_400Regular',
+    lineHeight: 20,
   },
-  errorType: {
-    fontSize: 12,
-    color: '#6D6558',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  debugBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
+  debugContainer: {
+    backgroundColor: '#f5f5f5',
     padding: 12,
+    borderRadius: 8,
     marginBottom: 20,
     maxHeight: 200,
   },
@@ -246,32 +197,32 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#333',
     fontFamily: 'monospace',
-    lineHeight: 16,
+    lineHeight: 14,
   },
-  button: {
+  retryButton: {
     backgroundColor: '#D4AF37',
-    borderRadius: 12,
-    paddingVertical: 16,
     paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 16,
     shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  buttonText: {
-    color: '#FFFFFF',
+  retryButtonText: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'Amiri_700Bold',
   },
   helpText: {
     fontSize: 14,
     color: '#6D6558',
     textAlign: 'center',
-    lineHeight: 22,
-    fontFamily: 'Amiri_400Regular',
+    lineHeight: 20,
   },
 });
+
+export default AppErrorHandler;
