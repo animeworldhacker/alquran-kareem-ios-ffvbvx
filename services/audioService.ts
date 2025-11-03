@@ -29,13 +29,13 @@ class AudioService {
   private recitationId = 2;
   
   private getAudioDir(): string {
-    // Use FileSystem.documentDirectory with proper null handling
-    const docDir = FileSystem.documentDirectory;
-    if (!docDir) {
-      console.warn('⚠️ documentDirectory is null, using fallback');
+    // Use FileSystem.cacheDirectory for audio files (more appropriate for cached content)
+    const cacheDir = FileSystem.cacheDirectory;
+    if (!cacheDir) {
+      console.warn('⚠️ cacheDirectory is null, using fallback');
       return 'file:///audio/';
     }
-    return `${docDir}audio/`;
+    return `${cacheDir}audio/`;
   }
 
   constructor() {
