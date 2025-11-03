@@ -69,6 +69,23 @@ class NetworkUtils {
     return NetInfo.fetch().then(state => state.type || 'unknown');
   }
 
+  /**
+   * Subscribe to network state changes
+   * Returns an unsubscribe function
+   */
+  subscribe(callback: (state: { isConnected: boolean }) => void): () => void {
+    const listener = (isOnline: boolean) => {
+      callback({ isConnected: isOnline });
+    };
+    
+    this.addListener(listener);
+    
+    // Return unsubscribe function
+    return () => {
+      this.removeListener(listener);
+    };
+  }
+
   addListener(callback: (isOnline: boolean) => void) {
     this.listeners.add(callback);
     // Immediately call with current status
