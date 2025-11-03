@@ -1,3 +1,4 @@
+
 module.exports = function (api) {
   api.cache(true);
   return {
@@ -27,6 +28,8 @@ module.exports = function (api) {
           },
         },
       ],
+      // CRITICAL: Required for @gorhom/bottom-sheet and react-native-reanimated
+      'react-native-reanimated/plugin',
     ],
   };
 };
