@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AppErrorHandler from '../components/AppErrorHandler';
@@ -35,6 +36,27 @@ function RootLayoutContent() {
     async function prepare() {
       try {
         console.log('🚀 Preparing app...');
+        
+        // Check for updates only if enabled and not in development
+        if (Updates.isEnabled && !__DEV__) {
+          try {
+            console.log('Checking for updates...');
+            const update = await Updates.checkForUpdateAsync();
+            
+            if (update.isAvailable) {
+              console.log('Update available, fetching...');
+              await Updates.fetchUpdateAsync();
+              console.log('Update fetched successfully');
+            } else {
+              console.log('App is up to date');
+            }
+          } catch (updateError) {
+            // Log but don't fail the app if updates fail
+            console.warn('⚠️ Update check failed (non-critical):', updateError);
+          }
+        } else {
+          console.log('Updates disabled or in development mode');
+        }
         
         // Wait for fonts to load or error
         if (fontsLoaded || fontError) {

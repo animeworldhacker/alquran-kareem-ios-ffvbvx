@@ -44,11 +44,29 @@ class AppErrorHandler extends Component<Props, State> {
   reloadApp = async (): Promise<void> => {
     try {
       console.log('Attempting to reload app...');
-      // Try to reload the app using Expo Updates
+      
+      // Check if updates are enabled and available
       if (Updates.isEnabled) {
-        await Updates.reloadAsync();
+        try {
+          console.log('Checking for updates...');
+          const update = await Updates.checkForUpdateAsync();
+          
+          if (update.isAvailable) {
+            console.log('Update available, fetching...');
+            await Updates.fetchUpdateAsync();
+            console.log('Update fetched, reloading...');
+            await Updates.reloadAsync();
+          } else {
+            console.log('No update available, reloading current version...');
+            await Updates.reloadAsync();
+          }
+        } catch (updateError) {
+          console.error('Error during update check/fetch:', updateError);
+          // If update fails, just reset the error state
+          this.setState({ hasError: false, error: null, errorInfo: null });
+        }
       } else {
-        // Fallback: reset error state
+        // Updates not enabled, just reset error state
         console.log('Updates not enabled, resetting error state');
         this.setState({ hasError: false, error: null, errorInfo: null });
       }

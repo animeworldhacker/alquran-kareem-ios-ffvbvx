@@ -1,8 +1,8 @@
 
 {
   "expo": {
-    "name": "Al-Quran Al-Kareem",
-    "slug": "alquran-kareem-ios-ffvbvx",
+    "name": "Al-Quran Kareem",
+    "slug": "Al-Quran Kareem",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -14,6 +14,8 @@
       "backgroundColor": "#000000"
     },
     "updates": {
+      "enabled": false,
+      "checkAutomatically": "ON_ERROR_RECOVERY",
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
@@ -24,7 +26,9 @@
       "bundleIdentifier": "com.quranapp.alkareem",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -65,5 +69,6 @@
       }
     },
     "jsEngine": "hermes"
-  }
+  },
+  "scheme": "Al-Quran Kareem"
 }
