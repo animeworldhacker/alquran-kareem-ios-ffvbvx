@@ -2,6 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'expo-router';
 import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
 import { audioService } from '../../services/audioService';
@@ -10,6 +12,8 @@ import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
   const { settings, updateSettings, colors, textSizes } = useTheme();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [testingAudio, setTestingAudio] = useState(false);
   const [downloadingAudio, setDownloadingAudio] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
@@ -22,6 +26,24 @@ export default function SettingsTab() {
       console.error('Error updating setting:', error);
       Alert.alert('خطأ', 'فشل في تحديث الإعداد');
     }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'تسجيل الخروج',
+      'هل أنت متأكد من تسجيل الخروج؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تسجيل الخروج',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            Alert.alert('نجح', 'تم تسجيل الخروج بنجاح');
+          },
+        },
+      ]
+    );
   };
 
   const handleResetSettings = () => {
@@ -237,7 +259,6 @@ export default function SettingsTab() {
     try {
       console.log(`📥 Starting download for Surah ${surahNumber}`);
       
-      // Get surah info
       const surah = await quranService.getSurah(surahNumber);
       if (!surah) {
         throw new Error('فشل في الحصول على معلومات السورة');
@@ -280,7 +301,6 @@ export default function SettingsTab() {
     try {
       console.log(`📥 Starting download for Juz ${juzNumber}`);
       
-      // Get all ayahs in the juz
       const allAyahs = await quranService.getAyahsByJuz(juzNumber);
       if (!allAyahs || allAyahs.length === 0) {
         throw new Error('فشل في الحصول على آيات الجزء');
@@ -294,7 +314,6 @@ export default function SettingsTab() {
       for (let i = 0; i < allAyahs.length; i++) {
         const ayah = allAyahs[i];
         try {
-          // Get surah number from ayah
           const surahNumber = await quranService.getSurahNumberForAyah(ayah.number);
           await audioService.downloadAyah(surahNumber, ayah.numberInSurah);
           successCount++;
@@ -562,6 +581,21 @@ export default function SettingsTab() {
       backgroundColor: colors.success,
       borderRadius: 4,
     },
+    userInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      marginBottom: 12,
+    },
+    userEmail: {
+      fontSize: 14,
+      color: colors.text,
+      fontFamily: 'Amiri_400Regular',
+      flex: 1,
+      textAlign: 'right',
+    },
   }), [colors]);
 
   return (
@@ -571,6 +605,49 @@ export default function SettingsTab() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>الحساب</Text>
+          
+          {user ? (
+            <React.Fragment>
+              <View style={styles.userInfo}>
+                <Text style={styles.userEmail}>{user.email}</Text>
+              </View>
+              
+              <TouchableOpacity
+                style={[styles.button, styles.buttonDanger]}
+                onPress={handleSignOut}
+              >
+                <Text style={[styles.buttonText, styles.buttonTextWhite]}>تسجيل الخروج</Text>
+              </TouchableOpacity>
+              
+              <Text style={styles.infoText}>
+                حسابك متصل. يتم مزامنة بياناتك تلقائياً عبر الأجهزة.
+              </Text>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSuccess]}
+                onPress={() => router.push('/auth/login')}
+              >
+                <Text style={[styles.buttonText, styles.buttonTextWhite]}>تسجيل الدخول</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={() => router.push('/auth/signup')}
+              >
+                <Text style={[styles.buttonText, styles.buttonTextSecondary]}>إنشاء حساب جديد</Text>
+              </TouchableOpacity>
+              
+              <Text style={styles.infoText}>
+                قم بتسجيل الدخول لمزامنة الإشارات المرجعية والإعدادات عبر الأجهزة
+              </Text>
+            </React.Fragment>
+          )}
+        </View>
+
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>المظهر</Text>
           

@@ -1,6 +1,7 @@
 
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { AuthProvider } from '../contexts/AuthContext';
 import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
@@ -108,23 +109,28 @@ function RootLayoutContent() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <View style={styles.container}>
-          <OfflineNotice />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="home" />
-            <Stack.Screen name="surah/[id]" />
-            <Stack.Screen name="tafsir/[surah]/[ayah]" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </View>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <View style={styles.container}>
+            <OfflineNotice />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="home" />
+              <Stack.Screen name="surah/[id]" />
+              <Stack.Screen name="tafsir/[surah]/[ayah]" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="auth/login" />
+              <Stack.Screen name="auth/signup" />
+              <Stack.Screen name="auth/forgot-password" />
+            </Stack>
+          </View>
+        </ThemeProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
