@@ -1,8 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
@@ -12,11 +11,50 @@ import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
   const { settings, updateSettings, colors, textSizes } = useTheme();
-  const { user, signOut } = useAuth();
   const router = useRouter();
   const [testingAudio, setTestingAudio] = useState(false);
   const [downloadingAudio, setDownloadingAudio] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  
+  // Download status states
+  const [quranDownloadStatus, setQuranDownloadStatus] = useState<'not_downloaded' | 'downloaded' | 'checking'>('checking');
+  const [tafsirDownloadStatus, setTafsirDownloadStatus] = useState<'not_downloaded' | 'downloaded' | 'checking'>('checking');
+  const [audioDownloadStatus, setAudioDownloadStatus] = useState<'not_downloaded' | 'partial' | 'full' | 'checking'>('checking');
+  const [audioDownloadInfo, setAudioDownloadInfo] = useState({ totalAyahs: 0, totalSize: '0 MB' });
+
+  // Check download status on mount
+  useEffect(() => {
+    checkDownloadStatus();
+  }, []);
+
+  const checkDownloadStatus = async () => {
+    try {
+      // Check Quran data
+      const quranStored = await quranService.isStoredOffline();
+      setQuranDownloadStatus(quranStored ? 'downloaded' : 'not_downloaded');
+
+      // Check Tafsir data
+      const tafsirStats = tafsirService.getCacheStats();
+      setTafsirDownloadStatus(tafsirStats.cacheSize > 0 ? 'downloaded' : 'not_downloaded');
+
+      // Check Audio data
+      const audioStats = await audioService.getDownloadStats();
+      setAudioDownloadInfo({
+        totalAyahs: audioStats.totalAyahs,
+        totalSize: audioStats.totalSize,
+      });
+      
+      if (audioStats.totalAyahs === 0) {
+        setAudioDownloadStatus('not_downloaded');
+      } else if (audioStats.totalAyahs >= 6236) {
+        setAudioDownloadStatus('full');
+      } else {
+        setAudioDownloadStatus('partial');
+      }
+    } catch (error) {
+      console.error('Error checking download status:', error);
+    }
+  };
 
   const handleUpdateSetting = async (key: keyof AppSettings, value: any) => {
     try {
@@ -26,24 +64,6 @@ export default function SettingsTab() {
       console.error('Error updating setting:', error);
       Alert.alert('خطأ', 'فشل في تحديث الإعداد');
     }
-  };
-
-  const handleSignOut = () => {
-    Alert.alert(
-      'تسجيل الخروج',
-      'هل أنت متأكد من تسجيل الخروج؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'تسجيل الخروج',
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            Alert.alert('نجح', 'تم تسجيل الخروج بنجاح');
-          },
-        },
-      ]
-    );
   };
 
   const handleResetSettings = () => {
@@ -71,6 +91,54 @@ export default function SettingsTab() {
             } catch (error) {
               console.error('Error resetting settings:', error);
               Alert.alert('خطأ', 'فشل في إعادة تعيين الإعدادات');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDownloadQuran = async () => {
+    Alert.alert(
+      'تنزيل القرآن الكريم',
+      'هل تريد تنزيل بيانات القرآن الكريم كاملة للاستخدام بدون إنترنت؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تنزيل',
+          onPress: async () => {
+            try {
+              setQuranDownloadStatus('checking');
+              await quranService.getFullQuran();
+              setQuranDownloadStatus('downloaded');
+              Alert.alert('نجح', 'تم تنزيل بيانات القرآن الكريم بنجاح');
+            } catch (error) {
+              console.error('Error downloading Quran:', error);
+              setQuranDownloadStatus('not_downloaded');
+              Alert.alert('خطأ', 'فشل في تنزيل بيانات القرآن الكريم');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearQuranData = () => {
+    Alert.alert(
+      'مسح بيانات القرآن',
+      'هل تريد مسح بيانات القرآن المحملة؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'مسح',
+          onPress: async () => {
+            try {
+              await quranService.clearCache();
+              setQuranDownloadStatus('not_downloaded');
+              Alert.alert('نجح', 'تم مسح بيانات القرآن بنجاح');
+            } catch (error) {
+              console.error('Error clearing Quran data:', error);
+              Alert.alert('خطأ', 'فشل في مسح بيانات القرآن');
             }
           },
         },
@@ -111,6 +179,7 @@ export default function SettingsTab() {
           onPress: async () => {
             try {
               await tafsirService.clearCache();
+              setTafsirDownloadStatus('not_downloaded');
               const stats = tafsirService.getCacheStats();
               Alert.alert('نجح', `تم مسح ذاكرة التخزين المؤقت للتفسير\n\nالإحصائيات:\n• الحجم: ${stats.cacheSize}\n• الأخطاء: ${stats.errorCount}`);
             } catch (error) {
@@ -282,6 +351,9 @@ export default function SettingsTab() {
         }
       }
 
+      // Refresh download status
+      await checkDownloadStatus();
+
       Alert.alert(
         'اكتمل التنزيل',
         `تم تنزيل السورة ${surah.name}\n\nنجح: ${successCount}\nفشل: ${failCount}`,
@@ -323,6 +395,9 @@ export default function SettingsTab() {
           failCount++;
         }
       }
+
+      // Refresh download status
+      await checkDownloadStatus();
 
       Alert.alert(
         'اكتمل التنزيل',
@@ -367,6 +442,9 @@ export default function SettingsTab() {
         }
       }
 
+      // Refresh download status
+      await checkDownloadStatus();
+
       Alert.alert(
         'اكتمل التنزيل',
         `تم تنزيل القرآن الكريم كاملاً\n\nنجح: ${successCount}\nفشل: ${failCount}`,
@@ -392,6 +470,7 @@ export default function SettingsTab() {
           onPress: async () => {
             await audioService.clearCache();
             await audioService.clearDownloadedAudio();
+            await checkDownloadStatus();
             Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت');
           },
         },
@@ -410,6 +489,39 @@ export default function SettingsTab() {
     } catch (error) {
       console.error('Error checking download stats:', error);
       Alert.alert('خطأ', 'فشل في الحصول على إحصائيات التنزيل');
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'downloaded':
+      case 'full':
+        return '✅';
+      case 'partial':
+        return '⚠️';
+      case 'not_downloaded':
+        return '❌';
+      case 'checking':
+        return '🔄';
+      default:
+        return '❓';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'downloaded':
+        return 'تم التنزيل';
+      case 'full':
+        return 'تم التنزيل كاملاً';
+      case 'partial':
+        return 'تنزيل جزئي';
+      case 'not_downloaded':
+        return 'لم يتم التنزيل';
+      case 'checking':
+        return 'جاري الفحص...';
+      default:
+        return 'غير معروف';
     }
   };
 
@@ -581,20 +693,32 @@ export default function SettingsTab() {
       backgroundColor: colors.success,
       borderRadius: 4,
     },
-    userInfo: {
+    statusRow: {
       flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      padding: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
       backgroundColor: colors.background,
       borderRadius: 8,
-      marginBottom: 12,
+      marginBottom: 8,
     },
-    userEmail: {
-      fontSize: 14,
+    statusLabel: {
+      fontSize: 15,
       color: colors.text,
       fontFamily: 'Amiri_400Regular',
       flex: 1,
       textAlign: 'right',
+    },
+    statusValue: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      fontFamily: 'Amiri_400Regular',
+      marginLeft: 8,
+    },
+    statusIcon: {
+      fontSize: 20,
+      marginLeft: 8,
     },
   }), [colors]);
 
@@ -605,49 +729,89 @@ export default function SettingsTab() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Offline Download Section */}
         <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>الحساب</Text>
+          <Text style={styles.sectionTitle}>التنزيل للاستخدام بدون إنترنت</Text>
           
-          {user ? (
-            <React.Fragment>
-              <View style={styles.userInfo}>
-                <Text style={styles.userEmail}>{user.email}</Text>
+          {/* Quran Data Status */}
+          <View style={styles.statusRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.statusIcon}>{getStatusIcon(quranDownloadStatus)}</Text>
+              <Text style={styles.statusValue}>{getStatusText(quranDownloadStatus)}</Text>
+            </View>
+            <Text style={styles.statusLabel}>بيانات القرآن الكريم</Text>
+          </View>
+
+          {/* Tafsir Data Status */}
+          <View style={styles.statusRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.statusIcon}>{getStatusIcon(tafsirDownloadStatus)}</Text>
+              <Text style={styles.statusValue}>{getStatusText(tafsirDownloadStatus)}</Text>
+            </View>
+            <Text style={styles.statusLabel}>تفسير ابن كثير</Text>
+          </View>
+
+          {/* Audio Data Status */}
+          <View style={styles.statusRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.statusIcon}>{getStatusIcon(audioDownloadStatus)}</Text>
+              <Text style={styles.statusValue}>
+                {audioDownloadStatus === 'not_downloaded' 
+                  ? getStatusText(audioDownloadStatus)
+                  : `${audioDownloadInfo.totalAyahs} آية (${audioDownloadInfo.totalSize})`
+                }
+              </Text>
+            </View>
+            <Text style={styles.statusLabel}>التلاوات الصوتية</Text>
+          </View>
+
+          {/* Download Buttons */}
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSuccess]}
+            onPress={handleDownloadQuran}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل بيانات القرآن</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSuccess, downloadingAudio && styles.buttonDisabled]}
+            onPress={handleDownloadAudio}
+            disabled={downloadingAudio}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>
+              {downloadingAudio ? 'جاري التنزيل...' : 'تنزيل التلاوات الصوتية'}
+            </Text>
+          </TouchableOpacity>
+
+          {downloadingAudio && downloadProgress.total > 0 && (
+            <View style={styles.progressContainer}>
+              <Text style={styles.progressText}>
+                {downloadProgress.current} / {downloadProgress.total}
+              </Text>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }
+                  ]} 
+                />
               </View>
-              
-              <TouchableOpacity
-                style={[styles.button, styles.buttonDanger]}
-                onPress={handleSignOut}
-              >
-                <Text style={[styles.buttonText, styles.buttonTextWhite]}>تسجيل الخروج</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.infoText}>
-                حسابك متصل. يتم مزامنة بياناتك تلقائياً عبر الأجهزة.
-              </Text>
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSuccess]}
-                onPress={() => router.push('/auth/login')}
-              >
-                <Text style={[styles.buttonText, styles.buttonTextWhite]}>تسجيل الدخول</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
-                onPress={() => router.push('/auth/signup')}
-              >
-                <Text style={[styles.buttonText, styles.buttonTextSecondary]}>إنشاء حساب جديد</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.infoText}>
-                قم بتسجيل الدخول لمزامنة الإشارات المرجعية والإعدادات عبر الأجهزة
-              </Text>
-            </React.Fragment>
+            </View>
           )}
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={checkDownloadStatus}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث حالة التنزيل</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.infoText}>
+            قم بتنزيل البيانات للاستخدام بدون إنترنت. يمكنك تنزيل القرآن الكريم كاملاً أو سور وأجزاء محددة من التلاوات الصوتية.
+          </Text>
         </View>
 
+        {/* Appearance Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>المظهر</Text>
           
@@ -689,6 +853,7 @@ export default function SettingsTab() {
           </View>
         </View>
 
+        {/* Reading Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>القراءة</Text>
           
@@ -718,6 +883,7 @@ export default function SettingsTab() {
           </View>
         </View>
 
+        {/* Tafsir Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>التفسير</Text>
           
@@ -733,6 +899,7 @@ export default function SettingsTab() {
           </Text>
         </View>
 
+        {/* Audio Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>الصوت</Text>
           
@@ -745,32 +912,6 @@ export default function SettingsTab() {
               {testingAudio ? 'جاري الاختبار...' : 'اختبار نظام الصوت'}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSuccess, downloadingAudio && styles.buttonDisabled]}
-            onPress={handleDownloadAudio}
-            disabled={downloadingAudio}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextWhite]}>
-              {downloadingAudio ? 'جاري التنزيل...' : 'تنزيل التلاوات الصوتية'}
-            </Text>
-          </TouchableOpacity>
-
-          {downloadingAudio && downloadProgress.total > 0 && (
-            <View style={styles.progressContainer}>
-              <Text style={styles.progressText}>
-                {downloadProgress.current} / {downloadProgress.total}
-              </Text>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }
-                  ]} 
-                />
-              </View>
-            </View>
-          )}
 
           <TouchableOpacity
             style={[styles.button, styles.buttonSecondary]}
@@ -789,11 +930,11 @@ export default function SettingsTab() {
           <Text style={styles.infoText}>
             القارئ: عبد الباسط عبد الصمد (حفص عن عاصم){'\n'}
             • اختبار نظام الصوت: للتحقق من توفر الملفات الصوتية{'\n'}
-            • تنزيل التلاوات: لحفظ التلاوات للاستماع بدون إنترنت{'\n'}
             • مسح الذاكرة: لحذف الملفات المخزنة مؤقتاً
           </Text>
         </View>
 
+        {/* Data Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>البيانات</Text>
           
@@ -803,12 +944,20 @@ export default function SettingsTab() {
           >
             <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث بيانات القرآن</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonDanger]}
+            onPress={handleClearQuranData}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>مسح بيانات القرآن المحملة</Text>
+          </TouchableOpacity>
           
           <Text style={styles.infoText}>
-            استخدم هذا الخيار لتحديث بيانات القرآن من الخادم
+            استخدم هذا الخيار لتحديث بيانات القرآن من الخادم أو مسح البيانات المحملة
           </Text>
         </View>
 
+        {/* Reset Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>إعادة تعيين</Text>
           
