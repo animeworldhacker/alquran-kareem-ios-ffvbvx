@@ -1,7 +1,7 @@
 
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { networkUtils } from '../utils/networkUtils';
 
 interface AudioCache {
@@ -30,8 +30,7 @@ class AudioService {
   
   private getAudioDir(): string {
     // Use FileSystem.cacheDirectory for audio files (more appropriate for cached content)
-    // Access via the namespace to avoid lint errors
-    const cacheDir = (FileSystem as any).cacheDirectory as string | null;
+    const cacheDir = FileSystem.cacheDirectory;
     if (!cacheDir) {
       console.warn('⚠️ cacheDirectory is null, using fallback');
       return 'file:///audio/';
