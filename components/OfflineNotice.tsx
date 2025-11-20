@@ -29,6 +29,8 @@ export default function OfflineNotice() {
       if (offline) {
         slideAnim.setValue(0);
       }
+    }).catch(error => {
+      console.error('Error checking network state:', error);
     });
 
     return unsubscribe;
@@ -48,7 +50,7 @@ export default function OfflineNotice() {
       ]}
     >
       <Icon name="wifi-off" size={16} color="#fff" />
-      <Text style={styles.text}>لا يوجد اتصال بالإنترنت</Text>
+      <Text style={styles.text}>No internet connection</Text>
     </Animated.View>
   );
 }
@@ -72,6 +74,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Amiri_700Bold',
   },
 });

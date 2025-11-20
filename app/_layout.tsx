@@ -75,7 +75,7 @@ function RootLayoutContent() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#D4AF37" />
-        <Text style={styles.loadingText}>جاري التحميل...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }

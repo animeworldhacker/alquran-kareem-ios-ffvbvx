@@ -1,15 +1,16 @@
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface IconProps {
   name: keyof typeof Ionicons.glyphMap;
   size?: number;
+  color?: string;
   style?: any;
 }
 
-export default function Icon({ name, size = 24, style }: IconProps) {
+export default function Icon({ name, size = 24, color, style }: IconProps) {
   try {
     // Validate props
     if (!name) {
@@ -18,7 +19,7 @@ export default function Icon({ name, size = 24, style }: IconProps) {
     }
 
     const iconSize = typeof size === 'number' && size > 0 ? size : 24;
-    const iconColor = style?.color || '#2F4F4F';
+    const iconColor = color || style?.color || '#2F4F4F';
 
     return (
       <Ionicons 
