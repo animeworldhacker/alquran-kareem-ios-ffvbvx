@@ -1,10 +1,11 @@
 
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Share, Clipboard, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Share, Alert } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { useBookmarks } from '../hooks/useBookmarks';
 import { router } from 'expo-router';
 import Icon from './Icon';
+import * as Clipboard from 'expo-clipboard';
+import { useBookmarks } from '../hooks/useBookmarks';
 
 interface AyahActionPopoverProps {
   visible: boolean;
@@ -28,81 +29,62 @@ export default function AyahActionPopover({
   onClose,
 }: AyahActionPopoverProps) {
   const { colors, textSizes } = useTheme();
-  const { isBookmarked, addBookmark, removeBookmarkByAyah } = useBookmarks();
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
-
+  const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const bookmarked = isBookmarked(surahNumber, ayahNumber);
 
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      scaleAnim.setValue(0);
-      opacityAnim.setValue(0);
-    }
-  }, [visible, scaleAnim, opacityAnim]);
-
-  const handlePlay = () => {
+  const handlePlayAudio = () => {
     onAction('play', ayahNumber);
     onClose();
   };
 
-  const handleTafsir = () => {
-    router.push(`/tafsir/${surahNumber}/${ayahNumber}`);
+  const handleViewTafsir = () => {
     onClose();
+    // Navigate to tafsir screen with proper route
+    try {
+      console.log(`Navigating to tafsir: /tafsir/${surahNumber}/${ayahNumber}`);
+      router.push(`/tafsir/${surahNumber}/${ayahNumber}` as any);
+    } catch (error) {
+      console.error('Error navigating to tafsir:', error);
+      Alert.alert('خطأ', 'فشل في فتح التفسير');
+    }
   };
 
   const handleCopy = async () => {
     try {
-      await Clipboard.setString(ayahText);
+      await Clipboard.setStringAsync(ayahText);
       Alert.alert('تم النسخ', 'تم نسخ الآية إلى الحافظة');
       onClose();
     } catch (error) {
-      console.error('Error copying ayah:', error);
-      Alert.alert('خطأ', 'فشل في نسخ الآية');
+      console.error('Error copying text:', error);
+      Alert.alert('خطأ', 'فشل في نسخ النص');
     }
   };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${surahName} - آية ${ayahNumber}\n\n${ayahText}`,
+        message: `${ayahText}\n\n${surahName} - الآية ${ayahNumber}`,
       });
       onClose();
     } catch (error) {
-      console.error('Error sharing ayah:', error);
+      console.error('Error sharing:', error);
     }
   };
 
   const handleBookmark = async () => {
     try {
       if (bookmarked) {
-        await removeBookmarkByAyah(surahNumber, ayahNumber);
+        await removeBookmark(surahNumber, ayahNumber);
         Alert.alert('تم الحذف', 'تم حذف العلامة المرجعية');
       } else {
         await addBookmark({
           surahNumber,
-          surahName,
-          surahEnglishName: '',
           ayahNumber,
+          surahName,
           ayahText,
+          timestamp: Date.now(),
         });
-        Alert.alert('تم الحفظ', 'تم حفظ العلامة المرجعية');
+        Alert.alert('تم الحفظ', 'تم إضافة العلامة المرجعية');
       }
       onClose();
     } catch (error) {
@@ -111,138 +93,141 @@ export default function AyahActionPopover({
     }
   };
 
-  // Calculate popover position to stay on screen
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
   const popoverWidth = 200;
-  const popoverHeight = 240;
-  const padding = 16;
+  const popoverHeight = 280;
 
-  let left = position.x - popoverWidth / 2;
-  let top = position.y - popoverHeight - 20;
+  // Calculate position to keep popover within screen bounds
+  let popoverX = position.x - popoverWidth / 2;
+  let popoverY = position.y + 20;
 
-  // Flip horizontally if too close to edges
-  if (left < padding) {
-    left = padding;
-  } else if (left + popoverWidth > screenWidth - padding) {
-    left = screenWidth - popoverWidth - padding;
+  // Adjust horizontal position
+  if (popoverX < 10) {
+    popoverX = 10;
+  } else if (popoverX + popoverWidth > screenWidth - 10) {
+    popoverX = screenWidth - popoverWidth - 10;
   }
 
-  // Flip vertically if too close to top
-  if (top < padding) {
-    top = position.y + 20;
-  }
-
-  // Ensure it doesn't go off bottom
-  if (top + popoverHeight > screenHeight - padding) {
-    top = screenHeight - popoverHeight - padding;
+  // Adjust vertical position
+  if (popoverY + popoverHeight > screenHeight - 100) {
+    popoverY = position.y - popoverHeight - 20;
   }
 
   const styles = StyleSheet.create({
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
+    overlay: {
+      flex: 1,
       backgroundColor: 'transparent',
-      zIndex: 999,
     },
-    container: {
+    popover: {
       position: 'absolute',
-      left,
-      top,
+      left: popoverX,
+      top: popoverY,
       width: popoverWidth,
       backgroundColor: colors.card,
       borderRadius: 16,
-      borderWidth: 2,
-      borderColor: colors.gold,
-      padding: 12,
-      boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.2)',
-      elevation: 8,
-      zIndex: 1000,
+      padding: 8,
+      boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.25)',
+      elevation: 10,
+      borderWidth: 1,
+      borderColor: colors.outline,
     },
-    actionButton: {
+    menuItem: {
       flexDirection: 'row-reverse',
       alignItems: 'center',
-      justifyContent: 'flex-end',
       paddingVertical: 12,
       paddingHorizontal: 12,
-      borderRadius: 12,
-      marginBottom: 6,
-      backgroundColor: colors.surfaceVariant,
+      borderRadius: 8,
       gap: 12,
     },
-    actionButtonActive: {
-      backgroundColor: colors.primary,
-    },
-    actionText: {
+    menuItemText: {
       fontSize: textSizes.body,
       color: colors.text,
-      fontFamily: 'Amiri_700Bold',
-      textAlign: 'right',
+      fontFamily: 'Amiri_400Regular',
       flex: 1,
+      textAlign: 'right',
     },
-    actionTextActive: {
-      color: colors.gold,
-    },
-    icon: {
-      color: colors.text,
-    },
-    iconActive: {
-      color: colors.gold,
+    divider: {
+      height: 1,
+      backgroundColor: colors.outline,
+      marginVertical: 4,
+      opacity: 0.3,
     },
   });
 
-  if (!visible) return null;
-
   return (
-    <>
-      {/* Backdrop to capture outside taps */}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <TouchableOpacity
-        style={styles.backdrop}
+        style={styles.overlay}
         activeOpacity={1}
         onPress={onClose}
-      />
-      
-      {/* Popover content */}
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim,
-          },
-        ]}
       >
-        <TouchableOpacity style={styles.actionButton} onPress={handlePlay}>
-          <Text style={styles.actionText}>تشغيل</Text>
-          <Icon name="play" size={20} style={styles.icon} />
-        </TouchableOpacity>
+        <View style={styles.popover}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handlePlayAudio}
+            activeOpacity={0.7}
+          >
+            <Icon name="play-circle" size={24} style={{ color: colors.primary }} />
+            <Text style={styles.menuItemText}>تشغيل الآية</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleTafsir}>
-          <Text style={styles.actionText}>تفسير</Text>
-          <Icon name="book-outline" size={20} style={styles.icon} />
-        </TouchableOpacity>
+          <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleCopy}>
-          <Text style={styles.actionText}>نسخ</Text>
-          <Icon name="copy-outline" size={20} style={styles.icon} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleViewTafsir}
+            activeOpacity={0.7}
+          >
+            <Icon name="book" size={24} style={{ color: colors.primary }} />
+            <Text style={styles.menuItemText}>عرض التفسير</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Text style={styles.actionText}>مشاركة</Text>
-          <Icon name="share-outline" size={20} style={styles.icon} />
-        </TouchableOpacity>
+          <View style={styles.divider} />
 
-        <TouchableOpacity
-          style={[styles.actionButton, bookmarked && styles.actionButtonActive]}
-          onPress={handleBookmark}
-        >
-          <Text style={[styles.actionText, bookmarked && styles.actionTextActive]}>
-            {bookmarked ? 'إزالة الإشارة' : 'إشارة'}
-          </Text>
-          <Icon
-            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-            size={20}
-            style={bookmarked ? styles.iconActive : styles.icon}
-          />
-        </TouchableOpacity>
-      </Animated.View>
-    </>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleCopy}
+            activeOpacity={0.7}
+          >
+            <Icon name="copy" size={24} style={{ color: colors.primary }} />
+            <Text style={styles.menuItemText}>نسخ النص</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Icon name="share" size={24} style={{ color: colors.primary }} />
+            <Text style={styles.menuItemText}>مشاركة</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleBookmark}
+            activeOpacity={0.7}
+          >
+            <Icon 
+              name={bookmarked ? "bookmark" : "bookmark-outline"} 
+              size={24} 
+              style={{ color: bookmarked ? colors.gold : colors.primary }} 
+            />
+            <Text style={styles.menuItemText}>
+              {bookmarked ? 'إزالة العلامة' : 'إضافة علامة'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Modal>
   );
 }

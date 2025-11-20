@@ -192,7 +192,7 @@ export default function MushafPageView({
   };
 
   const screenWidth = Dimensions.get('window').width;
-  const responsiveFontSize = Math.min(textSizes.ayah, screenWidth * 0.065);
+  const responsiveFontSize = Math.min(textSizes.ayah, screenWidth * 0.06);
   // Increased padding for narrower text column, similar to printed page
   const responsivePadding = Math.max(32, screenWidth * 0.10);
 
@@ -257,7 +257,7 @@ export default function MushafPageView({
     boundaryBadgeText: {
       fontSize: 10,
       color: colors.onSurfaceVariant,
-      fontFamily: 'Amiri_700Bold',
+      fontFamily: 'Amiri_400Regular',
     },
     pageContent: {
       minHeight: Dimensions.get('window').height - 200,
@@ -278,11 +278,12 @@ export default function MushafPageView({
     ayahTextSegment: {
       fontSize: responsiveFontSize,
       // Slightly increased line height for more airy feel without huge gaps
-      lineHeight: responsiveFontSize * 1.85,
+      lineHeight: responsiveFontSize * 1.8,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       textAlign: 'right',
       writingDirection: 'rtl',
+      flexShrink: 1,
     },
     highlightedText: {
       backgroundColor: `${colors.primary}1F`,

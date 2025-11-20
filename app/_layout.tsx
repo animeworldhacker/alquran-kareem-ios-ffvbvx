@@ -97,14 +97,14 @@ function RootLayoutContent() {
                 animation: 'slide_from_right',
               }}
             >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="home" />
-              <Stack.Screen name="surah/[id]" />
-              <Stack.Screen name="tafsir/[surah]/[ayah]" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="auth/login" />
-              <Stack.Screen name="auth/signup" />
-              <Stack.Screen name="auth/forgot-password" />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="home" options={{ headerShown: false }} />
+              <Stack.Screen name="surah/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="tafsir/[surah]/[ayah]" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
             </Stack>
           </View>
         </ThemeProvider>
