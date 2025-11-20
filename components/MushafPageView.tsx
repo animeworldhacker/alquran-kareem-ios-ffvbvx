@@ -28,26 +28,26 @@ interface AyahBoundary {
   endY: number;
 }
 
-// Reusable verse medallion component matching scrolling mode exactly
+// Reusable verse medallion component - smaller and inline
 const VerseMedallion = ({ number }: { number: number }) => {
   const { colors, textSizes, settings } = useTheme();
   
   const styles = StyleSheet.create({
     container: {
-      width: 26,
-      height: 26,
+      width: 20,
+      height: 20,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      marginHorizontal: 4,
+      marginHorizontal: 3,
     },
     image: {
-      width: 26,
-      height: 26,
+      width: 20,
+      height: 20,
       position: 'absolute',
     },
     text: {
-      fontSize: 14,
+      fontSize: 11,
       color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
@@ -189,27 +189,23 @@ export default function MushafPageView({
 
   const screenWidth = Dimensions.get('window').width;
   const responsiveFontSize = Math.min(textSizes.ayah, screenWidth * 0.065);
-  const responsivePadding = Math.max(12, screenWidth * 0.04);
+  const responsivePadding = Math.max(24, screenWidth * 0.08);
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.surface,
+      backgroundColor: '#F5EEE3', // Warm cream/parchment color
     },
     scrollContent: {
       paddingHorizontal: responsivePadding,
-      paddingTop: 16,
-      paddingBottom: 40,
+      paddingTop: 24,
+      paddingBottom: 60,
     },
     bismillahContainer: {
-      paddingVertical: 14,
+      paddingVertical: 16,
       paddingHorizontal: 16,
       alignItems: 'center',
-      backgroundColor: colors.card,
-      marginBottom: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.outline,
+      marginBottom: 20,
     },
     bismillah: {
       fontSize: Math.min(textSizes.heading, screenWidth * 0.07),
@@ -221,13 +217,14 @@ export default function MushafPageView({
     divider: {
       height: 1,
       backgroundColor: colors.outline,
-      marginTop: 8,
-      opacity: 0.3,
+      marginTop: 12,
+      opacity: 0.2,
+      width: '60%',
     },
     boundaryMarkerContainer: {
       alignItems: 'center',
-      marginVertical: 10,
-      marginBottom: 14,
+      marginVertical: 12,
+      marginBottom: 16,
       width: '100%',
     },
     boundaryDivider: {
@@ -235,6 +232,7 @@ export default function MushafPageView({
       backgroundColor: colors.outline,
       width: '100%',
       marginBottom: 8,
+      opacity: 0.2,
     },
     boundaryBadges: {
       flexDirection: 'row',
@@ -244,7 +242,7 @@ export default function MushafPageView({
       justifyContent: 'center',
     },
     boundaryBadge: {
-      backgroundColor: colors.surfaceVariant,
+      backgroundColor: 'rgba(212, 175, 55, 0.15)',
       borderColor: colors.outline,
       borderWidth: 1,
       borderRadius: 8,
@@ -265,20 +263,20 @@ export default function MushafPageView({
       flexWrap: 'wrap',
       alignItems: 'baseline',
       width: '100%',
+      textAlign: 'right',
     },
     ayahWrapper: {
       flexDirection: 'row-reverse',
-      alignItems: 'baseline',
-      flexWrap: 'wrap',
-      maxWidth: '100%',
+      alignItems: 'center',
+      flexWrap: 'nowrap',
     },
     ayahTextSegment: {
       fontSize: responsiveFontSize,
-      lineHeight: responsiveFontSize * 1.9,
+      lineHeight: responsiveFontSize * 1.75,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
-      textAlign: 'justify',
-      flexShrink: 1,
+      textAlign: 'right',
+      writingDirection: 'rtl',
     },
     highlightedText: {
       backgroundColor: `${colors.primary}1F`,
@@ -291,11 +289,11 @@ export default function MushafPageView({
       paddingHorizontal: 2,
     },
     sajdahIcon: {
-      fontSize: 12,
+      fontSize: 10,
       color: colors.onSurfaceVariant,
       fontFamily: 'Amiri_700Bold',
       marginLeft: 4,
-      backgroundColor: colors.surfaceVariant,
+      backgroundColor: 'rgba(212, 175, 55, 0.15)',
       borderColor: colors.outline,
       borderWidth: 1,
       borderRadius: 4,
@@ -303,7 +301,7 @@ export default function MushafPageView({
       paddingVertical: 1,
     },
     spacer: {
-      width: 4,
+      width: 2,
     },
   });
 
