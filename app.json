@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Al-Quran Kareem",
@@ -14,7 +15,6 @@
     },
     "updates": {
       "enabled": false,
-      "checkAutomatically": "ON_ERROR_RECOVERY",
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [

@@ -1,7 +1,6 @@
 
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import * as Updates from 'expo-updates';
 
 interface Props {
   children: ReactNode;
@@ -41,39 +40,13 @@ class AppErrorHandler extends Component<Props, State> {
     });
   }
 
-  reloadApp = async (): Promise<void> => {
+  reloadApp = (): void => {
     try {
-      console.log('Attempting to reload app...');
-      
-      // Check if updates are enabled and available
-      if (Updates.isEnabled) {
-        try {
-          console.log('Checking for updates...');
-          const update = await Updates.checkForUpdateAsync();
-          
-          if (update.isAvailable) {
-            console.log('Update available, fetching...');
-            await Updates.fetchUpdateAsync();
-            console.log('Update fetched, reloading...');
-            await Updates.reloadAsync();
-          } else {
-            console.log('No update available, reloading current version...');
-            await Updates.reloadAsync();
-          }
-        } catch (updateError) {
-          console.error('Error during update check/fetch:', updateError);
-          // If update fails, just reset the error state
-          this.setState({ hasError: false, error: null, errorInfo: null });
-        }
-      } else {
-        // Updates not enabled, just reset error state
-        console.log('Updates not enabled, resetting error state');
-        this.setState({ hasError: false, error: null, errorInfo: null });
-      }
-    } catch (error) {
-      console.error('Error reloading app:', error);
-      // Reset error state as fallback
+      console.log('Resetting error state...');
+      // Simply reset error state to retry rendering
       this.setState({ hasError: false, error: null, errorInfo: null });
+    } catch (error) {
+      console.error('Error resetting state:', error);
     }
   };
 

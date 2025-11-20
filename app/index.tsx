@@ -4,7 +4,6 @@ import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import SplashScreen from '../components/SplashScreen';
-import { runTextProcessorTests } from '../utils/testTextProcessor';
 
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
@@ -18,17 +17,6 @@ export default function Index() {
     async function initialize() {
       try {
         console.log('🚀 Initializing app...');
-        
-        // Run text processor tests in development
-        if (__DEV__) {
-          try {
-            console.log('Running text processor tests...');
-            runTextProcessorTests();
-            console.log('✅ Text processor tests completed');
-          } catch (error) {
-            console.error('❌ Text processor tests failed:', error);
-          }
-        }
         
         // Wait a bit for theme to initialize
         await new Promise(resolve => setTimeout(resolve, 100));

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import * as Updates from 'expo-updates';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -41,21 +40,13 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
     });
   }
 
-  handleReload = async () => {
+  handleReload = () => {
     try {
-      console.log('Attempting to reload app...');
-      // Try to reload the app using Expo Updates
-      if (Updates.isEnabled) {
-        await Updates.reloadAsync();
-      } else {
-        // Fallback: reset error state
-        console.log('Updates not enabled, resetting error state');
-        this.setState({ hasError: false, error: null, errorInfo: null });
-      }
-    } catch (error) {
-      console.error('Error reloading app:', error);
-      // Reset error state as fallback
+      console.log('Resetting error state...');
+      // Simply reset error state to retry rendering
       this.setState({ hasError: false, error: null, errorInfo: null });
+    } catch (error) {
+      console.error('Error resetting state:', error);
     }
   };
 
