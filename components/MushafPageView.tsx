@@ -28,30 +28,34 @@ interface AyahBoundary {
   endY: number;
 }
 
-// Reusable verse medallion component - smaller and inline
+// Reusable verse medallion component - slightly smaller and perfectly centered
 const VerseMedallion = ({ number }: { number: number }) => {
   const { colors, textSizes, settings } = useTheme();
   
   const styles = StyleSheet.create({
     container: {
-      width: 20,
-      height: 20,
+      width: 18,
+      height: 18,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
       marginHorizontal: 3,
+      // Ensure perfect vertical centering with text baseline
+      alignSelf: 'center',
     },
     image: {
-      width: 20,
-      height: 20,
+      width: 18,
+      height: 18,
       position: 'absolute',
     },
     text: {
-      fontSize: 11,
+      fontSize: 10,
       color: settings.theme === 'dark' ? '#1E5B4C' : colors.text,
       fontWeight: 'bold',
       fontFamily: 'Amiri_700Bold',
       zIndex: 1,
+      // Fine-tune vertical alignment
+      marginTop: -1,
     },
   });
 
@@ -189,7 +193,8 @@ export default function MushafPageView({
 
   const screenWidth = Dimensions.get('window').width;
   const responsiveFontSize = Math.min(textSizes.ayah, screenWidth * 0.065);
-  const responsivePadding = Math.max(24, screenWidth * 0.08);
+  // Increased padding for narrower text column, similar to printed page
+  const responsivePadding = Math.max(32, screenWidth * 0.10);
 
   const styles = StyleSheet.create({
     container: {
@@ -272,7 +277,8 @@ export default function MushafPageView({
     },
     ayahTextSegment: {
       fontSize: responsiveFontSize,
-      lineHeight: responsiveFontSize * 1.75,
+      // Slightly increased line height for more airy feel without huge gaps
+      lineHeight: responsiveFontSize * 1.85,
       color: colors.text,
       fontFamily: 'ScheherazadeNew_400Regular',
       textAlign: 'right',
