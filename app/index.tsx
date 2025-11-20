@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import SplashScreen from '../components/SplashScreen';
@@ -14,19 +14,14 @@ export default function Index() {
   const [initError, setInitError] = useState<string | null>(null);
   const router = useRouter();
   
-  // Always call hooks at the top level
-  let themeContext;
-  try {
-    themeContext = useTheme();
-  } catch (error) {
-    console.error('❌ Error getting theme context:', error);
-  }
+  // Always call hooks at the top level - unconditionally
+  const themeContext = useTheme();
 
   useEffect(() => {
     async function initialize() {
       try {
         console.log('🚀 Initializing app from index...');
-        console.log('📱 Platform:', require('react-native').Platform.OS);
+        console.log('📱 Platform:', Platform.OS);
         console.log('🔧 Debug mode:', __DEV__);
         
         // Wait a bit for theme to initialize
@@ -55,7 +50,7 @@ export default function Index() {
       <View style={styles.debugContainer}>
         <Text style={styles.debugTitle}>🔧 Debug Mode</Text>
         <Text style={styles.debugText}>App is running in debug mode</Text>
-        <Text style={styles.debugText}>Platform: {require('react-native').Platform.OS}</Text>
+        <Text style={styles.debugText}>Platform: {Platform.OS}</Text>
         <Text style={styles.debugText}>Dev: {__DEV__ ? 'Yes' : 'No'}</Text>
         <TouchableOpacity 
           style={styles.debugButton}
