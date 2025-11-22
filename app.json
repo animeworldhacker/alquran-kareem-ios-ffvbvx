@@ -2,7 +2,7 @@
 {
   "expo": {
     "name": "Al-Quran Kareem",
-    "slug": "alquran-kareem",
+    "slug": "Al-Quran Kareem",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -12,10 +12,6 @@
       "image": "./assets/images/natively-dark.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
-    },
-    "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
@@ -69,5 +65,6 @@
       }
     },
     "jsEngine": "hermes"
-  }
+  },
+  "scheme": "Al-Quran Kareem"
 }
