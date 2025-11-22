@@ -69,9 +69,18 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id-here"
       }
     },
-    "jsEngine": "hermes"
+    "jsEngine": "hermes",
+    "updates": {
+      "url": "https://u.expo.dev/your-eas-project-id-here"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   },
   "scheme": "Al-Quran Kareem"
 }
