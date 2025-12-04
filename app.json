@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Al-Quran Kareem",
@@ -80,6 +81,5 @@
       }
     },
     "jsEngine": "hermes"
-  },
-  "scheme": "Al-Quran Kareem"
+  }
 }
