@@ -45,18 +45,21 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="reciters"
+        options={{
+          title: 'القراء',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="musical-notes" size={size || 24} style={{ color: color || colors.text }} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'الإعدادات',
           tabBarIcon: ({ color, size }) => (
             <Icon name="settings" size={size || 24} style={{ color: color || colors.text }} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="reciters"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

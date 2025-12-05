@@ -7,6 +7,64 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SELECTED_RECITER_KEY = 'selectedReciter';
 
+// Static list of reciters with correct Quran.com recitation IDs
+const STATIC_RECITERS: Reciter[] = [
+  {
+    id: 2,
+    name: 'عبد الباسط عبد الصمد',
+    letter: 'ع',
+    rewaya: 'حفص عن عاصم - مرتل',
+    count: 114,
+    server: 'https://verses.quran.com/2/',
+    recitationId: 2,
+  },
+  {
+    id: 7,
+    name: 'علي جابر',
+    letter: 'ع',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/7/',
+    recitationId: 7,
+  },
+  {
+    id: 3,
+    name: 'أحمد بن علي العجمي',
+    letter: 'أ',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/3/',
+    recitationId: 3,
+  },
+  {
+    id: 6,
+    name: 'ماهر المعيقلي',
+    letter: 'م',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/6/',
+    recitationId: 6,
+  },
+  {
+    id: 11,
+    name: 'ياسر الدوسري',
+    letter: 'ي',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/11/',
+    recitationId: 11,
+  },
+  {
+    id: 9,
+    name: 'سعود الشريم',
+    letter: 'س',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/9/',
+    recitationId: 9,
+  },
+];
+
 interface UseAudioReturn {
   audioState: AudioState;
   loading: boolean;
@@ -34,9 +92,9 @@ export const useAudio = (): UseAudioReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
-  const [reciters, setReciters] = useState<Reciter[]>([]);
+  const [reciters] = useState<Reciter[]>(STATIC_RECITERS);
   const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
-  const [loadingReciters, setLoadingReciters] = useState(false);
+  const [loadingReciters] = useState(false);
 
   const initializeAudio = useCallback(async (): Promise<void> => {
     try {
@@ -55,92 +113,6 @@ export const useAudio = (): UseAudioReturn => {
     }
   }, []);
 
-  const setDefaultReciters = useCallback((): void => {
-    // Fallback to default reciters if API fails
-    const defaultReciters: Reciter[] = [
-      {
-        id: 2,
-        name: 'عبد الباسط عبد الصمد',
-        letter: 'ع',
-        rewaya: 'حفص عن عاصم - مرتل',
-        count: 114,
-        server: 'https://server8.mp3quran.net/afs/',
-        recitationId: 2,
-      },
-      {
-        id: 7,
-        name: 'مشاري بن راشد العفاسي',
-        letter: 'م',
-        rewaya: 'حفص عن عاصم',
-        count: 114,
-        server: 'https://server8.mp3quran.net/afs/',
-        recitationId: 7,
-      },
-      {
-        id: 5,
-        name: 'محمد صديق المنشاوي',
-        letter: 'م',
-        rewaya: 'حفص عن عاصم - مجود',
-        count: 114,
-        server: 'https://server10.mp3quran.net/minsh/',
-        recitationId: 5,
-      },
-    ];
-    setReciters(defaultReciters);
-    console.log('✅ Set default reciters');
-  }, []);
-
-  const loadReciters = useCallback(async (): Promise<void> => {
-    try {
-      setLoadingReciters(true);
-      console.log('📥 Loading reciters from API...');
-      
-      const response = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
-      
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data && data.reciters && Array.isArray(data.reciters)) {
-        // Map the reciters to include recitation IDs
-        const mappedReciters: Reciter[] = data.reciters.map((reciter: any) => {
-          // Get the first moshaf (recitation) for each reciter
-          const firstMoshaf = reciter.moshaf && reciter.moshaf.length > 0 ? reciter.moshaf[0] : null;
-          
-          return {
-            id: reciter.id,
-            name: reciter.name,
-            letter: reciter.letter || '',
-            rewaya: firstMoshaf ? firstMoshaf.name : 'حفص عن عاصم',
-            count: firstMoshaf ? firstMoshaf.surah_total : 114,
-            server: firstMoshaf ? firstMoshaf.server : '',
-            recitationId: firstMoshaf ? firstMoshaf.id : reciter.id,
-          };
-        });
-        
-        // Filter to only include popular reciters with complete Quran
-        const popularReciters = mappedReciters.filter(r => 
-          r.count === 114 && r.server && r.server.length > 0
-        );
-        
-        setReciters(popularReciters);
-        console.log('✅ Loaded reciters:', popularReciters.length);
-      } else {
-        console.warn('⚠️ Invalid reciters data format');
-        // Set default reciters if API fails
-        setDefaultReciters();
-      }
-    } catch (error) {
-      console.error('❌ Error loading reciters:', error);
-      // Set default reciters on error
-      setDefaultReciters();
-    } finally {
-      setLoadingReciters(false);
-    }
-  }, [setDefaultReciters]);
-
   const loadSelectedReciter = useCallback(async (): Promise<void> => {
     try {
       const saved = await AsyncStorage.getItem(SELECTED_RECITER_KEY);
@@ -149,24 +121,24 @@ export const useAudio = (): UseAudioReturn => {
         setSelectedReciterState(reciterId);
         audioService.setRecitationId(reciterId);
         console.log('✅ Loaded selected reciter:', reciterId);
+      } else {
+        // Set default reciter (Abdulbasit)
+        audioService.setRecitationId(2);
+        console.log('✅ Set default reciter: Abdulbasit (2)');
       }
     } catch (error) {
       console.error('Error loading selected reciter:', error);
     }
   }, []);
 
-  // FIXED: Added all dependencies to useEffect
   useEffect(() => {
     initializeAudio().catch(error => {
       console.error('Error in audio initialization effect:', error);
     });
-    loadReciters().catch(error => {
-      console.error('Error loading reciters:', error);
-    });
     loadSelectedReciter().catch(error => {
       console.error('Error loading selected reciter:', error);
     });
-  }, [initializeAudio, loadReciters, loadSelectedReciter]);
+  }, [initializeAudio, loadSelectedReciter]);
 
   const setSelectedReciter = async (reciterId: number): Promise<void> => {
     try {
@@ -205,6 +177,7 @@ export const useAudio = (): UseAudioReturn => {
       setError(null);
       
       console.log(`\n🎵 Hook: Playing Surah ${surahNumber}, Ayah ${ayahNumber}`);
+      console.log(`🎙️ Using reciter ID: ${audioService.getRecitationId()}`);
       
       if (!surahNumber || !ayahNumber || surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
         throw new Error(`معاملات غير صحيحة: سورة ${surahNumber}, آية ${ayahNumber}`);

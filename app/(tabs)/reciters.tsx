@@ -39,25 +39,34 @@ export default function RecitersTab() {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
-      backgroundColor: colors.backgroundAlt,
+    ornateHeader: {
+      backgroundColor: colors.primary,
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 12,
       paddingVertical: 16,
-      paddingHorizontal: 16,
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      borderWidth: 3,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      elevation: 5,
     },
     headerTitle: {
-      fontSize: textSizes.title,
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: colors.gold,
       fontFamily: 'Amiri_700Bold',
-      color: colors.text,
-      textAlign: 'right',
     },
     headerSubtitle: {
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_400Regular',
-      color: colors.textSecondary,
-      textAlign: 'right',
+      color: colors.gold,
+      textAlign: 'center',
       marginTop: 4,
+      opacity: 0.9,
     },
     content: {
       padding: 16,
@@ -72,16 +81,20 @@ export default function RecitersTab() {
       borderWidth: 2,
       borderColor: colors.border,
       boxShadow: '0px 2px 8px rgba(0,0,0,0.08)',
+      elevation: 2,
     },
     reciterCardActive: {
       borderColor: colors.primary,
       backgroundColor: colors.primary + '10',
+      borderWidth: 3,
     },
     reciterImage: {
       width: 60,
       height: 60,
       borderRadius: 30,
       marginLeft: 12,
+      borderWidth: 2,
+      borderColor: colors.border,
     },
     reciterInfo: {
       flex: 1,
@@ -111,13 +124,16 @@ export default function RecitersTab() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.border,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
+      borderWidth: 2,
+      borderColor: colors.border,
     },
     selectButtonActive: {
-      backgroundColor: colors.secondary,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     selectedBadge: {
       position: 'absolute',
@@ -129,7 +145,7 @@ export default function RecitersTab() {
       paddingVertical: 4,
     },
     selectedBadgeText: {
-      color: colors.backgroundAlt,
+      color: colors.gold,
       fontSize: textSizes.caption,
       fontFamily: 'Amiri_700Bold',
     },
@@ -152,12 +168,28 @@ export default function RecitersTab() {
       justifyContent: 'center',
       paddingVertical: 40,
     },
+    infoBox: {
+      backgroundColor: colors.primary + '15',
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.primary + '30',
+    },
+    infoText: {
+      fontSize: textSizes.caption,
+      color: colors.text,
+      textAlign: 'right',
+      fontFamily: 'Amiri_400Regular',
+      lineHeight: 20,
+    },
   });
 
   if (loadingReciters) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.ornateHeader}>
           <Text style={styles.headerTitle}>القراء</Text>
           <Text style={styles.headerSubtitle}>اختر القارئ المفضل لديك</Text>
         </View>
@@ -172,7 +204,7 @@ export default function RecitersTab() {
   if (recitersWithImages.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.ornateHeader}>
           <Text style={styles.headerTitle}>القراء</Text>
           <Text style={styles.headerSubtitle}>اختر القارئ المفضل لديك</Text>
         </View>
@@ -189,10 +221,16 @@ export default function RecitersTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.ornateHeader}>
         <Text style={styles.headerTitle}>القراء</Text>
         <Text style={styles.headerSubtitle}>
           {recitersWithImages.length} قارئ متاح • اضغط لاختيار القارئ
+        </Text>
+      </View>
+
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>
+          اختر القارئ المفضل لديك للاستماع إلى تلاوة القرآن الكريم. سيتم تطبيق اختيارك على جميع الآيات.
         </Text>
       </View>
 
@@ -209,7 +247,7 @@ export default function RecitersTab() {
           >
             {selectedReciter === reciter.id && (
               <View style={styles.selectedBadge}>
-                <Text style={styles.selectedBadgeText}>مختار</Text>
+                <Text style={styles.selectedBadgeText}>✓ مختار</Text>
               </View>
             )}
             
@@ -223,7 +261,7 @@ export default function RecitersTab() {
               <Icon
                 name={selectedReciter === reciter.id ? "checkmark" : "person"}
                 size={20}
-                style={{ color: colors.backgroundAlt }}
+                style={{ color: selectedReciter === reciter.id ? colors.gold : colors.textSecondary }}
               />
             </TouchableOpacity>
 
@@ -240,6 +278,8 @@ export default function RecitersTab() {
             />
           </TouchableOpacity>
         ))}
+        
+        <View style={{ height: 80 }} />
       </ScrollView>
     </View>
   );
