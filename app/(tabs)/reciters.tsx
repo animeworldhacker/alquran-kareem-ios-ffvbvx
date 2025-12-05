@@ -38,6 +38,7 @@ export default function RecitersTab() {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+      paddingTop: 48,
     },
     ornateHeader: {
       backgroundColor: colors.primary,
@@ -209,7 +210,7 @@ export default function RecitersTab() {
           <Text style={styles.headerSubtitle}>اختر القارئ المفضل لديك</Text>
         </View>
         <View style={styles.emptyState}>
-          <Icon name="musical-notes" size={48} style={{ color: colors.textSecondary }} />
+          <Icon name="volume-high" size={48} style={{ color: colors.textSecondary }} />
           <Text style={styles.emptyText}>
             لا توجد قائمة قراء متاحة حالياً{'\n'}
             يرجى التحقق من اتصالك بالإنترنت

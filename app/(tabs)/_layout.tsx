@@ -49,7 +49,7 @@ export default function TabsLayout() {
         options={{
           title: 'القراء',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="musical-notes" size={size || 24} style={{ color: color || colors.text }} />
+            <Icon name="volume-high" size={size || 24} style={{ color: color || colors.text }} />
           ),
         }}
       />
