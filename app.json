@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "Al-Quran Kareem",
@@ -77,6 +76,9 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {
+        "origin": false
+      }
     },
     "jsEngine": "hermes",
     "runtimeVersion": {
