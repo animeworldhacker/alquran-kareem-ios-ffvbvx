@@ -24,7 +24,9 @@ export default function RecitersTab() {
   };
 
   const getReciterDisplayName = (index: number) => {
-    return `قارئ عربي ${index + 1}`;
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const arabicNumber = (index + 1).toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+    return `قارئ ${arabicNumber}`;
   };
 
   const styles = StyleSheet.create({

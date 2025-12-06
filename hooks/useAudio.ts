@@ -11,8 +11,8 @@ const SELECTED_RECITER_KEY = 'selectedReciter';
 const STATIC_RECITERS: Reciter[] = [
   {
     id: 2,
-    name: 'عبد الباسط عبد الصمد',
-    letter: 'ع',
+    name: 'قارئ ١',
+    letter: 'ق',
     rewaya: 'حفص عن عاصم - مرتل',
     count: 114,
     server: 'https://verses.quran.com/2/',
@@ -20,8 +20,8 @@ const STATIC_RECITERS: Reciter[] = [
   },
   {
     id: 7,
-    name: 'علي جابر',
-    letter: 'ع',
+    name: 'قارئ ٢',
+    letter: 'ق',
     rewaya: 'حفص عن عاصم',
     count: 114,
     server: 'https://verses.quran.com/7/',
@@ -29,8 +29,8 @@ const STATIC_RECITERS: Reciter[] = [
   },
   {
     id: 11,
-    name: 'ياسر الدوسري',
-    letter: 'ي',
+    name: 'قارئ ٣',
+    letter: 'ق',
     rewaya: 'حفص عن عاصم',
     count: 114,
     server: 'https://verses.quran.com/11/',
@@ -38,8 +38,8 @@ const STATIC_RECITERS: Reciter[] = [
   },
   {
     id: 9,
-    name: 'سعود الشريم',
-    letter: 'س',
+    name: 'قارئ ٤',
+    letter: 'ق',
     rewaya: 'حفص عن عاصم',
     count: 114,
     server: 'https://verses.quran.com/9/',
@@ -130,11 +130,13 @@ export const useAudio = (): UseAudioReturn => {
       console.log('✅ Selected reciter:', reciterId);
       
       // Show confirmation
-      const reciter = reciters.find(r => r.id === reciterId);
-      if (reciter) {
+      const reciterIndex = reciters.findIndex(r => r.id === reciterId);
+      if (reciterIndex !== -1) {
+        const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        const arabicNumber = (reciterIndex + 1).toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
         Alert.alert(
           'تم اختيار القارئ',
-          `تم اختيار ${reciter.name} بنجاح`,
+          `تم اختيار قارئ ${arabicNumber} بنجاح`,
           [{ text: 'حسناً' }]
         );
       }

@@ -12,26 +12,26 @@ export interface ReciterInfo {
 export const RECITERS: ReciterInfo[] = [
   { 
     id: 2, 
-    name: 'عبد الباسط عبد الصمد', 
-    nameEn: 'Abdulbasit Abdulsamad',
+    name: 'قارئ ١', 
+    nameEn: 'Reader 1',
     rewaya: 'حفص عن عاصم - مرتل'
   },
   { 
     id: 7, 
-    name: 'علي جابر', 
-    nameEn: 'Ali Jaber',
+    name: 'قارئ ٢', 
+    nameEn: 'Reader 2',
     rewaya: 'حفص عن عاصم'
   },
   { 
     id: 11, 
-    name: 'ياسر الدوسري', 
-    nameEn: 'Yasser Ad-Dussary',
+    name: 'قارئ ٣', 
+    nameEn: 'Reader 3',
     rewaya: 'حفص عن عاصم'
   },
   { 
     id: 9, 
-    name: 'سعود الشريم', 
-    nameEn: "Sa'ud ash-Shuraym",
+    name: 'قارئ ٤', 
+    nameEn: 'Reader 4',
     rewaya: 'حفص عن عاصم'
   },
 ];

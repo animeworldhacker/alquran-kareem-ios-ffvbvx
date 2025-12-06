@@ -30,14 +30,20 @@ export default function AudioPlayer({
   reciters = []
 }: AudioPlayerProps) {
   const { colors } = useTheme();
-  const [reciterName, setReciterName] = useState('عبد الباسط عبد الصمد');
+  const [reciterName, setReciterName] = useState('قارئ');
 
   useEffect(() => {
     if (selectedReciter && reciters.length > 0) {
-      const reciter = reciters.find(r => r.id === selectedReciter);
-      if (reciter) {
-        setReciterName(reciter.name);
+      const reciterIndex = reciters.findIndex(r => r.id === selectedReciter);
+      if (reciterIndex !== -1) {
+        const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        const arabicNumber = (reciterIndex + 1).toString().split('').map(digit => arabicNumerals[parseInt(digit)]).join('');
+        setReciterName(`قارئ ${arabicNumber}`);
+      } else {
+        setReciterName('قارئ');
       }
+    } else {
+      setReciterName('قارئ');
     }
   }, [selectedReciter, reciters]);
 
