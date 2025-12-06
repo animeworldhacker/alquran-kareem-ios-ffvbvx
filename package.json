@@ -62,7 +62,6 @@
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.9",
-    "expo-updates": "~0.26.19",
     "expo-web-browser": "~14.0.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
