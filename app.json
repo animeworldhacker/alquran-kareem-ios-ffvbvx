@@ -65,7 +65,9 @@
             "deploymentTarget": "15.1"
           },
           "android": {
-            "minSdkVersion": 23
+            "minSdkVersion": 23,
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34
           }
         }
       ]
@@ -77,9 +79,14 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "your-project-id"
       }
     },
-    "jsEngine": "hermes"
-  },
-  "scheme": "Al-Quran Kareem"
+    "jsEngine": "hermes",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
 }

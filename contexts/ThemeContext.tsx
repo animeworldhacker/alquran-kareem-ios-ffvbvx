@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppSettings } from '../types';
-import { settingsService } from '../services/settingsService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ThemeContextType {
   settings: AppSettings;
@@ -51,17 +51,21 @@ export const useTheme = (): ThemeContextType => {
   return context;
 };
 
+const DEFAULT_SETTINGS: AppSettings = {
+  textSize: 'medium',
+  theme: 'light',
+  showBanner: true,
+  readingMode: 'scroll',
+  squareAdjustment: 50,
+  showTajweed: true,
+  autoExpandTafsir: false,
+};
+
+const SETTINGS_KEY = 'app_settings';
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [settings, setSettings] = useState<AppSettings>({
-    textSize: 'medium',
-    theme: 'light',
-    showBanner: true,
-    readingMode: 'scroll',
-    squareAdjustment: 50,
-    showTajweed: true,
-    autoExpandTafsir: false,
-  });
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     loadSettings();
@@ -72,17 +76,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('📱 Loading settings...');
       
-      const savedSettings = await settingsService.getSettings();
-      const defaultSettings = settingsService.getDefaultSettings();
+      const savedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
       
-      const mergedSettings = { ...defaultSettings, ...savedSettings };
-      setSettings(mergedSettings);
-      console.log('✅ Settings loaded successfully:', mergedSettings);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        const mergedSettings = { ...DEFAULT_SETTINGS, ...parsed };
+        setSettings(mergedSettings);
+        console.log('✅ Settings loaded successfully:', mergedSettings);
+      } else {
+        console.log('ℹ️ No saved settings, using defaults');
+        setSettings(DEFAULT_SETTINGS);
+      }
     } catch (error) {
       console.error('❌ Error loading settings:', error);
       // Use default settings on error
-      const defaultSettings = settingsService.getDefaultSettings();
-      setSettings(defaultSettings);
+      setSettings(DEFAULT_SETTINGS);
       console.log('⚠️ Using default settings due to error');
     } finally {
       setIsLoading(false);
@@ -95,7 +103,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       console.log('📝 Updating settings:', newSettings);
       const updatedSettings = { ...settings, ...newSettings };
       
-      await settingsService.saveSettings(updatedSettings);
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
       setSettings(updatedSettings);
       console.log('✅ Settings updated successfully:', updatedSettings);
     } catch (error) {

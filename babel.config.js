@@ -18,6 +18,8 @@ module.exports = function (api) {
             '.jsx',
             '.js',
             '.json',
+            '.mjs',
+            '.cjs',
           ],
           alias: {
             '@': './',

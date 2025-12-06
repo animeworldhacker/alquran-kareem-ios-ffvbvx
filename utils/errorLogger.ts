@@ -4,29 +4,32 @@
 import { Platform } from 'react-native';
 
 // Simple debouncing to prevent duplicate errors
-const recentErrors: { [key: string]: boolean } = {};
+const recentErrors: { [key: string]: number } = {};
+const ERROR_DEBOUNCE_MS = 1000;
+
 const clearErrorAfterDelay = (errorKey: string): void => {
   setTimeout(() => {
     delete recentErrors[errorKey];
-  }, 100);
+  }, ERROR_DEBOUNCE_MS);
 };
 
 // Function to send errors to parent window (React frontend)
 const sendErrorToParent = (level: string, message: string, data: any): void => {
   // Create a simple key to identify duplicate errors
-  const errorKey = `${level}:${message}:${JSON.stringify(data)}`;
+  const errorKey = `${level}:${message}`;
 
   // Skip if we've seen this exact error recently
-  if (recentErrors[errorKey]) {
+  const now = Date.now();
+  if (recentErrors[errorKey] && (now - recentErrors[errorKey]) < ERROR_DEBOUNCE_MS) {
     return;
   }
 
   // Mark this error as seen and schedule cleanup
-  recentErrors[errorKey] = true;
+  recentErrors[errorKey] = now;
   clearErrorAfterDelay(errorKey);
 
   try {
-    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.parent && window.parent !== window) {
       window.parent.postMessage({
         type: 'EXPO_ERROR',
         level: level,
@@ -37,8 +40,8 @@ const sendErrorToParent = (level: string, message: string, data: any): void => {
         source: 'expo-template'
       }, '*');
     } else {
-      // Fallback to console if no parent window
-      console.error('🚨 ERROR (no parent):', level, message, data);
+      // Fallback to console if no parent window or not web
+      console.error('🚨 ERROR:', level, message, data);
     }
   } catch (error) {
     console.error('❌ Failed to send error to parent:', error);
@@ -79,12 +82,12 @@ const extractSourceLocation = (stack: string): string => {
   }
 
   return '';
-};
+}
 
 export const setupErrorLogging = (): void => {
   try {
-    // Capture unhandled errors in web environment
-    if (typeof window !== 'undefined') {
+    // Only setup web-specific error handlers on web platform
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       // Override window.onerror to catch JavaScript errors
       const originalOnError = window.onerror;
       window.onerror = (message, source, lineno, colno, error): boolean => {
@@ -109,22 +112,19 @@ export const setupErrorLogging = (): void => {
         return false; // Don't prevent default error handling
       };
       
-      // Check if platform is web
-      if (Platform.OS === 'web') {
-        // Capture unhandled promise rejections
-        window.addEventListener('unhandledrejection', (event) => {
-          const errorData = {
-            reason: event.reason,
-            timestamp: new Date().toISOString()
-          };
+      // Capture unhandled promise rejections
+      window.addEventListener('unhandledrejection', (event) => {
+        const errorData = {
+          reason: event.reason,
+          timestamp: new Date().toISOString()
+        };
 
-          console.error('🚨 UNHANDLED PROMISE REJECTION:', errorData);
-          sendErrorToParent('error', 'Unhandled Promise Rejection', errorData);
-        });
-      }
+        console.error('🚨 UNHANDLED PROMISE REJECTION:', errorData);
+        sendErrorToParent('error', 'Unhandled Promise Rejection', errorData);
+      });
     }
 
-    console.log('✅ Error logging initialized');
+    console.log('✅ Error logging initialized for platform:', Platform.OS);
   } catch (error) {
     console.error('❌ Failed to setup error logging:', error);
   }
