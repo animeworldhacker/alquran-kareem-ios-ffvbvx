@@ -1,8 +1,9 @@
+
 {
   "expo": {
     "name": "Al-Quran Kareem",
-    "slug": "Al-Quran Kareem",
-    "version": "1.0.0",
+    "slug": "alquran-kareem-ios-ffvbvx",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
     "userInterfaceStyle": "automatic",
@@ -24,7 +25,12 @@
         "UIBackgroundModes": [
           "audio"
         ],
-        "NSMicrophoneUsageDescription": "This app does not require microphone access."
+        "NSMicrophoneUsageDescription": "This app does not require microphone access.",
+        "NSPhotoLibraryUsageDescription": "This app does not require photo library access.",
+        "NSCameraUsageDescription": "This app does not require camera access."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -32,11 +38,28 @@
         "foregroundImage": "./assets/images/natively-dark.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.quranapp.alkareem",
-      "versionCode": 1,
+      "package": "com.animeworldhacker.alqurankareem",
+      "versionCode": 2,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "*.alqurankareem.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
@@ -66,7 +89,8 @@
           "android": {
             "minSdkVersion": 23,
             "compileSdkVersion": 34,
-            "targetSdkVersion": 34
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
           }
         }
       ]
@@ -78,11 +102,15 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id"
       }
     },
     "jsEngine": "hermes",
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "owner": "your-expo-username"
   }
 }
