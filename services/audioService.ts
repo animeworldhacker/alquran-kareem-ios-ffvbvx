@@ -154,12 +154,10 @@ class AudioService {
         throw new Error('Invalid parameters for building audio URL');
       }
       
-      // Zero-pad to 3 digits as per CDN format
+      // Zero-pad to 3 digits as per Quran.com CDN format
       const paddedSurah = surahNumber.toString().padStart(3, '0');
       const paddedAyah = ayahNumber.toString().padStart(3, '0');
-      
-      // NEW CDN BASE URL - changed from https://verses.quran.com/
-      const url = `https://cdn.myquranserver.com/${this.recitationId}/${paddedSurah}${paddedAyah}.mp3`;
+      const url = `https://verses.quran.com/${this.recitationId}/${paddedSurah}${paddedAyah}.mp3`;
       
       console.log('🔗 Built CDN URL:', url);
       return url;
@@ -175,8 +173,8 @@ class AudioService {
       return url;
     }
     
-    // If it's a relative path, prepend the CDN base URL
-    const baseUrl = 'https://cdn.myquranserver.com/';
+    // If it's a relative path, prepend the Quran.com CDN base URL
+    const baseUrl = 'https://verses.quran.com/';
     
     // Remove leading slash if present
     const cleanPath = url.startsWith('/') ? url.substring(1) : url;

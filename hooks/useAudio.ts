@@ -4,18 +4,66 @@ import { AudioState, Reciter } from '../types';
 import { audioService } from '../services/audioService';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RECITERS, DEFAULT_RECITER_ID, RECITER_STORAGE_KEY } from '../constants/reciters';
+
+const SELECTED_RECITER_KEY = 'selectedReciter';
 
 // Static list of reciters with correct Quran.com recitation IDs
-const STATIC_RECITERS: Reciter[] = RECITERS.map(reciter => ({
-  id: reciter.id,
-  name: reciter.name,
-  letter: reciter.name.charAt(0),
-  rewaya: reciter.rewaya || 'حفص عن عاصم',
-  count: 114,
-  server: `https://cdn.myquranserver.com/${reciter.id}/`,
-  recitationId: reciter.id,
-}));
+const STATIC_RECITERS: Reciter[] = [
+  {
+    id: 2,
+    name: 'عبد الباسط عبد الصمد',
+    letter: 'ع',
+    rewaya: 'حفص عن عاصم - مرتل',
+    count: 114,
+    server: 'https://verses.quran.com/2/',
+    recitationId: 2,
+  },
+  {
+    id: 7,
+    name: 'علي جابر',
+    letter: 'ع',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/7/',
+    recitationId: 7,
+  },
+  {
+    id: 3,
+    name: 'أحمد بن علي العجمي',
+    letter: 'أ',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/3/',
+    recitationId: 3,
+  },
+  {
+    id: 6,
+    name: 'ماهر المعيقلي',
+    letter: 'م',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/6/',
+    recitationId: 6,
+  },
+  {
+    id: 11,
+    name: 'ياسر الدوسري',
+    letter: 'ي',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/11/',
+    recitationId: 11,
+  },
+  {
+    id: 9,
+    name: 'سعود الشريم',
+    letter: 'س',
+    rewaya: 'حفص عن عاصم',
+    count: 114,
+    server: 'https://verses.quran.com/9/',
+    recitationId: 9,
+  },
+];
 
 interface UseAudioReturn {
   audioState: AudioState;
@@ -45,7 +93,7 @@ export const useAudio = (): UseAudioReturn => {
   const [error, setError] = useState<string | null>(null);
   const [continuousPlayback, setContinuousPlayback] = useState(false);
   const [reciters] = useState<Reciter[]>(STATIC_RECITERS);
-  const [selectedReciter, setSelectedReciterState] = useState<number>(DEFAULT_RECITER_ID);
+  const [selectedReciter, setSelectedReciterState] = useState<number>(2); // Default to Abdulbasit
   const [loadingReciters] = useState(false);
 
   const initializeAudio = useCallback(async (): Promise<void> => {
@@ -67,45 +115,37 @@ export const useAudio = (): UseAudioReturn => {
 
   const loadSelectedReciter = useCallback(async (): Promise<void> => {
     try {
-      // Load from persistent storage using the correct key: current_recitation_id
-      const saved = await AsyncStorage.getItem(RECITER_STORAGE_KEY);
+      const saved = await AsyncStorage.getItem(SELECTED_RECITER_KEY);
       if (saved) {
         const reciterId = parseInt(saved);
         setSelectedReciterState(reciterId);
         audioService.setRecitationId(reciterId);
-        console.log('✅ Loaded selected reciter from storage:', reciterId);
+        console.log('✅ Loaded selected reciter:', reciterId);
       } else {
-        // Set default reciter (Abdulbasit, ID 2)
-        setSelectedReciterState(DEFAULT_RECITER_ID);
-        audioService.setRecitationId(DEFAULT_RECITER_ID);
-        // Save default to storage
-        await AsyncStorage.setItem(RECITER_STORAGE_KEY, DEFAULT_RECITER_ID.toString());
+        // Set default reciter (Abdulbasit)
+        audioService.setRecitationId(2);
         console.log('✅ Set default reciter: Abdulbasit (2)');
       }
     } catch (error) {
       console.error('Error loading selected reciter:', error);
-      // Fallback to default
-      setSelectedReciterState(DEFAULT_RECITER_ID);
-      audioService.setRecitationId(DEFAULT_RECITER_ID);
     }
   }, []);
 
   useEffect(() => {
-    // Load selected reciter first, then initialize audio
-    loadSelectedReciter()
-      .then(() => initializeAudio())
-      .catch(error => {
-        console.error('Error in audio initialization effect:', error);
-      });
+    initializeAudio().catch(error => {
+      console.error('Error in audio initialization effect:', error);
+    });
+    loadSelectedReciter().catch(error => {
+      console.error('Error loading selected reciter:', error);
+    });
   }, [initializeAudio, loadSelectedReciter]);
 
   const setSelectedReciter = async (reciterId: number): Promise<void> => {
     try {
       setSelectedReciterState(reciterId);
       audioService.setRecitationId(reciterId);
-      // Save to persistent storage using the correct key: current_recitation_id
-      await AsyncStorage.setItem(RECITER_STORAGE_KEY, reciterId.toString());
-      console.log('✅ Selected reciter saved to storage:', reciterId);
+      await AsyncStorage.setItem(SELECTED_RECITER_KEY, reciterId.toString());
+      console.log('✅ Selected reciter:', reciterId);
       
       // Show confirmation
       const reciter = reciters.find(r => r.id === reciterId);
