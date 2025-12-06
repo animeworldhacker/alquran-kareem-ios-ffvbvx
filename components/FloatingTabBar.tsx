@@ -19,6 +19,7 @@ export default function FloatingTabBar({ visible, translateY }: FloatingTabBarPr
   const tabs = [
     { name: 'chapters', label: 'السور', icon: 'book', route: '/(tabs)/chapters' },
     { name: 'bookmarks', label: 'المفضلة', icon: 'bookmark', route: '/(tabs)/bookmarks' },
+    { name: 'reciters', label: 'القراء', icon: 'volume-high', route: '/(tabs)/reciters' },
     { name: 'settings', label: 'الإعدادات', icon: 'settings', route: '/(tabs)/settings' },
   ];
 

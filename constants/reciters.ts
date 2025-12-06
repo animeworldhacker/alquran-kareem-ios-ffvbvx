@@ -23,18 +23,6 @@ export const RECITERS: ReciterInfo[] = [
     rewaya: 'حفص عن عاصم'
   },
   { 
-    id: 3, 
-    name: 'أحمد بن علي العجمي', 
-    nameEn: 'Ahmed ibn Ali al-Ajmy',
-    rewaya: 'حفص عن عاصم'
-  },
-  { 
-    id: 6, 
-    name: 'ماهر المعيقلي', 
-    nameEn: 'Maher al-Muaiqly',
-    rewaya: 'حفص عن عاصم'
-  },
-  { 
     id: 11, 
     name: 'ياسر الدوسري', 
     nameEn: 'Yasser Ad-Dussary',

@@ -1,24 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAudio } from '../../hooks/useAudio';
-import { reciterService } from '../../services/reciterService';
-import { ReciterWithImage } from '../../types';
 import Icon from '../../components/Icon';
 
 export default function RecitersTab() {
   const { colors, textSizes } = useTheme();
   const { reciters, selectedReciter, setSelectedReciter, loadingReciters } = useAudio();
-  const [recitersWithImages, setRecitersWithImages] = useState<ReciterWithImage[]>([]);
-
-  useEffect(() => {
-    if (reciters.length > 0) {
-      const withImages = reciterService.getRecitersWithImages(reciters);
-      setRecitersWithImages(withImages);
-      console.log('Reciters with images loaded:', withImages.length);
-    }
-  }, [reciters]);
 
   const handleSelectReciter = async (reciterId: number) => {
     try {
@@ -32,6 +21,10 @@ export default function RecitersTab() {
         [{ text: 'حسناً' }]
       );
     }
+  };
+
+  const getReciterDisplayName = (index: number) => {
+    return `قارئ عربي ${index + 1}`;
   };
 
   const styles = StyleSheet.create({
@@ -75,10 +68,11 @@ export default function RecitersTab() {
     reciterCard: {
       backgroundColor: colors.card,
       borderRadius: 12,
-      padding: 16,
+      padding: 20,
       marginBottom: 12,
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
       borderWidth: 2,
       borderColor: colors.border,
       boxShadow: '0px 2px 8px rgba(0,0,0,0.08)',
@@ -89,46 +83,24 @@ export default function RecitersTab() {
       backgroundColor: colors.primary + '10',
       borderWidth: 3,
     },
-    reciterImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      marginLeft: 12,
-      borderWidth: 2,
-      borderColor: colors.border,
-    },
     reciterInfo: {
       flex: 1,
       alignItems: 'flex-end',
     },
     reciterName: {
-      fontSize: textSizes.subtitle,
+      fontSize: textSizes.title,
       fontFamily: 'Amiri_700Bold',
       color: colors.text,
       textAlign: 'right',
-      marginBottom: 4,
-    },
-    reciterRewaya: {
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.textSecondary,
-      textAlign: 'right',
-      marginBottom: 2,
-    },
-    reciterDescription: {
-      fontSize: textSizes.caption,
-      fontFamily: 'Amiri_400Regular',
-      color: colors.textSecondary,
-      textAlign: 'right',
     },
     selectButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: colors.border,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
       borderWidth: 2,
       borderColor: colors.border,
     },
@@ -142,7 +114,7 @@ export default function RecitersTab() {
       left: 8,
       backgroundColor: colors.primary,
       borderRadius: 12,
-      paddingHorizontal: 8,
+      paddingHorizontal: 10,
       paddingVertical: 4,
     },
     selectedBadgeText: {
@@ -202,7 +174,7 @@ export default function RecitersTab() {
     );
   }
 
-  if (recitersWithImages.length === 0) {
+  if (reciters.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.ornateHeader}>
@@ -225,7 +197,7 @@ export default function RecitersTab() {
       <View style={styles.ornateHeader}>
         <Text style={styles.headerTitle}>القراء</Text>
         <Text style={styles.headerSubtitle}>
-          {recitersWithImages.length} قارئ متاح • اضغط لاختيار القارئ
+          {reciters.length} قارئ متاح • اضغط لاختيار القارئ
         </Text>
       </View>
 
@@ -236,7 +208,7 @@ export default function RecitersTab() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {recitersWithImages.map((reciter) => (
+        {reciters.map((reciter, index) => (
           <TouchableOpacity
             key={reciter.id}
             style={[
@@ -261,22 +233,14 @@ export default function RecitersTab() {
             >
               <Icon
                 name={selectedReciter === reciter.id ? "checkmark" : "person"}
-                size={20}
+                size={24}
                 style={{ color: selectedReciter === reciter.id ? colors.gold : colors.textSecondary }}
               />
             </TouchableOpacity>
 
             <View style={styles.reciterInfo}>
-              <Text style={styles.reciterName}>{reciter.name}</Text>
-              <Text style={styles.reciterRewaya}>{reciter.rewaya}</Text>
-              <Text style={styles.reciterDescription}>{reciter.description}</Text>
+              <Text style={styles.reciterName}>{getReciterDisplayName(index)}</Text>
             </View>
-
-            <Image
-              source={{ uri: reciter.image }}
-              style={styles.reciterImage}
-              defaultSource={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' }}
-            />
           </TouchableOpacity>
         ))}
         
