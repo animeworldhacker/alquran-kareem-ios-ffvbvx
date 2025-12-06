@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { networkUtils } from '../utils/networkUtils';
 import { offlineManager } from '../services/offlineManager';
@@ -9,6 +9,22 @@ export default function OfflineNotice() {
   const [isOffline, setIsOffline] = useState(false);
   const [canWorkOffline, setCanWorkOffline] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-100));
+
+  const checkOfflineCapability = useCallback(async () => {
+    try {
+      const connected = await networkUtils.isConnected();
+      const offline = !connected;
+      setIsOffline(offline);
+      
+      if (offline) {
+        const canWork = await offlineManager.canWorkOffline();
+        setCanWorkOffline(canWork);
+        slideAnim.setValue(0);
+      }
+    } catch (error) {
+      console.error('Error checking offline capability:', error);
+    }
+  }, [slideAnim]);
 
   useEffect(() => {
     let mounted = true;
@@ -35,23 +51,7 @@ export default function OfflineNotice() {
       mounted = false;
       unsubscribe();
     };
-  }, [slideAnim]);
-
-  const checkOfflineCapability = async () => {
-    try {
-      const connected = await networkUtils.isConnected();
-      const offline = !connected;
-      setIsOffline(offline);
-      
-      if (offline) {
-        const canWork = await offlineManager.canWorkOffline();
-        setCanWorkOffline(canWork);
-        slideAnim.setValue(0);
-      }
-    } catch (error) {
-      console.error('Error checking offline capability:', error);
-    }
-  };
+  }, [slideAnim, checkOfflineCapability]);
 
   if (!isOffline) {
     return null;
