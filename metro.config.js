@@ -6,7 +6,7 @@ const config = getDefaultConfig(__dirname);
 // Enable package exports support for Expo 54
 config.resolver.unstable_enablePackageExports = true;
 
-// Ensure proper source extensions
+// Ensure proper source extensions - ADD .mjs support
 config.resolver.sourceExts = [
   'expo.ts',
   'expo.tsx',
@@ -19,6 +19,8 @@ config.resolver.sourceExts = [
   'json',
   'wasm',
   'svg',
+  'mjs',
+  'cjs',
 ];
 
 // Add asset extensions
