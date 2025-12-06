@@ -13,10 +13,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -81,14 +77,9 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "your-project-id"
       }
     },
-    "jsEngine": "hermes",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
-  }
+    "jsEngine": "hermes"
+  },
+  "scheme": "Al-Quran Kareem"
 }

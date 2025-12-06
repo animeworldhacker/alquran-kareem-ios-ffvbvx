@@ -11,6 +11,7 @@ import OfflineNotice from '../components/OfflineNotice';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { setupErrorLogging } from '../utils/errorLogger';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Updates from 'expo-updates';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(error => {
@@ -25,6 +26,11 @@ try {
   console.error('❌ Failed to setup error logging:', error);
 }
 
+// Disable expo-updates in development
+if (__DEV__) {
+  console.log('🔧 Development mode: Expo Updates disabled');
+}
+
 function RootLayoutContent() {
   const [fontsLoaded, fontError] = useFonts({
     Amiri_400Regular,
@@ -37,6 +43,27 @@ function RootLayoutContent() {
     async function prepare() {
       try {
         console.log('🚀 Preparing app...');
+        
+        // Check if we're running in Expo Go or development build
+        if (!Updates.isEmbeddedLaunch && !__DEV__) {
+          console.log('📦 Checking for updates...');
+          try {
+            const update = await Updates.checkForUpdateAsync();
+            if (update.isAvailable) {
+              console.log('⬇️ Downloading update...');
+              await Updates.fetchUpdateAsync();
+              console.log('🔄 Reloading with new update...');
+              await Updates.reloadAsync();
+            } else {
+              console.log('✅ App is up to date');
+            }
+          } catch (updateError) {
+            console.warn('⚠️ Update check failed, continuing with cached version:', updateError);
+            // Continue with app launch even if update fails
+          }
+        } else {
+          console.log('🔧 Running in development mode or Expo Go - skipping updates');
+        }
         
         // Wait for fonts to load or error
         if (fontsLoaded || fontError) {
