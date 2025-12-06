@@ -7,52 +7,34 @@ import { AppSettings } from '../../types';
 import { quranService } from '../../services/quranService';
 import { audioService } from '../../services/audioService';
 import { tafsirService } from '../../services/tafsirService';
+import { offlineManager } from '../../services/offlineManager';
 import Icon from '../../components/Icon';
 
 export default function SettingsTab() {
   const { settings, updateSettings, colors, textSizes } = useTheme();
   const router = useRouter();
   const [testingAudio, setTestingAudio] = useState(false);
-  const [downloadingAudio, setDownloadingAudio] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0, status: '' });
   
-  // Download status states
-  const [quranDownloadStatus, setQuranDownloadStatus] = useState<'not_downloaded' | 'downloaded' | 'checking'>('checking');
-  const [tafsirDownloadStatus, setTafsirDownloadStatus] = useState<'not_downloaded' | 'downloaded' | 'checking'>('checking');
-  const [audioDownloadStatus, setAudioDownloadStatus] = useState<'not_downloaded' | 'partial' | 'full' | 'checking'>('checking');
-  const [audioDownloadInfo, setAudioDownloadInfo] = useState({ totalAyahs: 0, totalSize: '0 MB' });
+  // Offline status
+  const [offlineStatus, setOfflineStatus] = useState<any>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
-  // Check download status on mount
+  // Check offline status on mount
   useEffect(() => {
-    checkDownloadStatus();
+    loadOfflineStatus();
   }, []);
 
-  const checkDownloadStatus = async () => {
+  const loadOfflineStatus = async () => {
     try {
-      // Check Quran data
-      const quranStored = await quranService.isStoredOffline();
-      setQuranDownloadStatus(quranStored ? 'downloaded' : 'not_downloaded');
-
-      // Check Tafsir data
-      const tafsirStats = tafsirService.getCacheStats();
-      setTafsirDownloadStatus(tafsirStats.cacheSize > 0 ? 'downloaded' : 'not_downloaded');
-
-      // Check Audio data
-      const audioStats = await audioService.getDownloadStats();
-      setAudioDownloadInfo({
-        totalAyahs: audioStats.totalAyahs,
-        totalSize: audioStats.totalSize,
-      });
-      
-      if (audioStats.totalAyahs === 0) {
-        setAudioDownloadStatus('not_downloaded');
-      } else if (audioStats.totalAyahs >= 6236) {
-        setAudioDownloadStatus('full');
-      } else {
-        setAudioDownloadStatus('partial');
-      }
+      setLoadingStatus(true);
+      const status = await offlineManager.getOfflineStatus();
+      setOfflineStatus(status);
     } catch (error) {
-      console.error('Error checking download status:', error);
+      console.error('Error loading offline status:', error);
+    } finally {
+      setLoadingStatus(false);
     }
   };
 
@@ -98,24 +80,33 @@ export default function SettingsTab() {
     );
   };
 
-  const handleDownloadQuran = async () => {
+  const handleDownloadQuranData = async () => {
     Alert.alert(
-      'تنزيل القرآن الكريم',
-      'هل تريد تنزيل بيانات القرآن الكريم كاملة للاستخدام بدون إنترنت؟',
+      'تنزيل بيانات القرآن',
+      'هل تريد تنزيل بيانات القرآن الكريم كاملة للاستخدام بدون إنترنت؟\n\nالحجم التقريبي: ~2 MB',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
           text: 'تنزيل',
           onPress: async () => {
+            setDownloading(true);
             try {
-              setQuranDownloadStatus('checking');
-              await quranService.getFullQuran();
-              setQuranDownloadStatus('downloaded');
-              Alert.alert('نجح', 'تم تنزيل بيانات القرآن الكريم بنجاح');
+              await offlineManager.downloadQuranData((progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', 'تم تنزيل بيانات القرآن الكريم بنجاح');
             } catch (error) {
               console.error('Error downloading Quran:', error);
-              setQuranDownloadStatus('not_downloaded');
-              Alert.alert('خطأ', 'فشل في تنزيل بيانات القرآن الكريم');
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل بيانات القرآن');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
             }
           },
         },
@@ -123,22 +114,33 @@ export default function SettingsTab() {
     );
   };
 
-  const handleClearQuranData = () => {
+  const handleDownloadTafsirData = async () => {
     Alert.alert(
-      'مسح بيانات القرآن',
-      'هل تريد مسح بيانات القرآن المحملة؟',
+      'تنزيل تفسير ابن كثير',
+      'هل تريد تنزيل تفسير ابن كثير لجميع الآيات؟\n\nالحجم التقريبي: ~50 MB\nقد يستغرق هذا عدة دقائق.',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
-          text: 'مسح',
+          text: 'تنزيل',
           onPress: async () => {
+            setDownloading(true);
             try {
-              await quranService.clearCache();
-              setQuranDownloadStatus('not_downloaded');
-              Alert.alert('نجح', 'تم مسح بيانات القرآن بنجاح');
+              await offlineManager.downloadTafsirData(1, 114, (progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', 'تم تنزيل تفسير ابن كثير بنجاح');
             } catch (error) {
-              console.error('Error clearing Quran data:', error);
-              Alert.alert('خطأ', 'فشل في مسح بيانات القرآن');
+              console.error('Error downloading Tafsir:', error);
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل التفسير');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
             }
           },
         },
@@ -146,21 +148,144 @@ export default function SettingsTab() {
     );
   };
 
-  const handleRefreshQuranData = async () => {
+  const handleDownloadAudioOptions = () => {
     Alert.alert(
-      'تحديث بيانات القرآن',
-      'هل تريد إعادة تحميل بيانات القرآن من الخادم؟',
+      'تنزيل التلاوات الصوتية',
+      'اختر ما تريد تنزيله:',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
-          text: 'تحديث',
-          onPress: async () => {
+          text: 'سورة واحدة',
+          onPress: () => handleDownloadSurah(),
+        },
+        {
+          text: 'عدة سور',
+          onPress: () => handleDownloadMultipleSurahs(),
+        },
+        {
+          text: 'القرآن كاملاً (~500 MB)',
+          onPress: () => handleDownloadAllAudio(),
+        },
+      ]
+    );
+  };
+
+  const handleDownloadSurah = () => {
+    Alert.prompt(
+      'تنزيل سورة',
+      'أدخل رقم السورة (1-114):',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تنزيل',
+          onPress: async (input) => {
+            const surahNum = parseInt(input || '0');
+            if (surahNum < 1 || surahNum > 114) {
+              Alert.alert('خطأ', 'رقم السورة يجب أن يكون بين 1 و 114');
+              return;
+            }
+            
+            setDownloading(true);
             try {
-              quranService.clearCache();
-              Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت. سيتم تحميل البيانات الجديدة عند الحاجة.');
+              await offlineManager.prefetchSurah(surahNum, (progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', `تم تنزيل السورة ${surahNum} بنجاح`);
             } catch (error) {
-              console.error('Error refreshing Quran data:', error);
-              Alert.alert('خطأ', 'فشل في تحديث بيانات القرآن');
+              console.error('Error downloading surah:', error);
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل السورة');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
+            }
+          },
+        },
+      ],
+      'plain-text',
+      '',
+      'numeric'
+    );
+  };
+
+  const handleDownloadMultipleSurahs = () => {
+    Alert.prompt(
+      'تنزيل عدة سور',
+      'أدخل أرقام السور مفصولة بفواصل (مثال: 1,2,3):',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تنزيل',
+          onPress: async (input) => {
+            try {
+              const surahs = (input || '')
+                .split(',')
+                .map(s => parseInt(s.trim()))
+                .filter(n => n >= 1 && n <= 114);
+              
+              if (surahs.length === 0) {
+                Alert.alert('خطأ', 'يرجى إدخال أرقام سور صحيحة');
+                return;
+              }
+              
+              setDownloading(true);
+              await offlineManager.downloadAudioData(surahs, (progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', `تم تنزيل ${surahs.length} سورة بنجاح`);
+            } catch (error) {
+              console.error('Error downloading surahs:', error);
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل السور');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
+            }
+          },
+        },
+      ],
+      'plain-text'
+    );
+  };
+
+  const handleDownloadAllAudio = () => {
+    Alert.alert(
+      'تنزيل القرآن كاملاً',
+      'سيتم تنزيل جميع التلاوات الصوتية للقرآن الكريم.\n\nالحجم التقريبي: ~500 MB\nقد يستغرق هذا وقتاً طويلاً.\n\nهل تريد المتابعة؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تنزيل',
+          onPress: async () => {
+            setDownloading(true);
+            try {
+              const allSurahs = Array.from({ length: 114 }, (_, i) => i + 1);
+              await offlineManager.downloadAudioData(allSurahs, (progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', 'تم تنزيل جميع التلاوات الصوتية بنجاح');
+            } catch (error) {
+              console.error('Error downloading all audio:', error);
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل التلاوات');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
             }
           },
         },
@@ -168,23 +293,57 @@ export default function SettingsTab() {
     );
   };
 
-  const handleClearTafsirCache = () => {
+  const handleDownloadEverything = () => {
     Alert.alert(
-      'مسح ذاكرة التفسير',
-      'هل تريد مسح ذاكرة التخزين المؤقت للتفسير؟',
+      'تنزيل كل شيء',
+      'سيتم تنزيل:\n• بيانات القرآن الكريم\n• تفسير ابن كثير\n• جميع التلاوات الصوتية\n\nالحجم التقريبي: ~552 MB\nقد يستغرق هذا وقتاً طويلاً جداً.\n\nهل تريد المتابعة؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
-          text: 'مسح',
+          text: 'تنزيل الكل',
+          onPress: async () => {
+            setDownloading(true);
+            try {
+              await offlineManager.downloadAllData((progress) => {
+                setDownloadProgress({
+                  current: progress.current,
+                  total: progress.total,
+                  status: progress.status,
+                });
+              });
+              
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', 'تم تنزيل جميع البيانات بنجاح!\n\nيمكنك الآن استخدام التطبيق بدون إنترنت.');
+            } catch (error) {
+              console.error('Error downloading everything:', error);
+              Alert.alert('خطأ ❌', error instanceof Error ? error.message : 'فشل في تنزيل البيانات');
+            } finally {
+              setDownloading(false);
+              setDownloadProgress({ current: 0, total: 0, status: '' });
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearAllOfflineData = () => {
+    Alert.alert(
+      'مسح جميع البيانات المحملة',
+      'هل تريد مسح جميع البيانات المحملة للاستخدام بدون إنترنت؟\n\nسيتم حذف:\n• بيانات القرآن\n• التفسير\n• التلاوات الصوتية',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'مسح الكل',
+          style: 'destructive',
           onPress: async () => {
             try {
-              await tafsirService.clearCache();
-              setTafsirDownloadStatus('not_downloaded');
-              const stats = tafsirService.getCacheStats();
-              Alert.alert('نجح', `تم مسح ذاكرة التخزين المؤقت للتفسير\n\nالإحصائيات:\n• الحجم: ${stats.cacheSize}\n• الأخطاء: ${stats.errorCount}`);
+              await offlineManager.clearAllData();
+              await loadOfflineStatus();
+              Alert.alert('نجح ✅', 'تم مسح جميع البيانات المحملة');
             } catch (error) {
-              console.error('Error clearing tafsir cache:', error);
-              Alert.alert('خطأ', 'فشل في مسح ذاكرة التفسير');
+              console.error('Error clearing data:', error);
+              Alert.alert('خطأ ❌', 'فشل في مسح البيانات');
             }
           },
         },
@@ -215,7 +374,7 @@ export default function SettingsTab() {
         
         Alert.alert(
           'نتائج الاختبار',
-          `نظام الصوت:\n\n${status} عبد الباسط عبد الصمد: ${response.status}\n\nنظام الصوت يعمل بشكل صحيح`,
+          `نظام الصوت:\n\n${status} القارئ الحالي: ${response.status}\n\nنظام الصوت يعمل بشكل صحيح`,
           [{ text: 'حسناً' }]
         );
       } catch (error) {
@@ -237,292 +396,8 @@ export default function SettingsTab() {
     }
   };
 
-  const handleDownloadAudio = () => {
-    Alert.alert(
-      'تنزيل التلاوات الصوتية',
-      'اختر ما تريد تنزيله للاستماع بدون إنترنت:',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'سورة واحدة',
-          onPress: () => handleDownloadSurah(),
-        },
-        {
-          text: 'جزء كامل',
-          onPress: () => handleDownloadJuz(),
-        },
-        {
-          text: 'القرآن كاملاً',
-          onPress: () => handleDownloadFullQuran(),
-        },
-      ]
-    );
-  };
-
-  const handleDownloadSurah = () => {
-    Alert.prompt(
-      'تنزيل سورة',
-      'أدخل رقم السورة (1-114):',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'تنزيل',
-          onPress: async (surahNumber) => {
-            const num = parseInt(surahNumber || '0');
-            if (num < 1 || num > 114) {
-              Alert.alert('خطأ', 'رقم السورة يجب أن يكون بين 1 و 114');
-              return;
-            }
-            await downloadSurahAudio(num);
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'numeric'
-    );
-  };
-
-  const handleDownloadJuz = () => {
-    Alert.prompt(
-      'تنزيل جزء',
-      'أدخل رقم الجزء (1-30):',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'تنزيل',
-          onPress: async (juzNumber) => {
-            const num = parseInt(juzNumber || '0');
-            if (num < 1 || num > 30) {
-              Alert.alert('خطأ', 'رقم الجزء يجب أن يكون بين 1 و 30');
-              return;
-            }
-            await downloadJuzAudio(num);
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'numeric'
-    );
-  };
-
-  const handleDownloadFullQuran = () => {
-    Alert.alert(
-      'تنزيل القرآن كاملاً',
-      'سيتم تنزيل جميع التلاوات الصوتية للقرآن الكريم (حوالي 6236 آية). قد يستغرق هذا وقتاً طويلاً ويستهلك مساحة تخزين كبيرة.\n\nهل تريد المتابعة؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'تنزيل',
-          onPress: async () => {
-            await downloadFullQuranAudio();
-          },
-        },
-      ]
-    );
-  };
-
-  const downloadSurahAudio = async (surahNumber: number) => {
-    setDownloadingAudio(true);
-    try {
-      console.log(`📥 Starting download for Surah ${surahNumber}`);
-      
-      const surah = await quranService.getSurah(surahNumber);
-      if (!surah) {
-        throw new Error('فشل في الحصول على معلومات السورة');
-      }
-
-      const totalAyahs = surah.ayahs.length;
-      setDownloadProgress({ current: 0, total: totalAyahs });
-
-      let successCount = 0;
-      let failCount = 0;
-
-      for (let i = 0; i < surah.ayahs.length; i++) {
-        const ayah = surah.ayahs[i];
-        try {
-          await audioService.downloadAyah(surahNumber, ayah.numberInSurah);
-          successCount++;
-          setDownloadProgress({ current: i + 1, total: totalAyahs });
-        } catch (error) {
-          console.error(`Failed to download ayah ${ayah.numberInSurah}:`, error);
-          failCount++;
-        }
-      }
-
-      // Refresh download status
-      await checkDownloadStatus();
-
-      Alert.alert(
-        'اكتمل التنزيل',
-        `تم تنزيل السورة ${surah.name}\n\nنجح: ${successCount}\nفشل: ${failCount}`,
-        [{ text: 'حسناً' }]
-      );
-    } catch (error) {
-      console.error('Error downloading surah audio:', error);
-      Alert.alert('خطأ', 'فشل في تنزيل التلاوات الصوتية');
-    } finally {
-      setDownloadingAudio(false);
-      setDownloadProgress({ current: 0, total: 0 });
-    }
-  };
-
-  const downloadJuzAudio = async (juzNumber: number) => {
-    setDownloadingAudio(true);
-    try {
-      console.log(`📥 Starting download for Juz ${juzNumber}`);
-      
-      const allAyahs = await quranService.getAyahsByJuz(juzNumber);
-      if (!allAyahs || allAyahs.length === 0) {
-        throw new Error('فشل في الحصول على آيات الجزء');
-      }
-
-      setDownloadProgress({ current: 0, total: allAyahs.length });
-
-      let successCount = 0;
-      let failCount = 0;
-
-      for (let i = 0; i < allAyahs.length; i++) {
-        const ayah = allAyahs[i];
-        try {
-          const surahNumber = await quranService.getSurahNumberForAyah(ayah.number);
-          await audioService.downloadAyah(surahNumber, ayah.numberInSurah);
-          successCount++;
-          setDownloadProgress({ current: i + 1, total: allAyahs.length });
-        } catch (error) {
-          console.error(`Failed to download ayah ${ayah.number}:`, error);
-          failCount++;
-        }
-      }
-
-      // Refresh download status
-      await checkDownloadStatus();
-
-      Alert.alert(
-        'اكتمل التنزيل',
-        `تم تنزيل الجزء ${juzNumber}\n\nنجح: ${successCount}\nفشل: ${failCount}`,
-        [{ text: 'حسناً' }]
-      );
-    } catch (error) {
-      console.error('Error downloading juz audio:', error);
-      Alert.alert('خطأ', 'فشل في تنزيل التلاوات الصوتية');
-    } finally {
-      setDownloadingAudio(false);
-      setDownloadProgress({ current: 0, total: 0 });
-    }
-  };
-
-  const downloadFullQuranAudio = async () => {
-    setDownloadingAudio(true);
-    try {
-      console.log('📥 Starting download for full Quran');
-      
-      const totalAyahs = 6236;
-      setDownloadProgress({ current: 0, total: totalAyahs });
-
-      let successCount = 0;
-      let failCount = 0;
-      let currentAyahCount = 0;
-
-      for (let surahNumber = 1; surahNumber <= 114; surahNumber++) {
-        const surah = await quranService.getSurah(surahNumber);
-        if (!surah) continue;
-
-        for (const ayah of surah.ayahs) {
-          try {
-            await audioService.downloadAyah(surahNumber, ayah.numberInSurah);
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to download ${surahNumber}:${ayah.numberInSurah}:`, error);
-            failCount++;
-          }
-          currentAyahCount++;
-          setDownloadProgress({ current: currentAyahCount, total: totalAyahs });
-        }
-      }
-
-      // Refresh download status
-      await checkDownloadStatus();
-
-      Alert.alert(
-        'اكتمل التنزيل',
-        `تم تنزيل القرآن الكريم كاملاً\n\nنجح: ${successCount}\nفشل: ${failCount}`,
-        [{ text: 'حسناً' }]
-      );
-    } catch (error) {
-      console.error('Error downloading full Quran audio:', error);
-      Alert.alert('خطأ', 'فشل في تنزيل التلاوات الصوتية');
-    } finally {
-      setDownloadingAudio(false);
-      setDownloadProgress({ current: 0, total: 0 });
-    }
-  };
-
-  const handleClearAudioCache = () => {
-    Alert.alert(
-      'مسح ذاكرة التخزين المؤقت للصوت',
-      'هل تريد مسح ذاكرة التخزين المؤقت للملفات الصوتية؟ سيتم حذف جميع التلاوات المحملة.',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'مسح',
-          onPress: async () => {
-            await audioService.clearCache();
-            await audioService.clearDownloadedAudio();
-            await checkDownloadStatus();
-            Alert.alert('نجح', 'تم مسح ذاكرة التخزين المؤقت للصوت');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleCheckDownloadedAudio = async () => {
-    try {
-      const stats = await audioService.getDownloadStats();
-      Alert.alert(
-        'إحصائيات التنزيل',
-        `التلاوات المحملة:\n\n• عدد الآيات: ${stats.totalAyahs}\n• الحجم: ${stats.totalSize}\n• السور: ${stats.surahs.join(', ')}`,
-        [{ text: 'حسناً' }]
-      );
-    } catch (error) {
-      console.error('Error checking download stats:', error);
-      Alert.alert('خطأ', 'فشل في الحصول على إحصائيات التنزيل');
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'downloaded':
-      case 'full':
-        return '✅';
-      case 'partial':
-        return '⚠️';
-      case 'not_downloaded':
-        return '❌';
-      case 'checking':
-        return '🔄';
-      default:
-        return '❓';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'downloaded':
-        return 'تم التنزيل';
-      case 'full':
-        return 'تم التنزيل كاملاً';
-      case 'partial':
-        return 'تنزيل جزئي';
-      case 'not_downloaded':
-        return 'لم يتم التنزيل';
-      case 'checking':
-        return 'جاري الفحص...';
-      default:
-        return 'غير معروف';
-    }
+  const getStatusIcon = (downloaded: boolean) => {
+    return downloaded ? '✅' : '❌';
   };
 
   const styles = useMemo(() => StyleSheet.create({
@@ -720,6 +595,52 @@ export default function SettingsTab() {
       fontSize: 20,
       marginLeft: 8,
     },
+    offlineStatusCard: {
+      backgroundColor: colors.background,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    offlineStatusTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.primary,
+      fontFamily: 'Amiri_700Bold',
+      textAlign: 'right',
+      marginBottom: 8,
+    },
+    offlineStatusRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 6,
+    },
+    offlineStatusLabel: {
+      fontSize: 14,
+      color: colors.text,
+      fontFamily: 'Amiri_400Regular',
+    },
+    offlineStatusValue: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontFamily: 'Amiri_400Regular',
+    },
+    fullyOfflineBadge: {
+      backgroundColor: colors.success,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      alignSelf: 'flex-end',
+      marginTop: 8,
+    },
+    fullyOfflineBadgeText: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 'bold',
+      fontFamily: 'Amiri_700Bold',
+    },
   }), [colors]);
 
   return (
@@ -729,62 +650,99 @@ export default function SettingsTab() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Offline Download Section */}
+        {/* Offline Status Overview */}
+        {!loadingStatus && offlineStatus && (
+          <View style={styles.settingCard}>
+            <Text style={styles.sectionTitle}>حالة الاستخدام بدون إنترنت</Text>
+            
+            <View style={styles.offlineStatusCard}>
+              <Text style={styles.offlineStatusTitle}>البيانات المحملة</Text>
+              
+              <View style={styles.offlineStatusRow}>
+                <Text style={styles.offlineStatusValue}>
+                  {getStatusIcon(offlineStatus.quranData.downloaded)} {offlineStatus.quranData.size}
+                </Text>
+                <Text style={styles.offlineStatusLabel}>القرآن الكريم</Text>
+              </View>
+              
+              <View style={styles.offlineStatusRow}>
+                <Text style={styles.offlineStatusValue}>
+                  {getStatusIcon(offlineStatus.tafsirData.cachedAyahs > 0)} {offlineStatus.tafsirData.cachedAyahs} آية ({offlineStatus.tafsirData.size})
+                </Text>
+                <Text style={styles.offlineStatusLabel}>تفسير ابن كثير</Text>
+              </View>
+              
+              <View style={styles.offlineStatusRow}>
+                <Text style={styles.offlineStatusValue}>
+                  {getStatusIcon(offlineStatus.audioData.totalAyahs > 0)} {offlineStatus.audioData.totalAyahs} آية ({offlineStatus.audioData.size})
+                </Text>
+                <Text style={styles.offlineStatusLabel}>التلاوات الصوتية</Text>
+              </View>
+              
+              <View style={[styles.offlineStatusRow, { borderTopWidth: 1, borderTopColor: colors.border, marginTop: 8, paddingTop: 8 }]}>
+                <Text style={[styles.offlineStatusValue, { fontWeight: 'bold' }]}>
+                  {offlineStatus.totalSize}
+                </Text>
+                <Text style={[styles.offlineStatusLabel, { fontWeight: 'bold' }]}>الحجم الإجمالي</Text>
+              </View>
+              
+              {offlineStatus.isFullyOffline && (
+                <View style={styles.fullyOfflineBadge}>
+                  <Text style={styles.fullyOfflineBadgeText}>✅ جاهز للاستخدام بدون إنترنت</Text>
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, styles.buttonSecondary]}
+              onPress={loadOfflineStatus}
+            >
+              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث الحالة</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Download Section */}
         <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>التنزيل للاستخدام بدون إنترنت</Text>
+          <Text style={styles.sectionTitle}>تنزيل للاستخدام بدون إنترنت</Text>
           
-          {/* Quran Data Status */}
-          <View style={styles.statusRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.statusIcon}>{getStatusIcon(quranDownloadStatus)}</Text>
-              <Text style={styles.statusValue}>{getStatusText(quranDownloadStatus)}</Text>
-            </View>
-            <Text style={styles.statusLabel}>بيانات القرآن الكريم</Text>
-          </View>
-
-          {/* Tafsir Data Status */}
-          <View style={styles.statusRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.statusIcon}>{getStatusIcon(tafsirDownloadStatus)}</Text>
-              <Text style={styles.statusValue}>{getStatusText(tafsirDownloadStatus)}</Text>
-            </View>
-            <Text style={styles.statusLabel}>تفسير ابن كثير</Text>
-          </View>
-
-          {/* Audio Data Status */}
-          <View style={styles.statusRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.statusIcon}>{getStatusIcon(audioDownloadStatus)}</Text>
-              <Text style={styles.statusValue}>
-                {audioDownloadStatus === 'not_downloaded' 
-                  ? getStatusText(audioDownloadStatus)
-                  : `${audioDownloadInfo.totalAyahs} آية (${audioDownloadInfo.totalSize})`
-                }
-              </Text>
-            </View>
-            <Text style={styles.statusLabel}>التلاوات الصوتية</Text>
-          </View>
-
-          {/* Download Buttons */}
           <TouchableOpacity
-            style={[styles.button, styles.buttonSuccess]}
-            onPress={handleDownloadQuran}
+            style={[styles.button, styles.buttonSuccess, downloading && styles.buttonDisabled]}
+            onPress={handleDownloadQuranData}
+            disabled={downloading}
           >
-            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل بيانات القرآن</Text>
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل بيانات القرآن (~2 MB)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.buttonSuccess, downloadingAudio && styles.buttonDisabled]}
-            onPress={handleDownloadAudio}
-            disabled={downloadingAudio}
+            style={[styles.button, styles.buttonSuccess, downloading && styles.buttonDisabled]}
+            onPress={handleDownloadTafsirData}
+            disabled={downloading}
           >
-            <Text style={[styles.buttonText, styles.buttonTextWhite]}>
-              {downloadingAudio ? 'جاري التنزيل...' : 'تنزيل التلاوات الصوتية'}
-            </Text>
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل تفسير ابن كثير (~50 MB)</Text>
           </TouchableOpacity>
 
-          {downloadingAudio && downloadProgress.total > 0 && (
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSuccess, downloading && styles.buttonDisabled]}
+            onPress={handleDownloadAudioOptions}
+            disabled={downloading}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل التلاوات الصوتية</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSuccess, downloading && styles.buttonDisabled]}
+            onPress={handleDownloadEverything}
+            disabled={downloading}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>تنزيل كل شيء (~552 MB)</Text>
+          </TouchableOpacity>
+
+          {downloading && downloadProgress.total > 0 && (
             <View style={styles.progressContainer}>
+              <Text style={styles.progressText}>
+                {downloadProgress.status}
+              </Text>
               <Text style={styles.progressText}>
                 {downloadProgress.current} / {downloadProgress.total}
               </Text>
@@ -800,14 +758,14 @@ export default function SettingsTab() {
           )}
 
           <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={checkDownloadStatus}
+            style={[styles.button, styles.buttonDanger]}
+            onPress={handleClearAllOfflineData}
           >
-            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث حالة التنزيل</Text>
+            <Text style={[styles.buttonText, styles.buttonTextWhite]}>مسح جميع البيانات المحملة</Text>
           </TouchableOpacity>
           
           <Text style={styles.infoText}>
-            قم بتنزيل البيانات للاستخدام بدون إنترنت. يمكنك تنزيل القرآن الكريم كاملاً أو سور وأجزاء محددة من التلاوات الصوتية.
+            قم بتنزيل البيانات للاستخدام بدون إنترنت. يمكنك تنزيل كل شيء دفعة واحدة أو تنزيل أجزاء محددة حسب حاجتك.
           </Text>
         </View>
 
@@ -883,22 +841,6 @@ export default function SettingsTab() {
           </View>
         </View>
 
-        {/* Tafsir Section */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>التفسير</Text>
-          
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleClearTafsirCache}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>مسح ذاكرة التخزين المؤقت للتفسير</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.infoText}>
-            يتم تحميل تفسير ابن كثير من Quran.com وحفظه محلياً للوصول السريع
-          </Text>
-        </View>
-
         {/* Audio Section */}
         <View style={styles.settingCard}>
           <Text style={styles.sectionTitle}>الصوت</Text>
@@ -912,48 +854,9 @@ export default function SettingsTab() {
               {testingAudio ? 'جاري الاختبار...' : 'اختبار نظام الصوت'}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleCheckDownloadedAudio}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>عرض التلاوات المحملة</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleClearAudioCache}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>مسح ذاكرة التخزين المؤقت للصوت</Text>
-          </TouchableOpacity>
           
           <Text style={styles.infoText}>
-            القارئ: عبد الباسط عبد الصمد (حفص عن عاصم){'\n'}
-            • اختبار نظام الصوت: للتحقق من توفر الملفات الصوتية{'\n'}
-            • مسح الذاكرة: لحذف الملفات المخزنة مؤقتاً
-          </Text>
-        </View>
-
-        {/* Data Section */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>البيانات</Text>
-          
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleRefreshQuranData}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextSecondary]}>تحديث بيانات القرآن</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonDanger]}
-            onPress={handleClearQuranData}
-          >
-            <Text style={[styles.buttonText, styles.buttonTextWhite]}>مسح بيانات القرآن المحملة</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.infoText}>
-            استخدم هذا الخيار لتحديث بيانات القرآن من الخادم أو مسح البيانات المحملة
+            يمكنك اختيار القارئ من قائمة القراء في الصفحة الرئيسية
           </Text>
         </View>
 

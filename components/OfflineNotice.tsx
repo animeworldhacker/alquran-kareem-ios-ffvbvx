@@ -1,11 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { networkUtils } from '../utils/networkUtils';
+import { offlineManager } from '../services/offlineManager';
 import Icon from './Icon';
 
 export default function OfflineNotice() {
   const [isOffline, setIsOffline] = useState(false);
+  const [canWorkOffline, setCanWorkOffline] = useState(false);
   const slideAnim = useState(new Animated.Value(-100))[0];
 
   useEffect(() => {
@@ -23,18 +25,26 @@ export default function OfflineNotice() {
     });
 
     // Check initial state
-    networkUtils.isConnected().then(connected => {
-      const offline = !connected;
-      setIsOffline(offline);
-      if (offline) {
-        slideAnim.setValue(0);
-      }
-    }).catch(error => {
-      console.error('Error checking network state:', error);
-    });
+    checkOfflineCapability();
 
     return unsubscribe;
   }, [slideAnim]);
+
+  const checkOfflineCapability = async () => {
+    try {
+      const connected = await networkUtils.isConnected();
+      const offline = !connected;
+      setIsOffline(offline);
+      
+      if (offline) {
+        const canWork = await offlineManager.canWorkOffline();
+        setCanWorkOffline(canWork);
+        slideAnim.setValue(0);
+      }
+    } catch (error) {
+      console.error('Error checking offline capability:', error);
+    }
+  };
 
   if (!isOffline) {
     return null;
@@ -44,13 +54,19 @@ export default function OfflineNotice() {
     <Animated.View
       style={[
         styles.container,
+        canWorkOffline ? styles.containerWarning : styles.containerError,
         {
           transform: [{ translateY: slideAnim }],
         },
       ]}
     >
       <Icon name="wifi-off" size={16} color="#fff" />
-      <Text style={styles.text}>No internet connection</Text>
+      <Text style={styles.text}>
+        {canWorkOffline 
+          ? 'وضع بدون إنترنت - البيانات المحملة متاحة'
+          : 'لا يوجد اتصال بالإنترنت'
+        }
+      </Text>
     </Animated.View>
   );
 }
@@ -61,7 +77,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#f44336',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -69,6 +84,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
     zIndex: 9999,
+  },
+  containerError: {
+    backgroundColor: '#f44336',
+  },
+  containerWarning: {
+    backgroundColor: '#ff9800',
   },
   text: {
     color: '#fff',
