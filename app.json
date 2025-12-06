@@ -81,9 +81,14 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "your-project-id"
       }
     },
-    "jsEngine": "hermes"
-  },
-  "scheme": "Al-Quran Kareem"
+    "jsEngine": "hermes",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
 }
