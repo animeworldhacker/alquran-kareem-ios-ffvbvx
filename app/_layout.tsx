@@ -10,6 +10,7 @@ import AppErrorHandler from '../components/AppErrorHandler';
 import OfflineNotice from '../components/OfflineNotice';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { setupErrorLogging } from '../utils/errorLogger';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(error => {
@@ -41,12 +42,13 @@ function RootLayoutContent() {
         if (fontsLoaded || fontError) {
           if (fontError) {
             console.error('❌ Font loading error:', fontError);
+            // Continue anyway - app will use system fonts
           } else {
             console.log('✅ Fonts loaded successfully');
           }
           
           // Small delay to ensure everything is ready
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Hide splash screen
           try {
@@ -75,7 +77,7 @@ function RootLayoutContent() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#D4AF37" />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>جاري التحميل...</Text>
       </View>
     );
   }
@@ -86,30 +88,32 @@ function RootLayoutContent() {
   }
 
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <ThemeProvider>
-          <View style={styles.container}>
-            <OfflineNotice />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right',
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="home" options={{ headerShown: false }} />
-              <Stack.Screen name="surah/[id]" options={{ headerShown: false }} />
-              <Stack.Screen name="tafsir/[surah]/[ayah]" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
-            </Stack>
-          </View>
-        </ThemeProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <ThemeProvider>
+            <View style={styles.container}>
+              <OfflineNotice />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="home" options={{ headerShown: false }} />
+                <Stack.Screen name="surah/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="tafsir/[surah]/[ayah]" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
+              </Stack>
+            </View>
+          </ThemeProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
 
@@ -135,5 +139,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     color: '#2C2416',
+    fontWeight: '600',
   },
 });

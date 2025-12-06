@@ -15,7 +15,13 @@ export default function Index() {
   const router = useRouter();
   
   // Always call hooks at the top level - unconditionally
-  const themeContext = useTheme();
+  let themeContext;
+  try {
+    themeContext = useTheme();
+  } catch (error) {
+    console.error('Error getting theme context:', error);
+    themeContext = null;
+  }
 
   useEffect(() => {
     async function initialize() {

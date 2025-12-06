@@ -28,7 +28,7 @@ module.exports = function (api) {
           },
         },
       ],
-      // CRITICAL: Required for @gorhom/bottom-sheet and react-native-reanimated
+      // CRITICAL: react-native-reanimated/plugin MUST be listed last
       'react-native-reanimated/plugin',
     ],
   };

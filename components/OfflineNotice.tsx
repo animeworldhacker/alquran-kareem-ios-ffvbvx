@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { networkUtils } from '../utils/networkUtils';
 import { offlineManager } from '../services/offlineManager';
 import Icon from './Icon';
@@ -8,11 +8,15 @@ import Icon from './Icon';
 export default function OfflineNotice() {
   const [isOffline, setIsOffline] = useState(false);
   const [canWorkOffline, setCanWorkOffline] = useState(false);
-  const slideAnim = useState(new Animated.Value(-100))[0];
+  const [slideAnim] = useState(new Animated.Value(-100));
 
   useEffect(() => {
+    let mounted = true;
+
     // Subscribe to network changes
     const unsubscribe = networkUtils.subscribe(state => {
+      if (!mounted) return;
+      
       const offline = !state.isConnected;
       setIsOffline(offline);
 
@@ -27,7 +31,10 @@ export default function OfflineNotice() {
     // Check initial state
     checkOfflineCapability();
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, [slideAnim]);
 
   const checkOfflineCapability = async () => {

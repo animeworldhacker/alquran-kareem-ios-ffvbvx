@@ -1,7 +1,7 @@
 
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { networkUtils } from '../utils/networkUtils';
 
 interface AudioCache {
@@ -67,7 +67,7 @@ class AudioService {
       }
     } catch (error) {
       console.error('Error creating audio directory:', error);
-      throw new Error('فشل في إنشاء مجلد الصوتيات');
+      // Don't throw - allow app to continue without download functionality
     }
   }
 

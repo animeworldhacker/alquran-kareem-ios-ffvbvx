@@ -24,40 +24,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    let mounted = true;
 
-      // Sync local data to Supabase when user is logged in
-      if (session?.user) {
-        syncLocalData();
+    // Get initial session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+
+          // Sync local data to Supabase when user is logged in
+          if (session?.user) {
+            syncLocalData().catch(err => {
+              console.error('Error syncing local data:', err);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event);
-      setSession(session);
-      setUser(session?.user ?? null);
+      
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      // Sync local data when user signs in
-      if (_event === 'SIGNED_IN' && session?.user) {
-        syncLocalData();
+        // Sync local data when user signs in
+        if (_event === 'SIGNED_IN' && session?.user) {
+          syncLocalData().catch(err => {
+            console.error('Error syncing local data:', err);
+          });
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const syncLocalData = async () => {
     try {
       console.log('Syncing local data to Supabase...');
       await Promise.all([
-        bookmarkService.syncLocalToSupabase(),
-        settingsService.syncLocalToSupabase(),
-        readingProgressService.syncLocalToSupabase(),
+        bookmarkService.syncLocalToSupabase().catch(err => {
+          console.error('Error syncing bookmarks:', err);
+        }),
+        settingsService.syncLocalToSupabase().catch(err => {
+          console.error('Error syncing settings:', err);
+        }),
+        readingProgressService.syncLocalToSupabase().catch(err => {
+          console.error('Error syncing reading progress:', err);
+        }),
       ]);
       console.log('Local data synced successfully');
     } catch (error) {

@@ -46,13 +46,13 @@ class OfflineManager {
       // Check Quran data
       const quranStored = await quranService.isStoredOffline();
       const quranData = await AsyncStorage.getItem('quran_full_data');
-      const quranSize = quranData ? (new Blob([quranData]).size / (1024 * 1024)).toFixed(2) : '0';
+      const quranSize = quranData ? (quranData.length / (1024 * 1024)).toFixed(2) : '0';
       const quranVersion = await AsyncStorage.getItem('quran_data_version');
 
       // Check Tafsir data
       const tafsirStats = tafsirService.getCacheStats();
       const tafsirData = await AsyncStorage.getItem('tafsir_cache');
-      const tafsirSize = tafsirData ? (new Blob([tafsirData]).size / (1024 * 1024)).toFixed(2) : '0';
+      const tafsirSize = tafsirData ? (tafsirData.length / (1024 * 1024)).toFixed(2) : '0';
 
       // Check Audio data
       const audioStats = await audioService.getDownloadStats();
