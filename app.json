@@ -87,9 +87,6 @@
         "origin": false
       }
     },
-    "jsEngine": "hermes",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "jsEngine": "hermes"
   }
 }

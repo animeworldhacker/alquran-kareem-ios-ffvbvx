@@ -1,67 +1,62 @@
 
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import Icon from '../../components/Icon';
+import FloatingTabBar from '../../components/FloatingTabBar';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function TabsLayout() {
-  const { colors, textSizes } = useTheme();
+  const { colors } = useTheme();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.text,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 60,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Amiri_700Bold',
-          fontSize: textSizes.caption,
-          marginBottom: 6,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="chapters"
-        options={{
-          title: 'السور',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="book" size={size || 24} style={{ color: color || colors.text }} />
-          ),
+    <View style={styles.container}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
         }}
-      />
-      <Tabs.Screen
-        name="bookmarks"
-        options={{
-          title: 'المفضلة',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="bookmark" size={size || 24} style={{ color: color || colors.text }} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="reciters"
-        options={{
-          title: 'القراء',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="volume-high" size={size || 24} style={{ color: color || colors.text }} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'الإعدادات',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="settings" size={size || 24} style={{ color: color || colors.text }} />
-          ),
-        }}
-      />
-    </Tabs>
+        tabBar={() => (
+          <FloatingTabBar 
+            visible={true} 
+            translateY={0}
+          />
+        )}
+      >
+        <Tabs.Screen
+          name="chapters"
+          options={{
+            title: 'السور',
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="bookmarks"
+          options={{
+            title: 'المفضلة',
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="reciters"
+          options={{
+            title: 'القراء',
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'الإعدادات',
+            headerShown: false,
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, Alert, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuran } from '../../hooks/useQuran';
 import { useAudio } from '../../hooks/useAudio';
@@ -46,7 +46,6 @@ export default function SurahScreen() {
   
   const scrollViewRef = useRef<ScrollView>(null);
   const lastScrollY = useRef(0);
-  const tabTranslateY = useRef(new Animated.Value(0)).current;
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load saved reading mode preference
@@ -110,15 +109,6 @@ export default function SurahScreen() {
       console.log(`Ayah ended, moving to next: ${surah}:${ayah}`);
     });
   }, [setOnAyahEnd]);
-
-  // Animate tab bar visibility
-  useEffect(() => {
-    Animated.timing(tabTranslateY, {
-      toValue: tabVisible ? 0 : TAB_BAR_HEIGHT + insets.bottom,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [tabVisible, insets.bottom, tabTranslateY]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentY = event.nativeEvent.contentOffset.y;
@@ -549,7 +539,7 @@ export default function SurahScreen() {
       />
 
       {readingMode === 'scroll' && (
-        <FloatingTabBar visible={tabVisible} translateY={tabTranslateY} />
+        <FloatingTabBar visible={tabVisible} translateY={0} />
       )}
     </View>
   );

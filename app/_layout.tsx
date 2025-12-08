@@ -22,6 +22,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    console.log('🚀 RootLayout mounted');
+    console.log('📦 Reanimated loaded:', typeof require('react-native-reanimated') !== 'undefined');
+  }, []);
+
+  useEffect(() => {
     async function hideSplash() {
       try {
         // Wait for fonts to load or error

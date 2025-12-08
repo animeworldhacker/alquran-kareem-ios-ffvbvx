@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import Icon from './Icon';
+import Animated from 'react-native-reanimated';
 
 interface FloatingTabBarProps {
   visible: boolean;
-  translateY: Animated.Value;
+  translateY: Animated.SharedValue<number>;
 }
 
 export default function FloatingTabBar({ visible, translateY }: FloatingTabBarProps) {
@@ -69,12 +70,9 @@ export default function FloatingTabBar({ visible, translateY }: FloatingTabBarPr
   });
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.container,
-        {
-          transform: [{ translateY }],
-        },
       ]}
     >
       {tabs.map((tab) => {
@@ -102,6 +100,6 @@ export default function FloatingTabBar({ visible, translateY }: FloatingTabBarPr
           </TouchableOpacity>
         );
       })}
-    </Animated.View>
+    </View>
   );
 }
