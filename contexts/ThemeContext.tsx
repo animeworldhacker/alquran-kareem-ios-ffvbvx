@@ -74,7 +74,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const loadSettings = async () => {
     try {
       setIsLoading(true);
-      console.log('📱 Loading settings...');
+      console.log('📱 Loading theme settings...');
       
       const savedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
       
@@ -82,32 +82,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(savedSettings);
         const mergedSettings = { ...DEFAULT_SETTINGS, ...parsed };
         setSettings(mergedSettings);
-        console.log('✅ Settings loaded successfully:', mergedSettings);
+        console.log('✅ Theme settings loaded');
       } else {
         console.log('ℹ️ No saved settings, using defaults');
         setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
-      console.error('❌ Error loading settings:', error);
+      console.error('❌ Error loading theme settings:', error);
       // Use default settings on error
       setSettings(DEFAULT_SETTINGS);
-      console.log('⚠️ Using default settings due to error');
     } finally {
       setIsLoading(false);
-      console.log('✅ Theme initialization complete');
     }
   };
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
-      console.log('📝 Updating settings:', newSettings);
+      console.log('📝 Updating theme settings...');
       const updatedSettings = { ...settings, ...newSettings };
       
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
       setSettings(updatedSettings);
-      console.log('✅ Settings updated successfully:', updatedSettings);
+      console.log('✅ Theme settings updated');
     } catch (error) {
-      console.error('❌ Error updating settings:', error);
+      console.error('❌ Error updating theme settings:', error);
       throw error;
     }
   };

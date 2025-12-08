@@ -41,12 +41,6 @@ config.resolver.assetExts = [
   'm4a',
 ];
 
-// Add node modules that need to be transformed
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  // Let Metro handle the resolution
-  return context.resolveRequest(context, moduleName, platform);
-};
-
 // Ensure proper transformer configuration
 config.transformer = {
   ...config.transformer,
@@ -56,6 +50,17 @@ config.transformer = {
       inlineRequires: true,
     },
   }),
+  minifierConfig: {
+    keep_classnames: true,
+    keep_fnames: true,
+    mangle: {
+      keep_classnames: true,
+      keep_fnames: true,
+    },
+  },
 };
+
+// Add watchFolders if needed
+config.watchFolders = [__dirname];
 
 module.exports = config;

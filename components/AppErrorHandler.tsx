@@ -1,6 +1,6 @@
 
 import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 
 interface Props {
   children: ReactNode;
@@ -9,6 +9,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: string | null;
 }
 
 export default class AppErrorHandler extends Component<Props, State> {
@@ -17,10 +18,11 @@ export default class AppErrorHandler extends Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
+      errorInfo: null,
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     console.error('🔴 App Error Handler caught error:', error);
     return {
       hasError: true,
@@ -34,6 +36,10 @@ export default class AppErrorHandler extends Component<Props, State> {
       stack: error.stack,
       componentStack: errorInfo.componentStack,
     });
+    
+    this.setState({
+      errorInfo: errorInfo.componentStack || null,
+    });
   }
 
   handleReset = () => {
@@ -41,6 +47,7 @@ export default class AppErrorHandler extends Component<Props, State> {
     this.setState({
       hasError: false,
       error: null,
+      errorInfo: null,
     });
   };
 
@@ -57,6 +64,13 @@ export default class AppErrorHandler extends Component<Props, State> {
               <View style={styles.errorBox}>
                 <Text style={styles.errorTitle}>Error Details:</Text>
                 <Text style={styles.errorText}>{this.state.error.message}</Text>
+                
+                {__DEV__ && this.state.error.stack && (
+                  <View style={styles.stackContainer}>
+                    <Text style={styles.stackTitle}>Stack Trace:</Text>
+                    <Text style={styles.stackText}>{this.state.error.stack}</Text>
+                  </View>
+                )}
               </View>
             )}
 
@@ -69,6 +83,12 @@ export default class AppErrorHandler extends Component<Props, State> {
               إذا استمرت المشكلة، يرجى إعادة تشغيل التطبيق{'\n'}
               If the problem persists, please restart the app
             </Text>
+            
+            {__DEV__ && (
+              <Text style={styles.devNote}>
+                Platform: {Platform.OS} | Debug Mode: {__DEV__ ? 'Yes' : 'No'}
+              </Text>
+            )}
           </ScrollView>
         </View>
       );
@@ -127,6 +147,23 @@ const styles = StyleSheet.create({
     color: '#6D6558',
     lineHeight: 18,
   },
+  stackContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  stackTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#2C2416',
+    marginBottom: 4,
+  },
+  stackText: {
+    fontSize: 10,
+    color: '#6D6558',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
   button: {
     backgroundColor: '#D4AF37',
     paddingHorizontal: 32,
@@ -151,5 +188,11 @@ const styles = StyleSheet.create({
     color: '#6D6558',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  devNote: {
+    marginTop: 20,
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 });

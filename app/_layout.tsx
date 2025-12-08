@@ -4,11 +4,10 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { AuthProvider } from '../contexts/AuthContext';
 import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import ErrorBoundary from '../components/ErrorBoundary';
-import AppErrorHandler from '../components/AppErrorHandler';
 import OfflineNotice from '../components/OfflineNotice';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Prevent the splash screen from auto-hiding
@@ -16,19 +15,15 @@ SplashScreen.preventAutoHideAsync().catch(error => {
   console.error('Error preventing splash screen auto-hide:', error);
 });
 
-function RootLayoutContent() {
+export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Amiri_400Regular,
     Amiri_700Bold,
   });
-  
-  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    async function prepare() {
+    async function hideSplash() {
       try {
-        console.log('🚀 Preparing app...');
-        
         // Wait for fonts to load or error
         if (fontsLoaded || fontError) {
           if (fontError) {
@@ -38,44 +33,21 @@ function RootLayoutContent() {
             console.log('✅ Fonts loaded successfully');
           }
           
-          // Small delay to ensure everything is ready
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
           // Hide splash screen
-          try {
-            await SplashScreen.hideAsync();
-            console.log('✅ Splash screen hidden');
-          } catch (error) {
-            console.error('❌ Error hiding splash screen:', error);
-          }
-          
-          // Mark app as ready
-          setAppReady(true);
-          console.log('✅ App ready');
+          await SplashScreen.hideAsync();
+          console.log('✅ Splash screen hidden');
         }
       } catch (error) {
-        console.error('❌ Error preparing app:', error);
-        // Even if there's an error, mark app as ready to show error boundary
-        setAppReady(true);
+        console.error('❌ Error hiding splash screen:', error);
       }
     }
 
-    prepare();
+    hideSplash();
   }, [fontsLoaded, fontError]);
 
-  // Show loading screen while fonts are loading
-  if (!appReady) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#D4AF37" />
-        <Text style={styles.loadingText}>جاري التحميل...</Text>
-      </View>
-    );
-  }
-
-  // Show error if fonts failed to load (but still allow app to continue)
-  if (fontError) {
-    console.warn('⚠️ Continuing without custom fonts due to error:', fontError);
+  // Don't render anything until fonts are loaded or errored
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
   return (
@@ -89,6 +61,7 @@ function RootLayoutContent() {
                 screenOptions={{
                   headerShown: false,
                   animation: 'slide_from_right',
+                  gestureEnabled: true,
                 }}
               >
                 <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -108,28 +81,8 @@ function RootLayoutContent() {
   );
 }
 
-export default function RootLayout() {
-  return (
-    <AppErrorHandler>
-      <RootLayoutContent />
-    </AppErrorHandler>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F5EEE3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: '#2C2416',
-    fontWeight: '600',
   },
 });

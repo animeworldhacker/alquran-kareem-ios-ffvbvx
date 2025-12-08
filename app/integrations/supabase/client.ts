@@ -8,16 +8,29 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 console.log('🔧 Initializing Supabase client...');
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+try {
+  supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
+  console.log('✅ Supabase client initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing Supabase client:', error);
+  // Create a fallback client that won't crash the app
+  supabaseInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
 
-console.log('✅ Supabase client initialized');
+export const supabase = supabaseInstance!;

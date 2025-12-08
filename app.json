@@ -2,7 +2,7 @@
 {
   "expo": {
     "name": "Al-Quran Kareem",
-    "slug": "alquran-kareem-ios-ffvbvx",
+    "slug": "alquran-kareem",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -39,27 +39,10 @@
         "backgroundColor": "#000000"
       },
       "package": "com.animeworldhacker.alqurankareem",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "*.alqurankareem.app",
-              "pathPrefix": "/"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
       ]
     },
     "web": {
@@ -102,15 +85,11 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "your-eas-project-id"
       }
     },
     "jsEngine": "hermes",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "owner": "your-expo-username"
+    }
   }
 }
