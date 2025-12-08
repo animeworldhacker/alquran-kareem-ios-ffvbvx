@@ -67,26 +67,35 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static"
           },
           "android": {
             "minSdkVersion": 23,
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
+            "buildToolsVersion": "34.0.0",
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false
           }
         }
       ]
     ],
     "scheme": "alquran",
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": null
       }
     },
-    "jsEngine": "hermes"
+    "jsEngine": "hermes",
+    "updates": {
+      "enabled": false
+    }
   }
 }

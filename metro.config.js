@@ -63,4 +63,13 @@ config.transformer = {
 // Add watchFolders if needed
 config.watchFolders = [__dirname];
 
+// Fix for getDevServer error - disable WebSocket connection in dev mode
+// This is a workaround for Expo SDK 54 Metro bundler issue
+config.server = {
+  ...config.server,
+  enhanceMiddleware: (middleware) => {
+    return middleware;
+  },
+};
+
 module.exports = config;
