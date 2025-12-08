@@ -17,8 +17,7 @@ export default function TabsLayout() {
         }}
         tabBar={() => (
           <FloatingTabBar 
-            visible={true} 
-            translateY={0}
+            visible={true}
           />
         )}
       >

@@ -5,14 +5,12 @@ import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import Icon from './Icon';
-import Animated from 'react-native-reanimated';
 
 interface FloatingTabBarProps {
   visible: boolean;
-  translateY: Animated.SharedValue<number>;
 }
 
-export default function FloatingTabBar({ visible, translateY }: FloatingTabBarProps) {
+export default function FloatingTabBar({ visible }: FloatingTabBarProps) {
   const { colors, textSizes } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();

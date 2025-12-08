@@ -23,7 +23,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     console.log('🚀 RootLayout mounted');
-    console.log('📦 Reanimated loaded:', typeof require('react-native-reanimated') !== 'undefined');
   }, []);
 
   useEffect(() => {
