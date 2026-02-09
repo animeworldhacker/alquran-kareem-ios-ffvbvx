@@ -1,3 +1,6 @@
+// Initialize Natively console log capture before anything else
+import './utils/errorLogger';
+
 
 // Import polyfills FIRST before anything else
 import './app/polyfills';
