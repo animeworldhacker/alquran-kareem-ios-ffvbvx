@@ -7,4 +7,4 @@ Made with 💙 for creativity.
 
 ---
 
-**Qasim was here** ✨
+**Qasim was here to update the package.json** ✨
