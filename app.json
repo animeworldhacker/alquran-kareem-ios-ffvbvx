@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Al-Quran Kareem",
-    "slug": "Al-Quran Kareem",
+    "slug": "alquran-kareem",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -80,7 +80,7 @@
         }
       ]
     ],
-    "scheme": "Al-Quran Kareem",
+    "scheme": "alquran",
     "experiments": {
       "typedRoutes": false
     },
